@@ -1,0 +1,661 @@
+<div>
+    @push('livewireStyles')
+        {{-- <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=CenturyGothic"> --}}
+        <style>
+            @font-face {
+                font-family: CenturyGothic;
+                src: url({{ url('/public/assets/css/centurygothic.ttf') }});
+            }
+
+            body {
+                background-color: #f6f6f7;
+                line-height: 20px;
+                font-size: 13px;
+                font-style: normal;
+                font-weight: normal;
+                visibility: visible;
+                color: #000000;
+                position: relative;
+                letter-spacing: 0.050em;
+                /* padding-top: 90px; */
+                font-family: "CenturyGothic";
+            }
+
+            .card-body {
+
+                padding: 1px;
+                margin: 0px !important;
+                box-shadow: 5px 5px 5px lightblue;
+            }
+
+            li.list-group-item.d-flex.justify-content-between.align-items-start.active {
+                background: linear-gradient(to right, #004575 0%, #0094e5 100%);
+                /* border: 2px solid linear-gradient(to right, #004575 0%, #0094e5 100%); */
+
+                color: black;
+                /* border-radius: 4px; */
+                color: #fff;
+            }
+
+            a.list-group-item.list-group-item-action.bg-dark.text-white.active::before {
+                content: '';
+                position: absolute;
+                bottom: 29%;
+                right: 0;
+                border-width: 8px;
+                border-style: solid;
+                border-color: transparent transparent #000000 transparent;
+                transform: rotate(-90deg);
+            }
+
+            li.list-group-item.d-flex.justify-content-between.align-items-start.active::before {
+                content: '';
+                position: absolute;
+                bottom: 29%;
+                right: 0;
+                border-width: 8px;
+                border-style: solid;
+                border-color: transparent transparent #02487a77 transparent;
+                transform: rotate(-90deg);
+            }
+
+
+            #inboxTable tr {
+                transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+                background-color: transparent;
+                position: relative;
+                z-index: 0;
+            }
+
+            #inboxTable tr:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+                background-color: transparent;
+                z-index: 1;
+            }
+
+            .card.shadow.mb-3 {
+                font-size: 13px;
+                height: 90vh;
+            }
+
+
+
+            .chat-container {
+                background: white;
+                border-radius: 10px;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                display: flex;
+                flex-direction: column;
+                height: 75vh;
+            }
+
+            .chat-messages {
+                flex: 1;
+                overflow-y: auto;
+                padding: 20px;
+            }
+
+            .message {
+                margin-bottom: 15px;
+                margin-top: 5px;
+            }
+
+            .message .text {
+                padding: 6px 10px;
+                border-radius: 4px;
+                display: inline-block;
+                max-width: 80%;
+            }
+
+            .message.sent .text {
+                position: relative;
+                /* background-color: #d1e7dd; */
+                background: linear-gradient(to bottom right, #d1e7dd, #b8d6c9);
+                align-self: flex-end;
+                color: #074026;
+                box-shadow: 2px 3px;
+                text-align: left;
+                border-radius: 7px;
+            }
+
+            .message.sent .text::before {
+                content: '';
+                position: absolute;
+                bottom: 100%;
+                right: 21%;
+                /* adjust for tail position */
+                border-width: 8px;
+                border-style: solid;
+                border-color: transparent transparent #d1e7dd transparent;
+            }
+
+
+
+            .message.received .text {
+                position: relative;
+                /* background-color: #c6cef4; */
+                background: linear-gradient(to bottom right, #c6cef4, #aab4f1);
+                color: #03125b;
+                box-shadow: 2px 3px;
+                border-radius: 7px;
+            }
+
+            .message.received .text::before {
+                content: '';
+                position: absolute;
+                bottom: 100%;
+                /* Position above the bubble */
+                left: 21%;
+                /* Adjust as needed */
+                border-width: 8px;
+                border-style: solid;
+                border-color: transparent transparent #c6cef4 transparent;
+
+            }
+
+            .chat-input {
+                padding: 15px;
+                border-top: 1px solid #ddd;
+            }
+
+            .chat-input form {
+                display: flex;
+                gap: 10px;
+                align-items: center;
+            }
+
+            .attachment-label {
+                cursor: pointer;
+            }
+
+            .attachment-label i {
+                font-size: 1.25rem;
+                color: #495057;
+            }
+
+            #attachment {
+                display: none;
+            }
+
+            a.download-link {
+                text-decoration: none;
+                color: #0d6efd;
+            }
+
+            input.form-control.w-100 {
+                box-shadow: 2px 3px 5px lightblue;
+                /* border-top: none; */
+            }
+
+            nav.navbar.navbar-expand-lg.navbar-light.bg-light {
+                box-shadow: 2px 3px 5px lightblue;
+                border-radius: 7px 7px 0px 0px;
+            }
+
+            small>span {
+                color: #afaaaa;
+                font-size: 12px;
+                padding-left: 5px;
+            }
+
+            a.dropdown-item,
+            strong {
+                font-size: 13px;
+            }
+
+            .navbar.navbar-expand-lg.navbar-light.bg-light {
+                /* border-left: 2px solid #004575; */
+            }
+
+            .modal-header,
+            span.badge.bg-secondary,
+            .navbar.navbar-expand-lg.navbar-light.bg-light,
+            li.list-group-item.d-flex.justify-content-between.align-items-start:hover,
+            button.btn.btn-primary.btn-sm,
+            button.btn.btn-outline-primary.btn-sm.position-relative:hover,
+            button.btn.btn-outline-primary.btn-sm:hover,
+            li.page-item.active span.page-link,
+            a.dropdown-item:hover,
+            .list-group-item.active,
+            .bg-blue-gradient,
+            .bg-blue-gradient:hover,
+            button.btn.btn-sm.btn-primary.dropdown-toggle {
+                background: linear-gradient(to right, #004575 0%, #0094e5 100%);
+                color: #fff;
+
+            }
+
+            nav.d-flex.justify-items-center.justify-content-between {
+                font-size: 15px;
+            }
+
+            a.navbar-brand {
+                color: #fff;
+            }
+
+            ul.nav.nav-tabs {
+                border: none;
+            }
+
+            #composeCloseBtn {
+                border-radius: 18px;
+                border: 2px solid #012d44;
+                width: 10px;
+                height: 10px;
+                padding: 5px;
+            }
+
+            .list-group.msg-list-grp.compose-btn {
+                height: 28px;
+            }
+
+            li.list-group-item.active {
+                min-height: 35px;
+            }
+
+            button.btn.btn-sm.text-white {
+                position: absolute;
+                top: 0;
+            }
+
+            .dropdown.float-end,
+            ul.dropdown-menu {
+                z-index: 9999999999;
+            }
+
+            .drp-icon button.btn.btn-sm.btn-primary.dropdown-toggle {
+                height: 18px;
+                width: 18px;
+            }
+
+            .drp-icon .dropdown-toggle::after {
+                display: none !important;
+            }
+
+            input.form-control.w-100 {
+                padding: 4px;
+            }
+
+            th.table-date,
+            td.table-date {
+                width: 23%;
+            }
+
+            th.tbl-chk-start,
+            td.tbl-chk-start {
+                width: 6%;
+            }
+
+            a.navbar-brand:hover {
+                color: #ffffff;
+            }
+
+            div#composeModal {
+                margin-top: 2%;
+                margin-left: 3%;
+            }
+        </style>
+    @endpush
+
+
+    @if (session()->has('success'))
+        <div class="alert alert-success">
+            {{ session('success') }}
+        </div>
+    @elseif (session()->has('error'))
+        <div class="alert alert-danger">
+            {{ session('error') }}
+        </div>
+    @endif
+
+
+    {{-- <div class="container"> --}}
+    <div class="card shadow mb-3">
+        <div class="card-header py-0 d-flex justify-content-between align-items-center">
+
+        </div>
+        <div class="card-body">
+            <div class="row mb-4 ">
+                <div class="col-md-3 pe-0">
+
+                    <ul class="nav nav-tabs">
+
+                        @if (Auth::user()->user_type == '3' || Auth::user()->user_type == '2')
+                            <li class="nav-item">
+                                <a class="nav-link" wire:click="messageType('buyer')">
+                                    <button type="button"
+                                        class="btn btn-{{ $message_type == 'buyer' ? 'primary' : 'outline-primary' }} btn-sm ">
+                                        Buyer <span class="badge bg-secondary">
+                                            {{ collect($msgCount)->firstWhere('user_type', '1')?->inbox_unread_count ?? 0 }}
+                                        </span>
+                                    </button>
+                                </a>
+                            </li>
+                        @endif
+
+                        @if (Auth::user()->user_type == '3' || Auth::user()->user_type == '1')
+                            <li class="nav-item">
+                                <a class="nav-link" wire:click="messageType('vendor')">
+                                    <button type="button"
+                                        class="btn btn-{{ $message_type == 'vendor' ? 'primary' : 'outline-primary' }} btn-sm position-relative">
+                                        Vendor
+                                        <span class="badge bg-secondary">
+                                            {{ collect($msgCount)->firstWhere('user_type', '2')?->inbox_unread_count ?? 0 }}
+                                        </span>
+                                    </button>
+                                </a>
+                            </li>
+                        @endif
+                        @if (Auth::user()->user_type == '2' || Auth::user()->user_type == '1')
+                            <li class="nav-item">
+                                <a class="nav-link" wire:click="messageType('raprocure')">
+                                    <button type="button"
+                                        class="btn btn-{{ $message_type == 'raprocure' ? 'primary' : 'outline-primary' }} btn-sm position-relative">
+                                        RaProcure
+                                        <span
+                                            class="badge  bg-secondary">{{ collect($msgCount)->firstWhere('user_type', '3')?->inbox_unread_count ?? 0 }}</span>
+                                    </button>
+                                </a>
+                            </li>
+                        @endif
+
+                    </ul>
+
+                    <!-- Trigger Button -->
+                    @if (
+                        (Auth::user()->user_type == '1' || Auth::user()->user_type == '2') &&
+                            $type_message == '3' &&
+                            $replyListStatus == false)
+                        <ul class="list-group msg-list-grp compose-btn mb-3">
+                            <li class="list-group-item active" aria-current="true" wire:click='showComposeModal()'>
+                                {{-- <li class="list-group-item active" aria-current="true" data-bs-toggle="modal"
+                                data-bs-target="#composeModal"> --}}
+                                <button class="btn btn-sm text-white">
+                                    <i class="fa fa-user-plus" aria-hidden="true"></i> Compose Mail
+                                </button>
+                            </li>
+                        </ul>
+                    @endif
+
+
+                    <ol class="list-group list-group mt-0 msg-list-grp">
+
+                        <li class="list-group-item d-flex justify-content-between align-items-start {{ $listing_type == 'inbox' ? 'active' : '' }}"
+                            wire:click="listingType('inbox')">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-medium"><i class="fa fa-0 fa-message"></i>
+                                    Inbox
+                                </div>
+                            </div>
+                            <span class="badge bg-secondary rounded-pill">
+                                @if ($message_type == 'raprocure')
+                                    {{ collect($msgCount)->firstWhere('user_type', '3')?->inbox_unread_count ?? 0 }}
+                                @elseif ($message_type == 'vendor')
+                                    {{ collect($msgCount)->firstWhere('user_type', '2')?->inbox_unread_count ?? 0 }}
+                                @elseif ($message_type == 'buyer')
+                                    {{ collect($msgCount)->firstWhere('user_type', '1')?->inbox_unread_count ?? 0 }}
+                                @endif
+                            </span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start {{ $listing_type == 'send' ? 'active' : '' }}"
+                            wire:click="listingType('send')">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-light"><i class="fa fa-location-arrow" aria-hidden="true"></i>
+                                    Send Message
+                                </div>
+                            </div>
+                            {{-- <span class="badge bg-primary rounded-pill">14</span> --}}
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start {{ $listing_type == 'draft' ? 'active' : '' }}"
+                            wire:click="listingType('draft')">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-light"><i class="fa fa-pencil-ruler" aria-hidden="true"></i>
+                                    Draft
+                                </div>
+                            </div>
+                            {{-- <span class="badge bg-primary rounded-pill">14</span> --}}
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-start {{ $listing_type == 'trash' ? 'active' : '' }}"
+                            wire:click="listingType('trash')">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-light">
+                                    <i class="fa fa-trash" aria-hidden="true"></i>
+
+                                    Trash
+                                </div>
+                            </div>
+                            {{-- <span class="badge bg-primary rounded-pill">14</span> --}}
+                        </li>
+
+
+                    </ol>
+                    {{-- @if ($replyListStatus == false) --}}
+                    @include('livewire.compose-mail')
+                    {{-- @endif --}}
+
+                </div>
+                <div class="col-md-9 ps-1">
+
+                    @if ($replyListStatus == true)
+                        @include('livewire.message-reply')
+                    @else
+                        @include('livewire.message-list')
+                    @endif
+
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+    {{-- </div> --}}
+
+    <!-- Close modal on success -->
+
+    <!-- Show modal again on validation error -->
+
+    @push('livewireScripts')
+        @if ($errors->any())
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const modal = new bootstrap.Modal(document.getElementById('composeModal'));
+                    modal.show();
+                });
+            </script>
+        @endif
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const selectAll = document.getElementById('selectAll');
+                Livewire.on('resetCheckboxes', () => {
+                    const checkboxes = document.querySelectorAll('.row-checkbox');
+                    checkboxes.forEach(cb => cb.checked = false);
+                    selectAll.checked = false;
+                });
+                document.addEventListener('change', function(event) {
+                    const checkboxes = document.querySelectorAll('.row-checkbox');
+                    if (event.target.id === 'selectAll') {
+                        checkboxes.forEach(cb => cb.checked = event.target.checked);
+
+                        const selectedMessages = [];
+                        checkboxes.forEach(cb => {
+                            if (cb.checked) {
+                                console.log(cb.value);
+
+                                selectedMessages.push(JSON.parse(cb.value));
+                            }
+                        });
+                        @this.set('selectedMessages', selectedMessages);
+                    }
+                    if (event.target.classList.contains('row-checkbox')) {
+                        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                        selectAll.checked = allChecked;
+                        const selectedMessages = [];
+                        checkboxes.forEach(cb => {
+                            if (cb.checked) {
+                                console.log(cb.value);
+                                selectedMessages.push(JSON.parse(cb.value));
+                            }
+                        });
+                        @this.set('selectedMessages', selectedMessages);
+                    }
+                });
+            });
+
+
+            document.addEventListener('DOMContentLoaded', () => {
+
+
+                const modalEl = document.getElementById('composeModal');
+                const closeBtn = document.getElementById('composeCloseBtn');
+                const cancelBtn = document.getElementById('composeCancelBtn');
+                const subject = document.getElementById('subject');
+                const msg = document.getElementById('msg');
+
+                const showConfirmBeforeClose = (e) => {
+                    e.preventDefault();
+                    if (msg.value != '' && subject.value != '') {
+
+                        const confirmClose = confirm("Do you want to save this as a draft before closing?");
+                        if (confirmClose) {
+                            Livewire.dispatch('save-draft');
+                        } else {
+                            const modal = bootstrap.Modal.getInstance(modalEl);
+                            if (modal) modal.hide();
+                        }
+                        /*const modal = bootstrap.Modal.getInstance(modalEl);
+                        if (modal) modal.hide();*/
+                    } else {
+                        Livewire.dispatch('resetInputFields');
+                        const modal = bootstrap.Modal.getInstance(modalEl);
+                        if (modal) modal.hide();
+                    }
+                };
+
+                closeBtn?.addEventListener('click', showConfirmBeforeClose);
+                cancelBtn?.addEventListener('click', showConfirmBeforeClose);
+
+                /***:- close form  -:***/
+                window.addEventListener('hide-compose-modal', () => {
+                    $('#composeModal').on('hidden.bs.modal', function() {
+                        $(this).find('form').trigger('reset');
+                    })
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
+
+                });
+
+
+                /***:- show form  -:***/
+                window.addEventListener('show-compose-modal', () => {
+                    //alert(1);
+                    const modal = new bootstrap.Modal(document.getElementById('composeModal'));
+                    modal.show();
+
+                });
+            });
+
+            document.addEventListener("livewire:update", () => {
+                setTimeout(() => {
+                    const el = document.getElementById('chatMessages');
+                    if (el) {
+                        alert('scroll-to-bottom');
+                        // Scroll to the bottom of the chat messages
+                        el.scrollTop = el.scrollHeight;
+                    }
+                }, 50);
+            });
+            window.addEventListener('scroll-to-bottom', () => {
+                setTimeout(() => {
+                    const el = document.getElementById('chatMessages');
+                    if (el) {
+                        el.scrollTop = el.scrollHeight;
+                    }
+                    bindChatScroll();
+                    document.getElementById('messageInput').focus();
+
+                }, 500);
+
+            });
+
+
+            function bindChatScroll() {
+
+                let chatScrollBound = false;
+
+                const container = document.getElementById('chatMessages');
+
+                if (container && !container.dataset.scrollBound) {
+                    container.dataset.scrollBound = "true"; // Mark as bound
+
+                    container.addEventListener('scroll', function() {
+                        const scrollTop = container.scrollTop;
+
+                        if (scrollTop === 0) {
+                            const componentEl = container.closest('[wire\\:id]');
+                            if (!componentEl) return;
+
+                            const component = Livewire.find(componentEl.getAttribute('wire:id'));
+
+                            if (component.get('hasMoreMessages')) {
+                                console.log('Loading more messages...');
+                                component.call('loadMore');
+                                container.scrollTop = container.scrollHeight - 400;
+                            }
+                        }
+                    });
+
+                    console.log('Scroll event bound.');
+                } else {
+                    console.log('Scroll event already bound or container missing.');
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+                bindChatScroll();
+            });
+
+            Livewire.hook('message.processed', (message, component) => {
+                bindChatScroll();
+            });
+        </script>
+
+        @if ($replyListStatus == true)
+            {{-- <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    alert(1);
+
+                    setTimeout(() => {
+                        let chatScrollBound = false;
+                        const container = document.getElementById('chatMessages');
+                        if (container && !chatScrollBound) {
+                            chatScrollBound = true;
+
+                            container.addEventListener('scroll', function() {
+                                const scrollTop = container.scrollTop;
+                                if (scrollTop === 0) {
+
+                                    const component = Livewire.find(container.closest('[wire\\:id]')
+                                        .getAttribute(
+                                            'wire:id'));
+
+                                    console.log('Component:', component.get('hasMoreMessages'));
+                                    if (component.get('hasMoreMessages') == true) {
+                                        console.log('Loading more messages...');
+                                        component.call('loadMore');
+                                        container.scrollTop = container.scrollHeight - 400;
+                                    }
+                                }
+                            });
+                            console.log('Scroll event bound.');
+                        } else {
+                            console.log('Scroll event not bound.');
+                        }
+                    }, 7000);
+
+                });
+            </script> --}}
+        @endif
+    @endpush
+
+</div>

@@ -1,0 +1,1256 @@
+{{-- @extends('buyer.layouts.app', ['title' => 'Inventory Dashboard']) --}}
+@extends('buyer.layouts.appInventory', ['title' => 'Inventory Dashboard'])
+@push('styles')
+<link rel="stylesheet" href="{{ asset('public/css/addInventoryModal.css') }}">
+<link rel="stylesheet" href="{{ asset('public/css/suggestions.css') }}">
+<link rel="stylesheet" href="{{ asset('public/css/manualPO.css') }}">
+<link rel="stylesheet" href="{{ asset('public/css/inventorytable.css') }}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+<style>
+    input#selectAll {
+        margin-left: 0px;
+    }
+
+    ::-webkit-scrollbar {
+        height: 16px;
+    }
+
+    .active>.page-link,
+    .page-link.active {
+        background: var(--primary-color);
+        color: var(--white-color) !important;
+        border: none;
+        z-index: 3;
+        /* color: var(--bs-pagination-active-color); */
+        background-color: var(--primary-color);
+        border-color: var(--bs-pagination-active-border-color) #015294;
+    }
+
+    button.ra-btn.ra-btn-primary.d-inline-block1.font-size-11.update-product-button {
+        margin-left: 32%;
+    }
+
+    .page-link {
+        background: var(--pagination-bg-color);
+        border: none;
+        color: var(--color-base);
+        font-size: .875rem;
+        margin: 2px;
+        border-radius: .25rem;
+        padding: 6px 15px;
+    }
+</style>
+@endpush
+
+@section('content')
+<div class="card rounded">
+    {{-- Card Header Section --}}
+    <div class="card-header bg-white">
+        <div class="row align-items-center justify-content-between mb-3">
+
+            <div class="col-12 col-sm-auto">
+                <h1 class="font-size-22 mb-0">API Inventory</h1>
+            </div>
+
+            <div class="col-12 col-sm-auto">
+                <div class="input-group w-200 w-mobile-100 mt-4">
+                    <span class="input-group-text"><span class="bi bi-shop"></span></span>
+                    <div class="form-floating">
+                        <select name="branch_id" id="branch_id" class="form-select">
+                            @foreach ($branches as $branch)
+                            <option value="{{ $branch->branch_id }}" {{ session('branch_id')==$branch->branch_id ?
+                                'selected' : '' }}>
+                                {{ $branch->name }}
+                            </option>
+                            @endforeach
+                        </select>
+                        <label for="branch_id">Branch/Unit:</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-auto pt-3">
+                <button type="button" class="ra-btn ra-btn-primary font-size-11" id="rftBtn">
+                    <span class="bi bi bi-plus-square font-size-11" aria-hidden="true"></span>
+                    Add to RFQ
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    {{-- Card Body Section --}}
+    <div class="card-body">
+        {{-- Top filter section --}}
+
+        <form method="GET" action="{{ route('buyer.apiIndent.list') }}">
+            <div class="row gx-3 gy-2 pt-3 mb-3">
+                <div class="col-12 col-sm-4 col-md-3 col-lg-2 mb-3">
+                    <div class="input-group">
+                        <span class="input-group-text"><span class="bi bi-journal-text"></span></span>
+                        <div class="form-floating">
+                            <input type="text" class="form-control" name="product_name" placeholder=""
+                                value="{{ request('product_name') }}">
+                            <label>Product Name</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-sm-4 col-md-3 col-lg-2 mb-3">
+                    <div class="input-group">
+                        <span class="input-group-text"><span class="bi bi-journal-text"></span></span>
+                        <div class="form-floating">
+                            <input type="text" class="form-control" name="product_id" placeholder=""
+                                value="{{ request('product_id') }}">
+                            <label>{{ $view_template == 1 ? 'Product ID' : 'Material No' }}</label>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="col-6 col-sm-4 col-md-3 col-lg-2 mb-3">
+                    <div class="input-group">
+                        <span class="input-group-text"><span class="bi bi-journal-text"></span></span>
+                        <div class="form-floating">
+                            <input type="text" class="form-control" placeholder="" name="indent_no"
+                                value="{{ request('indent_no') }}">
+                            <label>{{ $view_template == 1 ? 'Indent No' : 'Pr No' }}</label>
+                        </div>
+                    </div>
+                </div>
+
+
+
+                @if ($view_template == 1)
+                <div class="col-6 col-sm-4 col-md-3 col-lg-2 mb-3">
+                    <div class="input-group">
+                        <span class="input-group-text"><span class="bi bi-journal-text"></span></span>
+                        <div class="form-floating">
+                            <input type="text" class="form-control" placeholder="" name="division_code"
+                                value="{{ request('division_code') }}">
+                            <label>Division Code</label>
+                        </div>
+                    </div>
+                </div>
+                @elseif ($view_template == 2)
+                <div class="col-6 col-sm-4 col-md-3 col-lg-2 mb-3">
+                    <div class="input-group">
+                        <span class="input-group-text"><span class="bi bi-journal-text"></span></span>
+                        <div class="form-floating">
+                            <input type="text" placeholder="" class="form-control" name="plant"
+                                value="{{ request('plant') }}">
+                            <label>Plant</label>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+
+                <div class="col-auto">
+                    <button type="submit" class="ra-btn ra-btn-outline-primary w-100 justify-content-center">
+                        <span class="bi bi-search font-size-11"></span> Search
+                    </button>
+                </div>
+
+                @if (request('product_name') ||
+                request('product_id') ||
+                request('indent_no') ||
+                request('plant') ||
+                request('division_code'))
+                <div class="col-auto">
+                    <a href="{{ route('buyer.apiIndent.list') }}"
+                        class="ra-btn ra-btn-outline-danger w-100 justify-content-center">
+                        <span class="bi bi-arrow-clockwise font-size-11"></span> Reset
+                    </a>
+                </div>
+                @endif
+
+                <div class="col-auto mb-0 mb-sm-3">
+                    <button type="button" id="deleteBtn"
+                        class="ra-btn ra-btn-outline-danger w-100 justify-content-center">
+                        <span class="bi bi-trash font-size-11" aria-hidden="true"></span>
+                        Delete
+                    </button>
+                </div>
+                <div class="col-auto mb-0 mb-sm-3">
+                    <button type="button" id="exportBtn"
+                        class="ra-btn ra-btn-outline-primary w-100 justify-content-center">
+                        <span class="bi bi-download font-size-11" aria-hidden="true"></span>
+                        Export
+                    </button>
+                </div>
+
+
+
+            </div>
+        </form>
+
+        {{-- Indent Table List --}}
+        <div class="table-responsive">
+            <table class="product-listing-table table-indent w-100">
+                <thead>
+                    <tr>
+                        <th scope="col" class="text-center border-bottom-dark text-warp keep-word ">
+                            {{-- <div class="form-check">
+                                <input id="selectAll" class="form-check-input" type="checkbox" value=""
+                                    id="selectAll" />
+                            </div> --}}
+                        </th>
+
+                        @if ($view_template == 1)
+                        <!--:- old user -:-->
+                        <th class="text-center">Indent No</th>
+                        <th class="text-center">Product</th>
+                        <th class="text-center">Product ID</th>
+                        <th class="text-center">Division Code</th>
+                        <th class="text-center">Dept Code</th>
+                        <th class="text-center">Cost Code</th>
+                        <th class="our_product_width text-center">Product(Raprocure)</th>
+                        <th class="text-center">Specification</th>
+                        <th class="text-center">Size</th>
+                        <th class="text-center">UOM</th>
+                        <th class="text-center">Brand</th>
+                        <th class="text-center">Created Date</th>
+                        <th class="text-center">Indent Qty</span></th>
+                        <th class="text-center">RFQ Qty</th>
+                        @elseif($view_template == 2)
+                        <!--:- new user -:-->
+                        <th scope="col" class="text-center border-bottom-dark text-warp keep-word">PR No</th>
+                        <th scope="col" class="text-center border-bottom-dark text-warp keep-word">Material No
+                        </th>
+                        <th scope="col" class="text-center border-bottom-dark text-warp keep-word">Plant</th>
+                        <th scope="col" class="text-center border-bottom-dark text-warp keep-word">PR Text</th>
+
+
+                        <th scope="col" class="text-center border-bottom-dark text-warp keep-word">Indent QTY
+                        </th>
+                        <th scope="col" class="text-center border-bottom-dark text-warp keep-word">UOM</th>
+                        <th scope="col" class="text-center border-bottom-dark text-warp keep-word">Delivery
+                            Date
+                        </th>
+                        <th scope="col" class="text-center border-bottom-dark text-warp keep-word">Material
+                        </th>
+                        <th scope="col" class="text-center border-bottom-dark text-warp keep-word">Purchase
+                        </th>
+                        <th scope="col" class="text-center border-bottom-dark text-warp keep-word">
+                            Product(Raprocure)</th>
+                        <th scope="col" class="text-center border-bottom-dark text-warp keep-word">
+                            Specification
+                        </th>
+                        <th scope="col" class="text-center border-bottom-dark text-warp keep-word">Size</th>
+                        <th scope="col" class="text-center border-bottom-dark text-warp keep-word">Created Date
+                        </th>
+                        <th scope="col" class="text-center border-bottom-dark text-warp keep-word">RFQ Qty</th>
+                        @endif
+
+
+
+
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {{-- {{ dd($indentData) }} --}}
+
+                    @forelse ($indentData as $indent)
+                    <tr id="row-{{ $indent->id }}">
+                        <td class="text-center border border-dark">
+                            @if ($indent->match_product_id)
+                            <div class="form-check">
+
+                                <input class="product-checkbox" type="checkbox" name="indent-checkbox"
+                                    data-id="{{ $indent->id }}" value="{{ $indent->id }}" />
+                            </div>
+                            @else
+                            <!--:-  -:-->
+                            @endif
+                        </td>
+
+                        @if ($view_template == 1)
+                        <!--:- for old user -:-->
+                        <td class="text-center border border-dark">{{ $indent->indent_no }}</td>
+                        <td class="text-center border border-dark">{{ $indent->product_name }}</td>
+                        <td class="text-center border border-dark text-warp">{{ $indent->product_id }}</td>
+                        <td class="text-center border border-dark">{{ $indent->division_code }}</td>
+                        <td class="text-center border border-dark">{{ $indent->dept_code }}</td>
+                        <td class="text-center border border-dark">{{ $indent->cost_code }}</td>
+
+
+                        <td class="text-center border border-dark w-220">
+
+                            {{-- @if ($indent->match_product_id) --}}
+                            @if ($indent->rfq_quantity_sum)
+                            {{ optional($indent->getProduct)->product_name }}
+                            @else
+                            <form action="{{ route('buyer.apiIndent.update') }}" method="post">
+                                @csrf
+                                <input type="hidden" name="indent_id" id="{{ $indent->id }}"
+                                    value="{{ $indent->id }}" />
+
+                                <div class="product-block">
+
+
+                                    @if (optional($indent->getProduct)->product_name)
+                                    <span
+                                        class="text-primary-blue text-decoration-underline cursor-pointer toggle-trigger">{{
+                                        optional($indent->getProduct)->product_name }}</span>
+                                    @endif
+                                    <div class="row align-items-center justify-content-center
+                                                     @if (optional($indent->getProduct)->product_name) d-none
+                                                     @else
+                                                     d-block @endif
+                                                     form-container">
+                                        <div class="col-12">
+                                            <span class="division-category text-start"></span>
+                                            <div class="d-flex align-items-start justify-content-center">
+                                                <div class="position-relative w-150">
+
+                                                    <input type="text" class="form-control bg-white product-name"
+                                                        name="product_name" autocomplete="off">
+
+                                                    <input type="hidden" class="form-control bg-white product-id"
+                                                        name="product_id" maxlength="20">
+
+                                                    <div class="list-group w-100 position-relative product-suggestions"
+                                                        id="productSuggestions" style="display: none;">
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    class="ra-btn ra-btn-link width-inherit p-0 ms-2 mt-2 bg-transparent text-danger delete-trigger1 d-none">
+                                                    <span class="bi bi-trash font-size-20"></span>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-12 mt-2">
+                                            <button type="submit"
+                                                class="ra-btn ra-btn-primary d-inline-block1 font-size-11 d-none update-product-button">
+                                                <span class="bi bi-save font-size-11" aria-hidden="true"></span> Save
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                            @endif
+
+                        </td>
+
+                        <td class="text-center border border-dark">
+
+                            {{ $indent->product_specs }}
+                            @if ($indent->product_specs)
+                            <span title="{{ $indent->product_specs }}">
+                                <i class="bi bi-info-circle-fill"></i></span>
+                            @endif
+
+                        </td>
+
+                        <td class="text-center border border-dark">{{ $indent->product_size }}</td>
+                        <td class="text-center border border-dark keep-word">
+                            {{ optional($indent->getUom)->uom_name }}
+                        </td>
+                        <td class="text-center border border-dark">{{ $indent->product_brand }}</td>
+                        <td class="text-center border border-dark">
+                            {{ optional($indent->created_at)->format('d-m-Y') }}
+                        </td>
+
+                        <td class="text-center border border-dark">{{ $indent->quantity }}</td>
+                        <td class="text-center border border-dark">
+                            @if ($indent->rfq_quantity_sum)
+                            <span class="text-primary-blue text-decoration-underline cursor-pointer rfqList"
+                                data-indent_id="{{ $indent->id }}" data-bs-toggle="modal"
+                                data-bs-target="#activeRfqDetailsModal">{{ $indent->rfq_quantity_sum }}</span>
+                            @else
+                            0
+                            @endif
+
+                        </td>
+                        @elseif($view_template == 2)
+                        <!--:- for new user -:-->
+                        <td class="text-center border border-dark">{{ $indent->indent_no }}</td>
+                        <td class="text-center border border-dark text-warp">{{ $indent->product_id }}</td>
+                        <td class="text-center border border-dark">{{ $indent->plant }}</td>
+                        <td class="text-center border border-dark">{{ $indent->product_name }}</td>
+                        <td class="text-center border border-dark">{{ $indent->quantity }}</td>
+                        <td class="text-center border border-dark keep-word">
+                            {{ optional($indent->getUom)->uom_name }}</td>
+                        <td class="text-center border border-dark">{{ $indent->delivery_date }}</td>
+                        <td class="text-center border border-dark">{{ $indent->material_group }}</td>
+                        <td class="text-center border border-dark">{{ $indent->purchase_group }}</td>
+                        <td class="text-center border border-dark w-220">
+
+                            {{-- @if ($indent->match_product_id) --}}
+                            @if ($indent->rfq_quantity_sum)
+                            {{ optional($indent->getProduct)->product_name }}
+                            @else
+                            <form action="{{ route('buyer.apiIndent.update') }}" method="post">
+                                @csrf
+                                <input type="hidden" name="indent_id" id="{{ $indent->id }}"
+                                    value="{{ $indent->id }}" />
+
+                                <div class="product-block">
+
+
+                                    @if (optional($indent->getProduct)->product_name)
+                                    <span
+                                        class="text-primary-blue text-decoration-underline cursor-pointer toggle-trigger">{{
+                                        optional($indent->getProduct)->product_name }}</span>
+                                    @endif
+                                    <div class="row align-items-center justify-content-center
+                                                     @if (optional($indent->getProduct)->product_name) d-none
+                                                     @else
+                                                     d-block @endif
+                                                     form-container">
+                                        <div class="col-12">
+                                            <span class="division-category text-start"></span>
+                                            <div class="d-flex align-items-start justify-content-center">
+                                                <div class="position-relative w-150">
+
+                                                    <input type="text" class="form-control bg-white product-name"
+                                                        name="product_name" autocomplete="off">
+
+                                                    <input type="hidden" class="form-control bg-white product-id"
+                                                        name="product_id" maxlength="20">
+
+                                                    <div class="list-group w-100 position-relative product-suggestions"
+                                                        id="productSuggestions" style="display: none;">
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    class="ra-btn ra-btn-link width-inherit p-0 ms-2 mt-2 bg-transparent text-danger delete-trigger1 d-none">
+                                                    <span class="bi bi-trash font-size-20"></span>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-12 mt-2">
+                                            <button type="submit"
+                                                class="ra-btn ra-btn-primary d-inline-block1 font-size-11 d-none update-product-button">
+                                                <span class="bi bi-save font-size-11" aria-hidden="true"></span> Save
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                            @endif
+
+                        </td>
+
+
+                        <td class="text-center border border-dark">
+
+                            {{ $indent->product_specs }}
+                            @if ($indent->product_specs)
+                            <span title="{{ $indent->product_specs }}">
+                                <i class="bi bi-info-circle-fill"></i></span>
+                            @endif
+
+                        </td>
+                        <td class="text-center border border-dark">{{ $indent->product_size }}</td>
+                        <td class="text-center border border-dark">
+                            {{ optional($indent->created_at)->format('d-m-Y') }}
+                        </td>
+                        <td class="text-center border border-dark">
+                            @if ($indent->rfq_quantity_sum)
+                            <span class="text-primary-blue text-decoration-underline cursor-pointer rfqList"
+                                data-indent_id="{{ $indent->id }}" data-bs-toggle="modal"
+                                data-bs-target="#activeRfqDetailsModal">{{ $indent->rfq_quantity_sum }}</span>
+                            @else
+                            0
+                            @endif
+
+                        </td>
+                        @endif
+
+
+
+                    </tr>
+                    @empty
+                    <tr>
+                        <td class="text-center border border-dark" colspan="15">
+                            No data found.
+                        </td>
+
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        <div class="px-3 py-2 bg-white sticky-bottom">
+            {{ $indentData->links() }}
+        </div>
+    </div>
+</div>
+
+<!-- Modal Generate RFQ -->
+<div class="modal fade" id="addRfqModal" tabindex="-1" aria-labelledby="addRfqModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-graident text-white">
+                <h2 class="modal-title font-size-13" id="addRfqModalLabel"><span class="bi bi-pencil"
+                        aria-hidden="true"></span> Genrate RFQ</h2>
+                <button type="button" class="btn-close font-size-10" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="product-listing-table w-100">
+                        <thead>
+                            <tr>
+                                <th class="text-center">Product Name<sup class="text-danger">*</sup></th>
+                                <th class="text-center">Raprocure Product Name<sup class="text-danger">*</sup></th>
+                                <th class="text-center">Product Specification <sup class="text-danger">*</sup></th>
+                                <th class="text-center">Product Size <sup class="text-danger">*</sup></th>
+                                <th class="text-center">Product UOM <sup class="text-danger">*</sup></th>
+                                <th class="text-center">Max Quantity</th>
+                                <th class="text-center">Qty <sup class="text-danger">*</sup></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <!--:- indent product list -:-->
+
+                        </tbody>
+                    </table>
+
+                </div>
+
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" id="generateRfqBtn"
+                    class="ra-btn btn-primary ra-btn-primary text-uppercase text-nowrap font-size-11">
+                    <span class="bi bi-save font-size-11" aria-hidden="true"></span> Generate RFQ</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Modal ACtive RFQ --}}
+
+<div class="modal fade" id="activeRfqDetailsModal" tabindex="-1" aria-labelledby="activeRfqDetailsModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content">
+            <div class="modal-header bg-graident text-white">
+                <h2 class="modal-title font-size-13" id="activeRfqDetailsModalLabel"><span class="bi bi-pencil"
+                        aria-hidden="true"></span> Active RFQ Details</h2>
+                <button type="button" class="btn-close font-size-10" id="closeActiveRfqDetailsModalLabel"
+                    aria-label="Close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="product-listing-table w-100">
+                        <thead>
+                            <tr>
+                                <th class="text-center">RFQ No</th>
+                                <th class="text-center">RFQ Date</th>
+                                <th class="text-center">RFQ Closed</th>
+                                <th class="text-center">RFQ Qty</th>
+                                <th class="text-center">View</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <!--:- rfq list -:-->
+
+                        </tbody>
+                    </table>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
+
+
+@push('exJs')
+<script>
+    $(document).ready(function() {
+            // Toggle show/hide
+            $('.product-block').each(function() {
+                const block = $(this);
+                const toggleBtn = block.find('.toggle-trigger');
+                const formContainer = block.find('.form-container');
+                const deleteBtn = block.find('.delete-trigger1');
+                const saveBtn = block.find('.update-product-button');
+                const input = block.find('.product-name');
+                const suggestions = block.find('.product-suggestions');
+                const hiddenId = block.find('.product-id');
+                const divisionCategory = block.find('.division-category');
+
+                // Show form
+                toggleBtn.on('click', function() {
+                    formContainer.removeClass('d-none');
+                    deleteBtn.removeClass('d-none');
+                    toggleBtn.addClass('d-none');
+
+                });
+
+                // Hide form
+                deleteBtn.on('click', function() {
+                    formContainer.addClass('d-none');
+                    toggleBtn.removeClass('d-none');
+
+                    saveBtn.addClass('d-none').removeClass('d-inline-block');
+                    input.val('');
+                    hiddenId.val('');
+                    divisionCategory.html('');
+                });
+
+                // Product search
+                input.on('keyup', function() {
+                    const rawInput = $(this).val();
+                    const query = rawInput.trim();
+                    suggestions.empty().show();
+
+                    if (rawInput.length < 3) {
+                        suggestions.html(
+                            `<p class="p-2" style="color:#6aa510;">Please enter more than 3 characters.</p>`
+                        );
+                        divisionCategory.html('');
+                        hiddenId.val('');
+                        return;
+                    }
+
+                    if (rawInput.length > 0) {
+
+                        $.ajax({
+                            url: "{{ route('buyer.product.search') }}",
+                            method: "GET",
+                            data: {
+                                query: query
+                            },
+                            success: function(data) {
+                                if (data.length > 0) {
+                                    suggestions.html(
+                                        `<p class="p-2">Showing result for "<strong>${rawInput}</strong>" – <strong>${data.length}</strong> records found</p>`
+                                    );
+                                    data.forEach(product => {
+                                        suggestions.append(`
+                                <a href="#" class="list-group-item list-group-item-action text-start product-item"
+                                data-id="${product.id}"
+                                data-name="${product.product_name}"
+                                data-division="${product.division_name} > ${product.category_name}">
+                                ${product.division_name} > ${product.category_name}<br>${product.product_name}
+                                </a>
+                            `);
+                                    });
+                                } else {
+                                    suggestions.html(
+                                        `<p class="p-2">No Product Found For <strong>"${rawInput}"</strong></p>`
+                                    );
+                                }
+                            },
+                            error: function(xhr) {
+                                console.error("Product search failed:", xhr);
+                            }
+                        });
+                    }
+
+                });
+
+                // Select suggestion
+                block.on('click', '.product-item', function(e) {
+                    e.preventDefault();
+                    const name = $(this).data('name');
+                    const id = $(this).data('id');
+                    const division = $(this).data('division');
+                    input.val(name);
+                    hiddenId.val(id);
+                    divisionCategory.html(division);
+                    suggestions.hide();
+
+                    saveBtn.removeClass('d-none');
+                    $('.product-block').not(block).find('.update-product-button').addClass(
+                        'd-none');
+
+                    deleteBtn.removeClass('d-none');
+                    $('.product-block').not(block).find('.delete-trigger1').addClass('d-none');
+
+                    /* divisionCategory.removeClass('d-none');
+                        $('.product-block').not(block).find('.division-category').addClass('d-none');*/
+                });
+
+                // Click outside hides suggestions
+                $(document).on('click', function(e) {
+                    if (!block.is(e.target) && block.has(e.target).length === 0) {
+                        suggestions.hide();
+                    }
+                });
+            });
+        });
+</script>
+
+<script>
+    $("#inventory_product_name").keyup(function() {
+            let rawInput = $(this).val(); // includes spaces
+            let query = rawInput.trim();
+            $("#productSuggestions").empty().show();
+            if (rawInput.length < 3) {
+                $("#productSuggestions").html(`
+                    <p class="p-2" style="color:#6aa510;">
+                        Please enter more than 3 characters.
+                    </p>
+                `);
+                $('#divisionCategory').html(' ');
+                $('#product_id').val(' ');
+                return;
+            } else {
+                $.ajax({
+                    url: "{{ route('buyer.product.search') }}",
+                    method: "GET",
+                    data: {
+                        query: query
+                    },
+                    success: function(data) {
+                        if (data.length > 0) {
+                            $("#productSuggestions").html(`
+                                <p class="p-2">
+                                    Showing result for "<strong>${rawInput}</strong>" – <strong>${data.length}</strong> records found
+                                </p>
+                            `);
+                            data.forEach(product => {
+                                $("#productSuggestions").append(`
+                                    <a href="#"
+                                    class="list-group-item list-group-item-action product-item text-start"
+                                    data-id="${product.id}"
+                                    data-name="${product.product_name}" data-division-category="${product.division_name} > ${product.category_name}">
+                                        ${product.division_name} > ${product.category_name} <br> ${product.product_name}
+                                    </a>
+                                `);
+                            });
+                        } else {
+                            $("#productSuggestions").html(`
+                                <p class="p-2">No Product Found For <strong>"${rawInput}" Keyword</strong></p>
+                            `);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error fetching product suggestions:", error);
+                    }
+                });
+            }
+
+        });
+
+        // Select product from suggestions
+        $(document).on("click", ".product-item", function(e) {
+            e.preventDefault();
+            $("#inventory_product_name").val($(this).data("name"));
+            $('#product_id').val($(this).data("id"));
+            $('#divisionCategory').html($(this).data("division-category"));
+            $("#productSuggestions").hide();
+
+            // Show Save button
+            $('.save-button').removeClass('d-none');
+        });
+
+        // Hide suggestions when clicking outside
+        $(document).click(function(event) {
+            if (!$(event.target).closest("#productSuggestions, #inventory_product_name").length) {
+                $("#productSuggestions").hide();
+            }
+        });
+        // Save Inventory (Add/Edit)
+        $('#inventoryForm').submit(function(e) {
+            e.preventDefault();
+            $('.save_inventory_button').removeAttr('disabled');
+
+            //start pingki
+            var branch_id = $('#branch_id').val().trim();
+            var product_id = $('#product_id').val().trim();
+            var opening_stock = $('#opening_stock').val().trim();
+            var product_uom = $('#product_uom').val().trim();
+            var stock_price = $('#stock_price').val().trim();
+            //end pingki
+
+            function showError(msg, selector) {
+                toastr.error(msg);
+                if (selector) $(selector).focus();
+            }
+
+            if (branch_id === '') {
+                showError("Branch Name is required!", '#branch_id');
+                return;
+            }
+            if (product_id === '') {
+                showError("Valid Product is required!", "#product_name");
+                return;
+            }
+            if (opening_stock === '') {
+                showError("Opening Stock is required!", "#opening_stock");
+                return;
+            }
+            if (product_uom === '') {
+                showError("Product UOM is required!", "#product_uom");
+                return;
+            }
+            if (stock_price === '') {
+                showError("Rate is required!", "#stock_price");
+                return;
+            }
+
+            // Client side maxlength validation for all inputs with maxlength attr inside form
+            var invalidMaxlengthField = null;
+            $('#inventoryForm [maxlength]').each(function() {
+                var max = parseInt($(this).attr('maxlength'));
+                var val = $(this).val();
+                if (val.length > max) {
+                    invalidMaxlengthField = this;
+                    return false; // break .each
+                }
+            });
+            if (invalidMaxlengthField) {
+                var fieldName = $(invalidMaxlengthField).attr('name') || 'Field';
+                showError(fieldName + " must not exceed " + $(invalidMaxlengthField).attr('maxlength') +
+                    " characters.", invalidMaxlengthField);
+                return;
+            }
+
+            $('.save_inventory_button').attr('disabled', 'disabled');
+
+            $.ajax({
+                type: "POST",
+                url: "{{ route('buyer.inventory.store') }}",
+                // headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+                data: $('#inventoryForm').serialize() + '&buyer_branch_id=' + branch_id,
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    if (response.status) {
+                        $('.save_inventory_button').removeAttr('disabled');
+                        $('#inventoryForm')[0].reset();
+                        $('#inventoryForm').find('select').val('');
+                        $('#inventoryForm').find('input[type="hidden"]').val('');
+                        $('#inventoryModal').modal('hide');
+                        toastr.success(response.message);
+                        $('#inventory-table').DataTable().destroy();
+                        inventory_list_data();
+                    } else {
+                        toastr.error(response.message || "Failed to save data.");
+                        $('.save_inventory_button').removeAttr('disabled');
+                    }
+                },
+                error: function(xhr) {
+                    $('.save_inventory_button').removeAttr('disabled');
+                    // Laravel validation error format
+                    if (xhr.status === 422) {
+                        const response = xhr.responseJSON;
+
+                        // 1. Handle default Laravel validation errors (in "errors" object)
+                        if (response.errors) {
+                            let firstInvalid = true;
+                            $.each(response.errors, function(key, messages) {
+                                toastr.error(messages[0]);
+                                if (firstInvalid) {
+                                    const field = $('[name="' + key + '"]');
+                                    if (field.length) field.focus();
+                                    firstInvalid = false;
+                                }
+                            });
+                        }
+                        // 2. Handle custom error string from response.error
+                        else if (response.error) {
+                            toastr.error(response.error);
+                        }
+                        // 3. Fallback error message
+                        else {
+                            toastr.error(response.message || "Validation failed.");
+                        }
+                    } else {
+                        toastr.error("Something went wrong. Please try again.");
+                    }
+                }
+
+            });
+        });
+</script>
+
+
+<script>
+    /***:- view rfq list  -:***/
+        $('.rfqList').on('click', function() {
+            const indentId = $(this).data('indent_id');
+            if (!indentId) {
+                toastr.error('Indent id not found.');
+                e.stopPropagation(); // prevent modal opening
+                return false;
+            }
+
+            // Call Laravel route via AJAX
+            $.ajax({
+                url: '{{ route('buyer.apiIndent.getRfqList') }}', // your Laravel route
+                type: 'POST',
+                data: {
+                    id: indentId,
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function(response) {
+                    console.log('kailash', response);
+
+                    // Clear old table rows
+                    let tbody = $('#activeRfqDetailsModal tbody');
+                    tbody.empty();
+
+                    // Append products dynamically
+                    response.forEach(function(item, index) {
+                        tbody.append(`
+                        <tr>
+                            <td class="text-center"><input disabled type="text" class="form-control" value="${item.rfq_id}" readonly></td>
+                            <td class="text-center"><input disabled type="text" class="form-control" value="${item.formatted_created_at}" readonly></td>
+                            <td class="text-center"><input disabled type="text" class="form-control" name="rfq_close" value="${(item.buyer_rfq_status==8||item.buyer_rfq_status==9||item.buyer_rfq_status==10)?'Yes':'No'}" readonly></td>
+                            <td class="text-center"><input disabled type="text" class="form-control" name="quantity" value="${item.quantity??''}" readonly></td>
+                             <td class="text-center">
+                                        <a href="{{ url('buyer/rfq/rfq-details') }}/${item.rfq_id}">View Details</a>
+                                    </td>
+                        </tr>
+                    `);
+
+                    });
+                }
+            });
+            let modal = new bootstrap.Modal(document.getElementById('activeRfqDetailsModal'));
+            modal.show();
+        });
+
+
+        /***:- close rfq list modal  -:***/
+
+        $('#closeActiveRfqDetailsModalLabel').on('click', function() {
+            let modalEl = document.getElementById('activeRfqDetailsModal');
+            let modal = bootstrap.Modal.getInstance(modalEl);
+            if (!modal) {
+                modal = new bootstrap.Modal(modalEl);
+            }
+            modal.hide();
+
+
+            $('.modal-backdrop').remove();
+            $('body').removeClass('modal-open');
+        })
+
+
+
+
+        /***:- generate rfq  -:***/
+        $('#rftBtn').on('click', function() {
+            // Collect selected checkbox IDs
+            let productIds = [];
+            $('.product-checkbox:checked').each(function() {
+                productIds.push($(this).data('id'));
+            });
+
+            if (productIds.length === 0) {
+                toastr.error('Please select at least one product.');
+                e.stopPropagation(); // prevent modal opening
+                return false;
+            }
+
+            // Call Laravel route via AJAX
+            $.ajax({
+                url: '{{ route('buyer.apiIndent.getProductList') }}', // your Laravel route
+                type: 'POST',
+                data: {
+                    ids: productIds,
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function(response) {
+                    // Clear old table rows
+                    let tbody = $('#addRfqModal tbody');
+                    tbody.empty();
+
+                    // Append products dynamically
+                    response.forEach(function(item, index) {
+                        tbody.append(`
+                        <tr>
+                            <td class="text-center"><input disabled type="text" class="form-control" value="${item.product_name}" readonly></td>
+                            <td class="text-center"><input disabled type="text" class="form-control" value="${item.match_product_name}" readonly></td>
+                            <td class="text-center"><input disabled type="text" class="form-control" name="product_specs" value="${item.product_specs??''}" readonly></td>
+                            <td class="text-center"><input disabled type="text" class="form-control" name="product_size" value="${item.product_size??''}" readonly></td>
+                            <td class="text-center"><input disabled type="text" class="form-control" name="uom" value="${item.uom??''}" readonly></td>
+                            <td class="text-center"><input disabled type="text" class="form-control" value="${item.quantity}" readonly></td>
+                            <td class="text-center ">
+                            <input disabled type="hidden" class="form-control bg-white rfqQty" name="indent_api_id" value="${item.id}" >
+                            <input disabled type="hidden" class="form-control bg-white rfqQty" name="match_product_id" value="${item.match_product_id}" >
+                            <input type="text" class="form-control bg-white rfqQty"  data-max="${item.quantity}" min="1" name="rfqQty[]" value="" required></td>
+                        </tr>
+                    `);
+
+                    });
+
+                    // Show modal programmatically
+                    let modal = new bootstrap.Modal(document.getElementById('addRfqModal'));
+                    modal.show();
+                }
+            });
+        });
+
+
+        /***:- generate rfq  -:***/
+        $('#generateRfqBtn').on('click', function() {
+            let rfqData = [];
+            let hasError = false;
+
+            $('#addRfqModal tbody tr').each(function() {
+                let qtyInput = $(this).find('input[name="rfqQty[]"]');
+                let rfqQtyVal = qtyInput.val();
+                let rfqQty = parseFloat(rfqQtyVal);
+                let maxQty = parseFloat(qtyInput.data('max'));
+
+                // Validate empty
+                if (rfqQtyVal === '' || isNaN(rfqQty)) {
+                    toastr.error('Quantity field cannot be empty');
+                    qtyInput.focus();
+                    hasError = true;
+                    return false; // break loop
+                }
+
+                // Validate minimum
+                if (rfqQty < 1) {
+                    toastr.error('Quantity must be at least 1');
+                    qtyInput.focus();
+                    hasError = true;
+                    return false; // break loop
+                }
+
+                // Validate maximum
+                if (rfqQty > maxQty) {
+                    toastr.error(`Quantity cannot exceed maximum (${maxQty})`);
+                    qtyInput.focus();
+                    hasError = true;
+                    return false; // break loop
+                }
+
+                rfqData.push({
+                    uom: $(this).find('input[name="uom"]').val(),
+                    product_size: $(this).find('input[name="product_size"]').val(),
+                    product_specs: $(this).find('input[name="product_specs"]').val(),
+                    indent_api_id: $(this).find('input[name="indent_api_id"]').val(),
+                    match_product_id: $(this).find('input[name="match_product_id"]').val(),
+                    qty: rfqQty
+                });
+            });
+
+            if (hasError) return;
+
+            // const urlParams = new URLSearchParams(window.location.search);
+            //const branchId = urlParams.get('branchId');
+
+            const branchId = $('#branch_id').val();
+
+            // **Sort by match_product_id**
+            rfqData.sort((a, b) => {
+                return a.match_product_id - b.match_product_id;
+            });
+            // Ajax submit
+            $.ajax({
+                url: '{{ route('buyer.apiIndent.generateRFQ') }}',
+                type: 'POST',
+                data: {
+                    branchId,
+                    rfq: rfqData,
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function(response) {
+                    if (response.status) {
+                        toastr.success(response.message);
+                        // Close modal
+                        let modal = bootstrap.Modal.getInstance(document.getElementById('addRfqModal'));
+                        modal.hide();
+
+                        window.location = `${response.url}?t=api`
+                    } else {
+                        toastr.error(response.message);
+                    }
+
+                },
+                error: function() {
+                    toastr.error('Error generating RFQ!');
+                }
+            });
+        });
+
+
+
+
+        $(document).on('input', '.rfqQty', function() {
+            let max = parseFloat($(this).data('max'));
+            let val = parseFloat($(this).val());
+
+            if (val > max) {
+                toastr.error(`Quantity cannot exceed maximum (${max})`);
+                $(this).val(max);
+            }
+
+            if (val < 1) {
+                toastr.error(`Quantity cannot be less than 1`);
+                $(this).val(1);
+            }
+        });
+
+
+
+        $('#deleteBtn').on('click', function() {
+            // Get selected checkboxes
+            let ids = [];
+            $('.product-checkbox:checked').each(function() {
+                ids.push($(this).val());
+            });
+
+            if (ids.length === 0) {
+                toastr.error('Please select at least one record to delete.');
+                return;
+            }
+
+            if (!confirm('Are you sure you want to delete selected records?')) {
+                return;
+            }
+
+            $.ajax({
+                url: '{{ route('buyer.apiIndent.deleteIndent') }}',
+                type: 'POST',
+                data: {
+                    ids: ids,
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function(response) {
+                    if (response.status === 'success') {
+                        ids.forEach(id => {
+                            $('#row-' + id).remove();
+                        });
+                        toastr.success('Selected records deleted successfully.');
+                        ids.forEach(function(id) {
+                            $('#row-' + id).remove();
+                        });
+
+                        $('#selectAll').prop('checked', false);
+                    } else {
+                        toastr.error('Something went wrong.');
+                    }
+                },
+                error: function() {
+                    toastr.error('Error deleting records.');
+                }
+            });
+        });
+
+
+
+
+        /***:- need it in future  -:***/
+        /* $('#selectAll').on('click', function () {
+             $('.product-checkbox').prop('checked', this.checked);
+         });
+
+         $(document).on('change', '.product-checkbox', function () {
+             let allChecked = $('.product-checkbox').length === $('.product-checkbox:checked').length;
+             $('#selectAll').prop('checked', allChecked);
+         });*/
+
+
+        $('#exportBtn').on('click', function() {
+            let ids = [];
+            $('.product-checkbox:checked').each(function() {
+                ids.push($(this).val());
+            });
+
+            if (ids.length === 0) {
+                //toastr.error('Please select at least one record to export.');
+                //return;
+            }
+
+
+            // Collect search filter values
+            let productName = $('input[name="product_name"]').val();
+            let productId = $('input[name="product_id"]').val();
+            let indentNo = $('input[name="indent_no"]').val();
+            let plant = $('input[name="plant"]').val();
+
+            // Create a hidden form and submit
+            let form = $('<form>', {
+                action: '{{ route('buyer.apiIndent.exportIndentData') }}',
+                method: 'POST'
+            });
+
+            form.append('@csrf');
+
+            ids.forEach(id => {
+                form.append($('<input>', {
+                    type: 'hidden',
+                    name: 'ids[]',
+                    value: id
+                }));
+            });
+
+
+            form.append($('<input>', {
+                type: 'hidden',
+                name: 'product_name',
+                value: productName
+            }));
+            form.append($('<input>', {
+                type: 'hidden',
+                name: 'product_id',
+                value: productId
+            }));
+            form.append($('<input>', {
+                type: 'hidden',
+                name: 'indent_no',
+                value: indentNo
+            }));
+            form.append($('<input>', {
+                type: 'hidden',
+                name: 'plant',
+                value: plant
+            }));
+
+            $('body').append(form);
+            form.submit();
+        });
+
+
+
+        /***:- on change branch select the data  -:***/
+
+        $('#branch_id').on('change', function() {
+            let branch_id = $(this).val();
+
+            //alert(branch_id);
+
+            window.location = "{{ route('buyer.apiIndent.list') }}?branchId=" + branch_id;
+
+            /* $.ajax({
+                                                                                                                                                                                                                                                                                     url: '/buyer/api-indent/filter',
+                                                                                                                                                                                                                                                                                     type: 'GET',
+                                                                                                                                                                                                                                                                                     data: { plant: plant },
+                                                                                                                                                                                                                                                                                     success: function (response) {
+                                                                                                                                                                                                                                                                                         let tbody = $('#indentTable tbody');
+                                                                                                                                                                                                                                                                                         tbody.empty();
+
+                                                                                                                                                                                                                                                                                         if (response.length === 0) {
+                                                                                                                                                                                                                                                                                             tbody.append('<tr><td colspan="5" class="text-center">No data found</td></tr>');
+                                                                                                                                                                                                                                                                                         } else {
+                                                                                                                                                                                                                                                                                             response.forEach(function (item) {
+                                                                                                                                                                                                                                                                                                 tbody.append(`
+             <tr id="row-${item.id}">
+                 <td><input type="checkbox" class="delete-checkbox" value="${item.id}"></td>
+                 <td>${item.product_name}</td>
+                 <td>${item.material_no}</td>
+                 <td>${item.pr_no}</td>
+                 <td>${item.plant}</td>
+             </tr>
+         `);
+                                                                                                                                                                                                                                                                                             });
+                                                                                                                                                                                                                                                                                         }
+
+                                                                                                                                                                                                                                                                                         // Reset select all checkbox
+                                                                                                                                                                                                                                                                                         $('#selectAll').prop('checked', false);
+                                                                                                                                                                                                                                                                                     }
+                                                                                                                                                                                                                                                                                 });*/
+        });
+</script>
+
+@endpush
