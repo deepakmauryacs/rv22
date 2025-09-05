@@ -357,16 +357,23 @@ class LiveAuctionRfqSinglePriceController extends Controller
             return response()->json(['status' => false, 'message' => 'Auction not found'], 404);
         }
 
+        $hasAuctionIdCol = Schema::hasColumn('rfq_vendor_auction_price_total', 'rfq_auction_id');
+
         $sub = DB::table('rfq_vendor_auction_price_total')
             ->selectRaw('MAX(id) as max_id, vendor_id')
-            ->where('rfq_no', $rfqId)
-            ->where('rfq_auction_id', $auction->id)
-            ->groupBy('vendor_id');
+            ->where('rfq_no', $rfqId);
+        if ($hasAuctionIdCol) {
+            $sub->where('rfq_auction_id', $auction->id);
+        }
+        $sub->groupBy('vendor_id');
 
-        $rows = DB::table('rfq_vendor_auction_price_total as t')
+        $rowsQuery = DB::table('rfq_vendor_auction_price_total as t')
             ->joinSub($sub, 's', 's.max_id', '=', 't.id')
-            ->select('t.vendor_id', 't.total_price')
-            ->get();
+            ->select('t.vendor_id', 't.total_price');
+        if ($hasAuctionIdCol) {
+            $rowsQuery->where('t.rfq_auction_id', $auction->id);
+        }
+        $rows = $rowsQuery->get();
 
         if ($rows->isEmpty()) {
             return response()->json(['status' => true, 'data' => ['l1' => null, 'rank' => null, 'vendorPrice' => null]]);
