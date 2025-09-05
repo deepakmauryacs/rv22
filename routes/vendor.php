@@ -80,7 +80,8 @@ Route::name('vendor.')->group(function() {
 
      
             Route::post('/live-auction/metrics',[LiveAuctionRfqController::class, 'liveMetrics'])->name('live-auction.rfq.metrics');
-            
+            Route::post('/live-auction/total-metrics',[LiveAuctionRfqSinglePriceController::class, 'liveMetricsTotal'])->name('live-auction.rfq.total-metrics');
+
             Route::post('/live-auction-singal-price/rfq/submit', [LiveAuctionRfqSinglePriceController::class, 'saveLotRfq'])->name('live-auction-singal-price.rfq.submit');
 
             

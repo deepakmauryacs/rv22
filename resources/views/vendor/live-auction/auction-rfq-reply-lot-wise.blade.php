@@ -747,6 +747,49 @@ function rfq_counter_submit_data(_this, action) {
 }
 </script>
 
+<script>
+// Auto-fetch L1 price and rank every 2 minutes
+$(function(){
+    const rfqId = $("input[name='rfq_id']").val();
+    if(!rfqId) return;
+
+    const POLL_MS = 120000; // 2 minutes
+
+    function fmtPrice(n){
+        return n == null ? '-' : IND_amount_format(Number(n).toFixed(2));
+    }
+
+    function render(data){
+        $('#l1Price').text(fmtPrice(data.l1));
+
+        const $rank = $('#yourRank');
+        if(data.rank == null){
+            $rank.text('-').removeClass('text-success text-warning text-danger');
+        } else {
+            $rank.text(data.rank).removeClass('text-success text-warning text-danger');
+            if(data.rank === 1) $rank.addClass('text-success');
+            else if(data.rank <= 3) $rank.addClass('text-warning');
+            else $rank.addClass('text-danger');
+        }
+    }
+
+    function fetchMetrics(){
+        $.post('{{ route('vendor.live-auction.rfq.total-metrics') }}', {
+            _token: '{{ csrf_token() }}',
+            rfq_id: rfqId
+        }).done(function(res){
+            if(res && res.status && res.data){
+                render(res.data);
+            }
+        });
+    }
+
+    fetchMetrics();
+    setInterval(fetchMetrics, POLL_MS);
+    $(document).on('visibilitychange', function(){ if(!document.hidden) fetchMetrics(); });
+});
+</script>
+
 <!-- ====== LIVE + COUNTDOWN TIMER ====== -->
 <script>
 (function(){

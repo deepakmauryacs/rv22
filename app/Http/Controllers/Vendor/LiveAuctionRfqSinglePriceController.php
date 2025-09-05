@@ -338,6 +338,69 @@ class LiveAuctionRfqSinglePriceController extends Controller
     }
 
     /**
+     * Return L1 total price and rank for the current vendor in the latest auction.
+     */
+    public function liveMetricsTotal(Request $request)
+    {
+        $request->validate([
+            'rfq_id' => ['required', 'string'],
+        ]);
+
+        $rfqId    = (string) $request->input('rfq_id');
+        $vendorId = (int) (function_exists('getParentUserId') ? getParentUserId() : (auth()->id() ?? 0));
+        if (!$vendorId) {
+            return response()->json(['status' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        $auction = $this->latestAuctionRow($rfqId);
+        if (!$auction) {
+            return response()->json(['status' => false, 'message' => 'Auction not found'], 404);
+        }
+
+        $sub = DB::table('rfq_vendor_auction_price_total')
+            ->selectRaw('MAX(id) as max_id, vendor_id')
+            ->where('rfq_no', $rfqId)
+            ->where('rfq_auction_id', $auction->id)
+            ->groupBy('vendor_id');
+
+        $rows = DB::table('rfq_vendor_auction_price_total as t')
+            ->joinSub($sub, 's', 's.max_id', '=', 't.id')
+            ->select('t.vendor_id', 't.total_price')
+            ->get();
+
+        if ($rows->isEmpty()) {
+            return response()->json(['status' => true, 'data' => ['l1' => null, 'rank' => null, 'vendorPrice' => null]]);
+        }
+
+        $l1 = $rows->min('total_price');
+        $vendorPrice = optional($rows->firstWhere('vendor_id', $vendorId))->total_price;
+
+        $rank = null;
+        if ($vendorPrice !== null) {
+            $distinct = $rows->pluck('total_price')
+                ->map(fn($v) => (float) $v)
+                ->unique()
+                ->sort()
+                ->values();
+            foreach ($distinct as $i => $price) {
+                if (bccomp((string) $price, (string) $vendorPrice, 2) === 0) {
+                    $rank = $i + 1;
+                    break;
+                }
+            }
+        }
+
+        return response()->json([
+            'status' => true,
+            'data' => [
+                'l1'          => $l1 !== null ? round((float) $l1, 2) : null,
+                'rank'        => $rank,
+                'vendorPrice' => $vendorPrice !== null ? round((float) $vendorPrice, 2) : null,
+            ],
+        ]);
+    }
+
+    /**
      * % adjustment between bid_price and total_price (CI-style).
      */
     private function calculate_price_adjustment($bid_price, $total_price)
