@@ -10,6 +10,8 @@ class RfqVendorAuctionPrice extends Model
 
     public function rfqProductVariant()
     {
-        return $this->belongsTo(RfqProductVariant::class, 'rfq_product_variant_id');
+        // Database column is misspelled as `rfq_product_veriant_id`
+        // so we need to reference it explicitly here.
+        return $this->belongsTo(RfqProductVariant::class, 'rfq_product_veriant_id');
     }
 }
