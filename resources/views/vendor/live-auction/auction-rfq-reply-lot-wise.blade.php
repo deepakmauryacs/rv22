@@ -278,7 +278,7 @@ function IND_amount_format($amount) {
                                         <label class="mb-2" for="PriceInput"><strong>Enter your price based on the total order value</strong>(<span class="currency_price_input"></span>)</label>
                                         <input type="text" class="form-control" name="total_price" id="PriceInput" placeholder="Enter your bid"
                                             oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*?)\..*/g, '$1');"
-                                            onblur="if(this.value){ this.value = parseFloat(this.value).toFixed(2); }">
+                                            onblur="handlePriceBlur(this)">
                                     </div>
 
 
@@ -560,6 +560,52 @@ function IND_amount_format(amount) {
 </script>
 
 <script>
+// ====== Total price validation ======
+function showBidError(msg){
+    if(window.toastr){ toastr.error(msg); } else { alert(msg); }
+}
+
+function validateTotalPrice(price, adjust){
+    const totalBid = parseFloat($('#total_bid_price').val().replace(/,/g,'')) || 0;
+    if(price > totalBid){
+        showBidError('Your bid cannot exceed the Total Aggregate Value - Start Price.');
+        if(adjust) $('#PriceInput').val(totalBid.toFixed(2));
+        return false;
+    }
+
+    const minDec   = parseFloat($('#min_bid_decrement').val()) || 0;
+    const lastPrice = parseFloat($('#last_price').text().replace(/,/g,'')) || 0;
+
+    if(lastPrice > 0){
+        const maxAllowed = lastPrice * (1 - minDec/100);
+        const minAllowed = lastPrice * (1 - (minDec + 10)/100);
+
+        if(price > maxAllowed){
+            showBidError(`Your bid must be at least ${minDec}% lower than the last price.`);
+            if(adjust) $('#PriceInput').val(maxAllowed.toFixed(2));
+            return false;
+        }
+
+        if(price < minAllowed){
+            showBidError(`Your bid cannot be more than ${minDec + 10}% lower than the last price.`);
+            if(adjust) $('#PriceInput').val(minAllowed.toFixed(2));
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function handlePriceBlur(el){
+    if(!el.value) return;
+    let price = parseFloat(el.value.replace(/,/g,''));
+    if(isNaN(price)){ el.value = ''; return; }
+    el.value = price.toFixed(2);
+    validateTotalPrice(price, true);
+}
+</script>
+
+<script>
 // ===== Spec modal wiring =====
 let currentSpecInputId = null;
 $(document).on('click', '.specs-trigger', function () {
@@ -649,6 +695,10 @@ function rfq_counter_submit_data(_this, action) {
         return resetBtn();
     }
     $("#PriceInput").val(totalPrice.toFixed(2));
+
+    if (!validateTotalPrice(totalPrice, true)) {
+        return resetBtn();
+    }
 
     if (hasError) {
         if (window.toastr) toastr.error("Please fill all the Mandatory fields marked with *");
