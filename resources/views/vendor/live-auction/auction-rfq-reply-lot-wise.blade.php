@@ -171,7 +171,7 @@ function IND_amount_format($amount) {
                                     </th>
                                     <th class="text-center">Size</th>
 
-                                    <th width="400" style="text-align: right; !important;">
+                                    <th width="400" style="text-align: right !important;">
                                       Specs
                                       <i class="bi bi-info-circle-fill"
                                          data-bs-toggle="tooltip"
@@ -420,18 +420,18 @@ function IND_amount_format($amount) {
                     <?php if($current_status == 1) { ?>
                      <div class="row pt-3 gx-3 gy-3 justify-content-center align-items-center">
                         <div class="col-auto">
-                            <button type="button" data-bs-toggle="modal" data-bs-target="#sendMessage"
+                        <button type="button" data-bs-toggle="modal" data-bs-target="#sendMessage"
                                 class="ra-btn ra-btn-sm px-3 ra-btn-outline-primary">
-                                <i class="bi bi-send" aria-hidden="true"></i>
-                                Send Message
-                            </button>
-                        </div>
-                        <div class="col-12 col-sm-auto text-center">
-                            <button type="button" class="ra-btn ra-btn-sm px-3 ra-btn-primary send-quote-btn" onclick="rfq_counter_submit_data(this,'quote')">
-                                <i class="bi bi-check-lg" aria-hidden="true"></i>
-                                Send Quote
-                            </button>
-                        </div>
+                            <i class="bi bi-send" aria-hidden="true"></i>
+                            Send Message
+                        </button>
+                    </div>
+                    <div class="col-12 col-sm-auto text-center">
+                        <button type="button" class="ra-btn ra-btn-sm px-3 ra-btn-primary send-quote-btn" onclick="submitRfqCounterData(this,'quote')">
+                            <i class="bi bi-check-lg" aria-hidden="true"></i>
+                            Send Quote
+                        </button>
+                    </div>
                      </div>
                     <?php } ?>
 
@@ -523,8 +523,8 @@ function IND_amount_format($amount) {
 <script>
 // Disable entire form if auction is not Active
 $(function() {
-  var is_disable = Number(@json($current_status));
-  if (is_disable === 2 || is_disable === 3) {
+  const status = Number(@json($current_status));
+  if (status === 2 || status === 3) {
     $('input, select, textarea, button').prop('disabled', true);
     $('[data-bs-toggle="tooltip"],[data-toggle="tooltip"]').tooltip('disable');
   }
@@ -533,60 +533,60 @@ $(function() {
 
 // Currency symbol sync (extended)
 function updateCurrencySymbols() {
-    const $drop = $('#updateCurrency');
-    const symbol = ($drop.length ? ($drop.find('option:selected').data('symbol') || '₹') : '₹');
-
-    document.querySelectorAll('.currency-symbol').forEach(el => el.textContent = symbol);
-    document.querySelectorAll('.currency_symbol_total').forEach(el => el.textContent = symbol);
-    document.querySelectorAll('.currency_price_input').forEach(el => el.textContent = symbol);
+    const dropdown = document.getElementById('updateCurrency');
+    const symbol = dropdown ? (dropdown.selectedOptions[0]?.dataset.symbol || '₹') : '₹';
+    document.querySelectorAll('.currency-symbol, .currency_symbol_total, .currency_price_input')
+        .forEach(el => { el.textContent = symbol; });
 }
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', () => {
     updateCurrencySymbols();
-    const dd = document.getElementById('updateCurrency');
-    if (dd) dd.addEventListener('change', updateCurrencySymbols);
+    const dropdown = document.getElementById('updateCurrency');
+    if (dropdown) dropdown.addEventListener('change', updateCurrencySymbols);
 });
 
 // INR format (client)
 function IND_amount_format(amount) {
-    amount = String(amount);
-    const parts = amount.split('.');
-    let a = parts[0];
-    let lastThree = a.substring(a.length - 3);
-    let otherNumbers = a.substring(0, a.length - 3);
-    if (otherNumbers !== '') lastThree = ',' + lastThree;
-    const res = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + lastThree;
-    return parts.length > 1 ? res + '.' + parts[1] : res + '.00';
+    const parts = String(amount).split('.');
+    const integer = parts[0];
+    const lastThree = integer.slice(-3);
+    const others = integer.slice(0, -3);
+    const formatted = others.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + (others ? ',' : '') + lastThree;
+    return parts.length > 1 ? `${formatted}.${parts[1]}` : `${formatted}.00`;
 }
 </script>
 
 <script>
 // ====== Total price validation ======
-function showBidError(msg){
-    if(window.toastr){ toastr.error(msg); } else { alert(msg); }
-}
+const showBidError = msg => {
+    if (window.toastr) {
+        toastr.error(msg);
+    } else {
+        alert(msg);
+    }
+};
 
-function validateTotalPrice(price){
-    const totalBid = parseFloat($('#total_bid_price').val().replace(/,/g,'')) || 0;
-    if(price > totalBid){
+const validateTotalPrice = price => {
+    const totalBid = parseFloat($('#total_bid_price').val().replace(/,/g, '')) || 0;
+    if (price > totalBid) {
         showBidError('Your bid cannot exceed the Total Aggregate Value - Start Price.');
         $('#PriceInput').val('');
         return false;
     }
 
-    const lastPrice = parseFloat($('#last_price').text().replace(/,/g,'')) || 0;
+    const lastPrice = parseFloat($('#last_price').text().replace(/,/g, '')) || 0;
     const minDec = 2;
 
-    if(lastPrice > 0){
-        const maxAllowed = lastPrice * (1 - minDec/100);
-        const minAllowed = lastPrice * (1 - (minDec + 10)/100);
+    if (lastPrice > 0) {
+        const maxAllowed = lastPrice * (1 - minDec / 100);
+        const minAllowed = lastPrice * (1 - (minDec + 10) / 100);
 
-        if(price > maxAllowed){
+        if (price > maxAllowed) {
             showBidError(`Your bid must be at least ${minDec}% lower than the last price. Maximum allowed bid is ${maxAllowed.toFixed(2)}.`);
             $('#PriceInput').val('');
             return false;
         }
 
-        if(price < minAllowed){
+        if (price < minAllowed) {
             showBidError(`Your bid cannot be more than ${minDec + 10}% lower than the last price. Minimum allowed bid is ${minAllowed.toFixed(2)}.`);
             $('#PriceInput').val('');
             return false;
@@ -594,15 +594,18 @@ function validateTotalPrice(price){
     }
 
     return true;
-}
+};
 
-function handlePriceBlur(el){
-    if(!el.value) return;
-    let price = parseFloat(el.value.replace(/,/g,''));
-    if(isNaN(price)){ el.value = ''; return; }
+const handlePriceBlur = el => {
+    if (!el.value) return;
+    const price = parseFloat(el.value.replace(/,/g, ''));
+    if (isNaN(price)) {
+        el.value = '';
+        return;
+    }
     el.value = price.toFixed(2);
-    if(!validateTotalPrice(price)) el.value = '';
-}
+    if (!validateTotalPrice(price)) el.value = '';
+};
 </script>
 
 <script>
@@ -612,53 +615,57 @@ $(document).on('click', '.specs-trigger', function () {
     currentSpecInputId = $(this).data('target-input');
     $('#specificationsTextarea').val($(this).val());
 });
-$('.submit-specification').on('click', function () {
+$('.submit-specification').on('click', () => {
     const newSpec = $('#specificationsTextarea').val();
-    if (currentSpecInputId) { $('#' + currentSpecInputId).val(newSpec); }
+    if (currentSpecInputId) {
+        $('#' + currentSpecInputId).val(newSpec);
+    }
     $('#submitSpecification').modal('hide');
 });
-function limitText(field, maxChars) {
-    if (field.value.length > maxChars) field.value = field.value.substring(0, maxChars);
-}
+const limitText = (field, maxChars) => {
+    if (field.value.length > maxChars) {
+        field.value = field.value.substring(0, maxChars);
+    }
+};
 </script>
 
 <script>
 // ====== Per-variant inline error helpers (kept for compatibility) ======
-function showVariantInlineError(variantId, msg){
-  const $row = $(".rank[data-variant-id='"+variantId+"']").closest("tr");
+const showVariantInlineError = (variantId, msg) => {
+  const $row = $(".rank[data-variant-id='" + variantId + "']").closest("tr");
   if (!$row.length) return;
 
   $row.addClass("table-danger");
-  setTimeout(function(){ $row.removeClass("table-danger"); }, 2000);
+  setTimeout(() => $row.removeClass("table-danger"), 2000);
 
   const $priceTd = $row.find("input.variant-price").closest("td");
   let $err = $priceTd.find(".variant-inline-error");
-  if ($err.length === 0){
+  if ($err.length === 0) {
     $err = $('<div class="variant-inline-error text-danger mt-1" style="font-size:12px;"></div>');
     $priceTd.append($err);
   }
   $err.text(msg);
-}
-function clearVariantInlineErrors(){
+};
+const clearVariantInlineErrors = () => {
   $(".variant-inline-error").remove();
-}
-function handleVariantErrors(errMap){
+};
+const handleVariantErrors = errMap => {
   clearVariantInlineErrors();
   let first = null;
-  $.each(errMap, function(vid, message){
+  $.each(errMap, (vid, message) => {
     if (!first) first = message;
     showVariantInlineError(vid, message);
     if (window.toastr) toastr.error(message);
   });
-  if (first && window.toastr){
+  if (first && window.toastr) {
     toastr.error("Validation failed. Please fix the highlighted rows.");
   }
-}
+};
 </script>
 
 <script>
 // ====== Submit (AJAX JSON) — TOTAL ORDER VALUE ONLY ======
-function rfq_counter_submit_data(_this, action) {
+function submitRfqCounterData(_this, action) {
     const $btn = $(_this);
     if ($btn.data('busy')) return false;              // block double-clicks
     $btn.prop('disabled', true).data('busy', true);
