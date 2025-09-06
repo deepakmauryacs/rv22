@@ -264,8 +264,8 @@ function IND_amount_format($amount) {
                                     </div>
                                     <div class="col-md">
                                         <label class="mb-2"><strong>Min Bid Decrement (%)</strong></label>
-                                        <div id="minBidDecrement">{{ $min_bid_decrement }}</div>
-                                        <input type="hidden" name="min_bid_decrement" id="min_bid_decrement" value="{{ $min_bid_decrement }}">
+                                        <div id="minBidDecrement">2</div>
+                                        <input type="hidden" name="min_bid_decrement" id="min_bid_decrement" value="2">
                                     </div>
 
                                     <div class="col-md">
@@ -565,30 +565,30 @@ function showBidError(msg){
     if(window.toastr){ toastr.error(msg); } else { alert(msg); }
 }
 
-function validateTotalPrice(price, adjust){
+function validateTotalPrice(price){
     const totalBid = parseFloat($('#total_bid_price').val().replace(/,/g,'')) || 0;
     if(price > totalBid){
         showBidError('Your bid cannot exceed the Total Aggregate Value - Start Price.');
-        if(adjust) $('#PriceInput').val(totalBid.toFixed(2));
+        $('#PriceInput').val('');
         return false;
     }
 
-    const minDec   = parseFloat($('#min_bid_decrement').val()) || 0;
     const lastPrice = parseFloat($('#last_price').text().replace(/,/g,'')) || 0;
+    const minDec = 2;
 
     if(lastPrice > 0){
         const maxAllowed = lastPrice * (1 - minDec/100);
         const minAllowed = lastPrice * (1 - (minDec + 10)/100);
 
         if(price > maxAllowed){
-            showBidError(`Your bid must be at least ${minDec}% lower than the last price.`);
-            if(adjust) $('#PriceInput').val(maxAllowed.toFixed(2));
+            showBidError(`Your bid must be at least ${minDec}% lower than the last price. Maximum allowed bid is ${maxAllowed.toFixed(2)}.`);
+            $('#PriceInput').val('');
             return false;
         }
 
         if(price < minAllowed){
-            showBidError(`Your bid cannot be more than ${minDec + 10}% lower than the last price.`);
-            if(adjust) $('#PriceInput').val(minAllowed.toFixed(2));
+            showBidError(`Your bid cannot be more than ${minDec + 10}% lower than the last price. Minimum allowed bid is ${minAllowed.toFixed(2)}.`);
+            $('#PriceInput').val('');
             return false;
         }
     }
@@ -601,7 +601,7 @@ function handlePriceBlur(el){
     let price = parseFloat(el.value.replace(/,/g,''));
     if(isNaN(price)){ el.value = ''; return; }
     el.value = price.toFixed(2);
-    validateTotalPrice(price, true);
+    if(!validateTotalPrice(price)) el.value = '';
 }
 </script>
 
@@ -696,7 +696,7 @@ function rfq_counter_submit_data(_this, action) {
     }
     $("#PriceInput").val(totalPrice.toFixed(2));
 
-    if (!validateTotalPrice(totalPrice, true)) {
+    if (!validateTotalPrice(totalPrice)) {
         return resetBtn();
     }
 
