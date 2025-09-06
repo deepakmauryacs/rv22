@@ -581,14 +581,14 @@ const validateTotalPrice = price => {
         return false;
     }
 
-    const maxAllowed = base * (1 - minDec / 100);
+    const maxAllowed = parseFloat((base * (1 - minDec / 100)).toFixed(2));
     if (price > maxAllowed) {
         showBidError(`Your bid must be at least ${minDec}% lower than the last price. Maximum allowed bid is ${maxAllowed.toFixed(2)}.`);
         $('#PriceInput').val('');
         return false;
     }
 
-    const minAllowed = base * (1 - (minDec + 10) / 100);
+    const minAllowed = parseFloat((base * (1 - (minDec + 10) / 100)).toFixed(2));
     if (price < minAllowed) {
         showBidError(`Your bid cannot be more than ${minDec + 10}% lower than the last price. Minimum allowed bid is ${minAllowed.toFixed(2)}.`);
         $('#PriceInput').val('');
