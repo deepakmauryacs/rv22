@@ -216,12 +216,12 @@ class LiveAuctionRfqSinglePriceController extends Controller
             $startTotal = $startTotalFromUI;
         }
 
-        // if ($startTotal > 0 && $lotPrice > $startTotal) {
-        //     return response()->json([
-        //         'status'=>false,
-        //         'message'=>'Your lot bid cannot exceed the Start Total ('.number_format($startTotal,2).').'
-        //     ]);
-        // }
+        if ($startTotal > 0 && $lotPrice > $startTotal) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Your lot bid cannot exceed the Start Total (' . number_format($startTotal, 2) . ').',
+            ]);
+        }
 
         $check = $this->checkRankByPrice(
             $rfqId,
