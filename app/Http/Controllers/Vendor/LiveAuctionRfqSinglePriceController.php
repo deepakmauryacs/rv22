@@ -223,33 +223,15 @@ class LiveAuctionRfqSinglePriceController extends Controller
         //     ]);
         // }
 
-        // L1 (other vendors) + min decrement check (if total table exists)
-        if (Schema::hasTable('rfq_vendor_auction_price_total')) {
-            $l1Query = DB::table('rfq_vendor_auction_price_total')
-                ->where('rfq_no', $rfqId)
-                ->where('vendor_id','!=',$vendorId);
-
-            if (Schema::hasColumn('rfq_vendor_auction_price_total','rfq_auction_id')) {
-                $l1Query->where('rfq_auction_id', $auction->id);
-            }
-
-            $l1Row = $l1Query->orderBy('total_price','asc')->select('total_price','vendor_id')->first();
-
-            if ($l1Row) {
-                $l1Total      = (float) $l1Row->total_price;
-                $minDecrement = (float) ($auction->min_bid_decrement ?? 0);
-                if ($minDecrement <= 0) $minDecrement = 1.0;
-
-                $requiredMax  = round($l1Total - (($minDecrement / 100.0) * $l1Total), 2);
-                if ($lotPrice >= $requiredMax) {
-                    return response()->json([
-                        'status'=>false,
-                        'message'=>"Your lot bid must be at least {$minDecrement}% lower than current L1 ("
-                                   . number_format($l1Total,2) . "). Max acceptable is "
-                                   . number_format($requiredMax,2) . "."
-                    ]);
-                }
-            }
+        $check = $this->checkRankByPrice(
+            $rfqId,
+            $vendorId,
+            $lotPrice,
+            $startTotal,
+            (float)($auction->min_bid_decrement ?? 0)
+        );
+        if ($check['status'] !== 1) {
+            return response()->json(['status' => false, 'message' => $check['message']]);
         }
 
         // CI-style global adjustment %: ((StartTotal - YourTotal)/StartTotal)*100
@@ -405,6 +387,89 @@ class LiveAuctionRfqSinglePriceController extends Controller
                 'vendorPrice' => $vendorPrice !== null ? round((float) $vendorPrice, 2) : null,
             ],
         ]);
+    }
+
+    /**
+     * Validate bid price against L1 or start price with decrement rules.
+     */
+    private function checkRankByPrice($rfq_id, $vend_id, $total_price, $total_bid_price, $min_bid_decrement = 0)
+    {
+        $result = ['status' => 1, 'message' => ''];
+
+        if (empty($rfq_id) || empty($vend_id)) {
+            return ['status' => 7, 'message' => 'Something went wrong!'];
+        }
+
+        $total_price = round((float) $total_price, 2);
+        $max_decrement = 10; // max 10% decrement allowed
+
+        $l1_row = DB::table('rfq_vendor_auction_price_total')
+            ->where('rfq_no', $rfq_id)
+            ->orderBy('total_price', 'asc')
+            ->select('vendor_id', 'total_price')
+            ->first();
+
+        if ($l1_row) {
+            $l1_price  = round((float) $l1_row->total_price, 2);
+            $l1_vendor = (int) $l1_row->vendor_id;
+
+            if ($total_price == $l1_price && $vend_id != $l1_vendor) {
+                return [
+                    'status' => 3,
+                    'message' => request()->input('vendor_currency') . $total_price . ' already submitted by another vendor as Rank 1. Please enter a lower amount.'
+                ];
+            }
+
+            if ($total_price > $l1_price) {
+                return [
+                    'status' => 2,
+                    'message' => 'You cannot enter a price higher than the L1 price ' . request()->input('vendor_currency') . $l1_price . '.'
+                ];
+            }
+
+            if ($total_price < $l1_price && $min_bid_decrement > 0) {
+                $expected_min_price = round($l1_price - ($l1_price * ($min_bid_decrement / 100)), 2);
+                if ($total_price > $expected_min_price) {
+                    return [
+                        'status' => 5,
+                        'message' => 'Price must be ≤ ' . request()->input('vendor_currency') . $expected_min_price . ' (minimum bid decrement ' . $min_bid_decrement . '%)'
+                    ];
+                }
+            }
+
+            $effective_decrement = $min_bid_decrement + $max_decrement;
+            if ($total_price < $l1_price && $effective_decrement > 0) {
+                $expected_min_price = round($l1_price - ($l1_price * ($effective_decrement / 100)), 2);
+                if ($total_price < $expected_min_price) {
+                    return [
+                        'status' => 6,
+                        'message' => 'Price cannot be reduced by more than 10% at once.'
+                    ];
+                }
+            }
+        } else {
+            $effective_decrement = min($min_bid_decrement, $max_decrement);
+            $total_bid_price    = round((float) $total_bid_price, 2);
+
+            if ($total_price > $total_bid_price) {
+                return [
+                    'status' => 2,
+                    'message' => 'You cannot enter a price higher than the start price ' . request()->input('vendor_currency') . $total_bid_price . '.'
+                ];
+            }
+
+            if ($effective_decrement > 0) {
+                $expected_min_price = round($total_bid_price - ($total_bid_price * ($effective_decrement / 100)), 2);
+                if ($total_price < $expected_min_price) {
+                    return [
+                        'status' => 6,
+                        'message' => 'Price cannot be reduced by more than 10% from start price at once.'
+                    ];
+                }
+            }
+        }
+
+        return $result;
     }
 
     /**
