@@ -235,10 +235,11 @@ class LiveAuctionRfqSinglePriceController extends Controller
         }
 
         // CI-style global adjustment %: ((StartTotal - YourTotal)/StartTotal)*100
-        $adjPercent = $this->calculate_price_adjustment($startTotal, $lotPrice);
+        // Calculate the % adjustment using the original Start Total shown in the UI
+        $adjustmentPercent = $this->calculate_price_adjustment($startTotalFromUI, $lotPrice);
 
         DB::transaction(function () use (
-            $rfqId, $vendorId, $auction, $variants, $adjPercent, $vendSpecs,
+            $rfqId, $vendorId, $auction, $variants, $adjustmentPercent, $vendSpecs,
             $vend_price_basis, $vend_payment_terms, $vend_delivery_period,
             $vend_price_validity, $vend_dispatch_branch, $vend_currency, $lotPrice
         ) {
@@ -268,11 +269,12 @@ class LiveAuctionRfqSinglePriceController extends Controller
 
             // (B) Upsert per-variant unit price into rfq_vendor_auction_price
             foreach ($variants as $v) {
-                $start     = (float) $v->start_price;
-                $vendPrice = ($start > 0)
-                    ? round($start - ($start * ($adjPercent/100.0)), 2)
-                    : 0.00;
-                if ($vendPrice < 0) $vendPrice = 0.00;
+                $originalPrice  = (float) $v->start_price;
+                $adjustedPrice  = $originalPrice - ($originalPrice * ($adjustmentPercent / 100));
+                $vendPrice      = $originalPrice > 0 ? round($adjustedPrice, 2) : 0.00;
+                if ($vendPrice < 0) {
+                    $vendPrice = 0.00;
+                }
 
                 $specTxt = null;
                 if (array_key_exists($v->rfq_variant_id, $vendSpecs)) {
