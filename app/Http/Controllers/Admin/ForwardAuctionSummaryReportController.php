@@ -1,0 +1,87 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class ForwardAuctionSummaryReportController extends Controller
+{
+    protected function baseQuery(Request $request)
+    {
+        $query = DB::table('forward_auctions as fa')
+            ->selectRaw('fa.auction_id, GROUP_CONCAT(DISTINCT fap.product_name SEPARATOR ", ") as products, b.legal_name as buyer_name, v.legal_name as vendor_name, fa.schedule_date, fa.schedule_start_time, fa.schedule_end_time, CASE WHEN COUNT(far.id) > 0 THEN "Yes" ELSE "No" END as participated')
+            ->join('forward_auction_products as fap', 'fa.auction_id', '=', 'fap.auction_id')
+            ->join('forward_auction_vendors as fav', 'fav.auction_product_id', '=', 'fap.id')
+            ->join('vendors as v', 'fav.vendor_id', '=', 'v.user_id')
+            ->join('buyers as b', 'fa.buyer_id', '=', 'b.user_id')
+            ->leftJoin('forward_auction_replies as far', function ($join) {
+                $join->on('far.auction_id', '=', 'fa.auction_id')
+                    ->on('far.vendor_id', '=', 'fav.vendor_id');
+            });
+
+        if ($request->filled('auction_id')) {
+            $query->where('fa.auction_id', 'like', '%' . $request->auction_id . '%');
+        }
+        if ($request->filled('vendor_name')) {
+            $query->where('v.legal_name', 'like', '%' . $request->vendor_name . '%');
+        }
+        if ($request->filled('buyer_name')) {
+            $query->where('b.legal_name', 'like', '%' . $request->buyer_name . '%');
+        }
+        if ($request->filled('from_date') && $request->filled('to_date')) {
+            $query->whereBetween('fa.schedule_date', [$request->from_date, $request->to_date]);
+        } elseif ($request->filled('from_date')) {
+            $query->where('fa.schedule_date', '>=', $request->from_date);
+        } elseif ($request->filled('to_date')) {
+            $query->where('fa.schedule_date', '<=', $request->to_date);
+        }
+
+        $query->groupBy('fa.auction_id', 'b.legal_name', 'v.legal_name', 'fa.schedule_date', 'fa.schedule_start_time', 'fa.schedule_end_time', 'fav.vendor_id')
+            ->orderByDesc('fa.schedule_date')
+            ->orderByDesc('fa.schedule_start_time');
+
+        return $query;
+    }
+
+    public function index(Request $request)
+    {
+        $query = $this->baseQuery($request);
+        $perPage = $request->input('per_page', 25);
+        $results = $query->paginate($perPage)->appends($request->all());
+
+        if ($request->ajax()) {
+            return view('admin.forward-auction-report.partials.forward-auction-summary-report-table', compact('results'))->render();
+        }
+
+        return view('admin.forward-auction-report.forward-auction-summary-report', compact('results'));
+    }
+
+    public function exportTotal(Request $request)
+    {
+        $total = $this->baseQuery($request)->get()->count();
+        return response()->json(['total' => $total]);
+    }
+
+    public function exportBatch(Request $request)
+    {
+        $offset = intval($request->input('start'));
+        $limit = intval($request->input('limit'));
+        $data_list = $this->baseQuery($request)->skip($offset)->take($limit)->get();
+
+        $result = [];
+        foreach ($data_list as $row) {
+            $result[] = [
+                $row->auction_id,
+                $row->products,
+                $row->buyer_name,
+                $row->vendor_name,
+                date('d/m/Y', strtotime($row->schedule_date)) . ' ' . date('h:i A', strtotime($row->schedule_start_time)) . ' To ' . date('h:i A', strtotime($row->schedule_end_time)),
+                $row->participated,
+            ];
+        }
+        return response()->json(['data' => $result]);
+    }
+}
+

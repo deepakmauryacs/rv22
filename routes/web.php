@@ -33,6 +33,7 @@ use App\Http\Controllers\Admin\VendorDisabledProductReportController;
 use App\Http\Controllers\Admin\RFQSummaryReportController;
 use App\Http\Controllers\Admin\VendorActivityReportController;
 use App\Http\Controllers\Admin\AuctionRFQSummaryReportController;
+use App\Http\Controllers\Admin\ForwardAuctionSummaryReportController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MiniWebPage;
 
@@ -365,6 +366,10 @@ Route::group(['prefix' => 'super-admin'], function () {
             Route::get('auction-rfqs-summary', [AuctionRFQSummaryReportController::class, 'index'])->name('reports.auction-rfqs-summary');
             Route::get('auction-rfqs-summary/export/total', [AuctionRFQSummaryReportController::class, 'exportTotal'])->name('auction-rfqs-summary.exportTotal');
             Route::get('auction-rfqs-summary/export/batch', [AuctionRFQSummaryReportController::class, 'exportBatch'])->name('auction-rfqs-summary.exportBatch');
+
+            Route::get('forward-auctions-summary', [ForwardAuctionSummaryReportController::class, 'index'])->name('reports.forward-auctions-summary');
+            Route::get('forward-auctions-summary/export/total', [ForwardAuctionSummaryReportController::class, 'exportTotal'])->name('forward-auctions-summary.exportTotal');
+            Route::get('forward-auctions-summary/export/batch', [ForwardAuctionSummaryReportController::class, 'exportBatch'])->name('forward-auctions-summary.exportBatch');
 
         });
         Route::prefix('vendor-disabled-product-report')->name('admin.')->group(function () {
