@@ -817,14 +817,18 @@ class LiveAuctionRfqController extends Controller
         }
 
         // Latest auction for this RFQ (or you can pass $auctionId from page)
-        $auctionId = DB::table('rfq_auctions')
+        $auctionRow = DB::table('rfq_auctions')
             ->where('rfq_no', $rfqId)
             ->orderByDesc('id')
-            ->value('id');
+            ->select('id', 'is_forcestop')
+            ->first();
 
-        if (!$auctionId) {
+        if (!$auctionRow) {
             return response()->json(['status' => false, 'message' => 'Auction not found'], 404);
         }
+
+        $auctionId    = $auctionRow->id;
+        $isForcestop = (string)($auctionRow->is_forcestop ?? '2');
 
         // Subquery: fetch latest row id per (variant, vendor)
         $sub = DB::table('rfq_vendor_auction_price')
@@ -891,6 +895,10 @@ class LiveAuctionRfqController extends Controller
             ];
         }
 
-        return response()->json(['status' => true, 'data' => $out]);
+        return response()->json([
+            'status'       => true,
+            'is_forcestop' => $isForcestop,
+            'data'         => $out,
+        ]);
     }
 }
