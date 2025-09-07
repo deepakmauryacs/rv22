@@ -148,8 +148,8 @@
                         </a>
 
                         <a href="javascript:void(0)"
-                           class="ra-btn small-btn ra-btn-outline-danger close-auction disabled"
-                           aria-disabled="true"
+                           class="ra-btn small-btn ra-btn-outline-danger close-auction {{ $show_close ? '' : 'disabled' }}"
+                           @unless($show_close) aria-disabled="true" @endunless
                            data-rfq="{{ $result->rfq_id }}">
                            Close
                         </a>
