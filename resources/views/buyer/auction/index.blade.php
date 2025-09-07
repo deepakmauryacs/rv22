@@ -130,10 +130,13 @@
                         _token: '{{ csrf_token() }}'
                     },
                     success: function(response) {
-                        alert(response.message || 'Failed to close auction.');
-                        if (response.success) {
-                            loadTable(window.location.href);
-                        }
+                         if (response.success) {
+                            toastr.success(response.message || 'Auction closed successfully.');
+                            setTimeout(() => window.location.reload(), 300);
+                          } else {
+                            toastr.error(response.message || 'Failed to close auction.');
+                          }
+                       
                     },
                     error: function(xhr) {
                         let msg = 'Failed to close auction.';
