@@ -95,6 +95,7 @@
                             <li><a href="{{ route('admin.vendor-disabled-product-report.index') }}">Vendor Disabled Products</a></li>
                             <li><a href="{{ route('admin.rfq-summary-report.index') }}">RFQs Summary</a></li>
                             <li><a href="{{ route('admin.reports.auction-rfqs-summary') }}">Auction RFQs Summary</a></li>
+                            <li><a href="{{ route('admin.reports.forward-auctions-summary') }}">Forward Auction Reports</a></li>
                         </ul>
                     </div>
                 </div>

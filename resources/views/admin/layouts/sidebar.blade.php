@@ -106,6 +106,7 @@
                                         </li>
                                         <li><a href="{{ route('admin.reports.auction-rfqs-summary') }}">Auction RFQs
                                                 Summary</a></li>
+                                        <li><a href="{{ route('admin.reports.forward-auctions-summary') }}">Forward Auction Reports</a></li>
                                     </ul>
                                 </div>
                             </div>
