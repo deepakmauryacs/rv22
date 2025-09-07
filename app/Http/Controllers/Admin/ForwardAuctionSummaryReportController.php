@@ -8,6 +8,11 @@ use Illuminate\Support\Facades\DB;
 
 class ForwardAuctionSummaryReportController extends Controller
 {
+    /**
+     * Number of rows to return per export chunk.
+     */
+    protected $chunkSize = 500;
+
     protected function baseQuery(Request $request)
     {
         $query = DB::table('forward_auctions as fa')
@@ -60,28 +65,39 @@ class ForwardAuctionSummaryReportController extends Controller
 
     public function exportTotal(Request $request)
     {
-        $total = $this->baseQuery($request)->get()->count();
-        return response()->json(['total' => $total]);
+        $total = $this->baseQuery($request)->count();
+
+        return response()->json([
+            'total' => $total,
+            'chunk_size' => $this->chunkSize,
+        ]);
     }
 
     public function exportBatch(Request $request)
     {
-        $offset = intval($request->input('start'));
-        $limit = intval($request->input('limit'));
-        $data_list = $this->baseQuery($request)->skip($offset)->take($limit)->get();
+        $offset = (int) $request->input('start', 0);
+        $limit  = (int) $request->input('limit', $this->chunkSize);
 
-        $result = [];
-        foreach ($data_list as $row) {
-            $result[] = [
+        $rows = $this->baseQuery($request)
+            ->skip($offset)
+            ->take($limit)
+            ->get();
+
+        $data = [];
+        foreach ($rows as $row) {
+            $data[] = [
                 $row->auction_id,
                 $row->products,
                 $row->buyer_name,
                 $row->vendor_name,
-                date('d/m/Y', strtotime($row->schedule_date)) . ' ' . date('h:i A', strtotime($row->schedule_start_time)) . ' To ' . date('h:i A', strtotime($row->schedule_end_time)),
+                date('d/m/Y', strtotime($row->schedule_date)) . ' ' .
+                date('h:i A', strtotime($row->schedule_start_time)) . ' To ' .
+                date('h:i A', strtotime($row->schedule_end_time)),
                 $row->participated,
             ];
         }
-        return response()->json(['data' => $result]);
+
+        return response()->json(['data' => $data]);
     }
 }
 
