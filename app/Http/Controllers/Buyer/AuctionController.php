@@ -639,17 +639,17 @@ class AuctionController extends Controller
 
         $currentTime = date('H:i:s');
 
-        DB::table('rfq_auctions')
+        $updated = DB::table('rfq_auctions')
             ->where('rfq_no', $rfqNo)
             ->update([
                 'is_forcestop'     => '1',
                 'auction_end_time' => $currentTime
             ]);
 
-        if (DB::affectingStatement('SELECT ROW_COUNT()')) {
-            return response()->json(['status'=>'success','message'=>'Auction forcibly stopped successfully.']);
+        if ($updated) {
+            return response()->json(['status' => 'success', 'message' => 'Auction forcibly stopped successfully.']);
         }
-        return response()->json(['status'=>'error','message'=>'Failed to stop auction or auction already stopped.']);
+        return response()->json(['status' => 'error', 'message' => 'Failed to stop auction or auction already stopped.']);
     }
 
     
