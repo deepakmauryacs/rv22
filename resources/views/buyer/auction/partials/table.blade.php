@@ -79,7 +79,7 @@
 
                 // Status logic (Active / Scheduled / Closed)
                 $current_status = null;  // 1=Active, 2=Scheduled, 3=Closed
-                $close_btn = 'disabled'; // default disabled
+                $show_close = false;     // only show Close when scheduled
                 if ($hasAuction && $d && $t1 && $t2) {
                     $start = $d->copy()->setTime($t1->hour, $t1->minute, $t1->second);
                     $end   = $d->copy()->setTime($t2->hour, $t2->minute, $t2->second);
@@ -91,18 +91,15 @@
                     $now = Carbon::now($tz);
                     if ($now->betweenIncluded($start, $end)) {
                         $current_status = 1; // Active
-                        $close_btn = "disabled";
                     } elseif ($now->lt($start)) {
                         $current_status = 2; // Scheduled
-                        $close_btn = ""; // allow closing only when scheduled
+                        $show_close = true; // allow closing only when scheduled
                     } else {
                         $current_status = 3; // Closed
-                        $close_btn = "disabled";
                     }
                 } else {
-                    // Not enough data to determine — show dashes, keep Close disabled
+                    // Not enough data to determine — show dashes
                     $current_status = null;
-                    $close_btn = "disabled";
                 }
 
                 $cis_url = route('buyer.auction.cis-sheet', ['rfq_id' => $result->rfq_id]);
@@ -150,11 +147,13 @@
                             {{ $rfq_button[$current_status] ?? 'View' }}
                         </a>
 
+                        @if ($show_close)
                         <a href="javascript:void(0)"
-                           class="ra-btn small-btn ra-btn-outline-danger close-auction {{ $close_btn }}"
-                           data-id="{{ $result->rfq_id }}">
+                           class="ra-btn small-btn ra-btn-outline-danger close-auction"
+                           data-rfq="{{ $result->rfq_id }}">
                            Close
                         </a>
+                        @endif
                     </div>
                 </td>
             </tr>
