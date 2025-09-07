@@ -15,6 +15,11 @@
         .cis-vendor-table-heading {
             height: 150px !important;
         }
+
+        /* ===== LIVE timer styles ===== */
+        .countdown{display:none;font-size:.95rem;padding:6px 10px;background:#f8f9fa;border:1px solid #dee2e6;border-radius:6px}
+        .live-text{display:none;font-weight:700;color:#dc3545;margin-right:8px;animation:blink 1s step-start infinite}
+        @keyframes blink{50%{opacity:0}}
     </style>
 @endsection
 
@@ -30,24 +35,31 @@
             <!---CIS Statemant section-->
             <section class="card rounded">
                 <div class="card-header bg-white">
-                    <div class="row gy-3 justify-content-between align-items-center py-3 px-0 px-md-3 mb-30">
-                        <div class="col-12 col-sm-auto order-2 order-sm-1">
-                            <h1 class="text-primary-blue font-size-27">Comparative Information Statement</h1>
+                    <div class="d-flex align-items-center py-3 px-0 px-md-3 mb-30">
+                        <!-- START (left): LIVE + countdown -->
+                        <div class="flex-shrink-0 me-2" id="live-text-div">
+                            <span id="live-text" class="live-text">LIVE</span>
+                            <span id="countdown" class="countdown">
+                                <span class="bi bi-clock me-1" aria-hidden="true"></span>
+                                <span id="timer"></span>
+                            </span>
                         </div>
-                        <div class="col-12 col-sm-auto order-1 order-sm-2">
-                            <div
-                                class="row gx-3 gy-2 align-items-center justify-content-center justify-content-sm-end">
-                                
-                                <div class="col-auto">
-                                    <button type="button" class="ra-btn ra-btn-outline-primary px-2 font-size-11" onclick="window.location.reload();">
-                                        <span class="bi bi-arrow-clockwise font-size-12" aria-hidden="true"></span>
-                                        Refresh
-                                    </button>
-                                </div>
-                            </div>
+
+                        <!-- CENTER: Title -->
+                        <div class="flex-grow-1 text-center">
+                            <h1 class="text-primary-blue font-size-27 mb-0">Comparative Information Statement</h1>
+                        </div>
+
+                        <!-- END (right): Refresh -->
+                        <div class="flex-shrink-0 ms-2">
+                            <button type="button" class="ra-btn ra-btn-outline-primary px-2 font-size-11" onclick="window.location.reload();">
+                                <span class="bi bi-arrow-clockwise font-size-12" aria-hidden="true"></span>
+                                Refresh
+                            </button>
                         </div>
                     </div>
                 </div>
+
                 <div class="card-body">
                     <div class="cis-info pb-2 px-0 px-md-3  d-none d-sm-flex">
                         <div class="cis-info-left">
@@ -65,8 +77,8 @@
                             RFQ Date: {{ $rfq['created_at'] ? date('d/m/Y', strtotime($rfq['created_at'])) : '' }}
                         </div>
                     </div>
-                        
-                   
+
+
 
                     <div class="cis-details py-3 px-0 px-md-3 d-none d-sm-block">
                         <div class="row g-0 gy-5">
@@ -111,7 +123,7 @@
                                                 <th scope="col" class="p-2 text-nowrap">Specifications</th>
                                                 <th scope="col" class="p-2 text-nowrap">Size</th>
                                                 <th scope="col" class="p-2 text-nowrap">Quantity/UOM</th>
-                                                
+
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -119,10 +131,10 @@
                                             <tr>
                                                 <td class="align-middle p-1 text-nowrap position-relative" scope="row">
                                                     <span class="name-tooltip">
-                                                        {!! 
-                                                            strlen($variants['product_name']) > 20 
+                                                        {!!
+                                                            strlen($variants['product_name']) > 20
                                                                 ? substr($variants['product_name'], 0, 20)
-                                                                : $variants['product_name'] 
+                                                                : $variants['product_name']
                                                         !!}
                                                     </span>
                                                     @if(strlen($variants['product_name']) > 20)
@@ -133,10 +145,10 @@
                                                 </td>
                                                 <td class="align-middle p-1">
                                                     <span class="name-tooltip">
-                                                        {!! 
-                                                            strlen($variants['specification']) > 20 
+                                                        {!!
+                                                            strlen($variants['specification']) > 20
                                                                 ? substr($variants['specification'], 0, 20)
-                                                                : $variants['specification'] 
+                                                                : $variants['specification']
                                                         !!}
                                                     </span>
                                                     @if(strlen($variants['specification']) > 20)
@@ -147,10 +159,10 @@
                                                 </td>
                                                 <td class="align-middle p-1">
                                                     <span class="name-tooltip">
-                                                        {!! 
-                                                            strlen($variants['size']) > 20 
+                                                        {!!
+                                                            strlen($variants['size']) > 20
                                                                 ? substr($variants['size'], 0, 20)
-                                                                : $variants['size'] 
+                                                                : $variants['size']
                                                         !!}
                                                     @if(strlen($variants['size']) > 20)
                                                     </span>
@@ -217,8 +229,8 @@
                                                 <td class="align-middle p-1" colspan="4"></td>
                                                 {{-- <td class="align-middle p-1"></td> --}}
                                             </tr>
-                                            
-                                           
+
+
                                             <tr>
                                                 <td class="align-middle p-1 bg-pink fw-bold" scope="row"
                                                     colspan="5">
@@ -304,10 +316,10 @@
                                                             <a href="javascript:void(0)" target="_blank"
                                                                 class="font-size-13 cursor-pointer"
                                                                 title="{{ $vendor['legal_name'] }}">
-                                                                {!! 
-                                                                    strlen($vendor['legal_name']) > 12 
+                                                                {!!
+                                                                    strlen($vendor['legal_name']) > 12
                                                                         ? substr($vendor['legal_name'], 0, 12)
-                                                                        : $vendor['legal_name'] 
+                                                                        : $vendor['legal_name']
                                                                 !!}
                                                             </a>
                                                             <span class="font-size-13">
@@ -321,19 +333,7 @@
                                                 </th>
                                                 @endforeach
                                             </tr>
-                                            <!-- <tr>
-                                                @foreach($cis['vendors'] as $vendor_id => $vendor)
-                                                @php
-                                                    if(!empty($cis['filter_vendors']) && !in_array($vendor_id, $cis['filter_vendors'])) {
-                                                        continue;
-                                                    }
-                                                @endphp
-                                                <th scope="col" class="text-center p-2 bg-white">
-                                                    <a target="_blank" href="{{ route('buyer.rfq.quotation-received', ['rfq_id' => $rfq['rfq_id'], 'vendor_id' => $vendor_id]) }}"
-                                                        class="text-decoration-underline text-primary-blue"> View Quotation </a>
-                                                </th>
-                                                @endforeach
-                                            </tr> -->
+                                           
                                             <tr>
                                                 @foreach($cis['vendors'] as $vendor_id => $vendor)
                                                 @php
@@ -395,7 +395,7 @@
                                                         </td>
                                                         @endif
                                                     @endforeach
-                                                </tr>                                            
+                                                </tr>
                                             @endforeach
                                             <tr>
                                                 @foreach($cis['vendors'] as $vendor_id => $vendor)
@@ -423,10 +423,10 @@
                                                         $vendor_price_basis = !empty($vendor['latest_quote']) ? $vendor['latest_quote']['vendor_price_basis'] : '';
                                                     @endphp
                                                     <span title="{{$vendor_price_basis}}">
-                                                        {!! 
-                                                            strlen($vendor_price_basis) > 12 
+                                                        {!!
+                                                            strlen($vendor_price_basis) > 12
                                                                 ? substr($vendor_price_basis, 0, 12)
-                                                                : $vendor_price_basis 
+                                                                : $vendor_price_basis
                                                         !!}
                                                     </span>
                                                     @if(strlen($vendor_price_basis) > 12)
@@ -449,12 +449,12 @@
                                                         $vendor_payment_terms = !empty($vendor['latest_quote']) ? $vendor['latest_quote']['vendor_payment_terms'] : '';
                                                     @endphp
                                                     <span title="{{$vendor_payment_terms}}">
-                                                        {!! 
-                                                            strlen($vendor_payment_terms) > 12 
+                                                        {!!
+                                                            strlen($vendor_payment_terms) > 12
                                                                 ? substr($vendor_payment_terms, 0, 12)
-                                                                : $vendor_payment_terms 
+                                                                : $vendor_payment_terms
                                                         !!}
-                                                    </span> 
+                                                    </span>
                                                     @if(strlen($vendor_payment_terms) > 12)
                                                     <span role="botton" type="button" class="p-0" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ $vendor_payment_terms }}">
                                                         <span class="bi bi-info-circle-fill text-dark font-size-11" aria-hidden="true"></span>
@@ -492,10 +492,10 @@
                                                         $vendor_brand = !empty($vendor['vendor_brand']) ? $vendor['vendor_brand'] : '';
                                                     @endphp
                                                     <span title="{{ $vendor_brand }}">
-                                                        {!! 
-                                                            strlen($vendor_brand) > 12 
+                                                        {!!
+                                                            strlen($vendor_brand) > 12
                                                                 ? substr($vendor_brand, 0, 12)
-                                                                : $vendor_brand 
+                                                                : $vendor_brand
                                                         !!}
                                                     </span>
                                                     @if(strlen($vendor_brand) > 12)
@@ -519,10 +519,10 @@
                                                         $vendor_remarks = !empty($vendor['latest_quote']) ? $vendor['latest_quote']['vendor_remarks'] : '';
                                                     @endphp
                                                     <span title="{{ $vendor_remarks }}">
-                                                        {!! 
-                                                            strlen($vendor_remarks) > 12 
+                                                        {!!
+                                                            strlen($vendor_remarks) > 12
                                                                 ? substr($vendor_remarks, 0, 12)
-                                                                : $vendor_remarks 
+                                                                : $vendor_remarks
                                                         !!}
                                                     </span>
                                                     @if(strlen($vendor_remarks) > 12)
@@ -534,7 +534,7 @@
                                                 </td>
                                                 @endforeach
                                             </tr>
-                                          
+
                                             <tr>
                                                 @foreach($cis['vendors'] as $vendor_id => $vendor)
                                                     @php
@@ -593,10 +593,10 @@
                                                         $vendor_product = !empty($vendor['vendor_product']) ? $vendor['vendor_product'] : '';
                                                     @endphp
                                                     <span title="{{ $vendor_product }}">
-                                                        {!! 
-                                                            strlen($vendor_product) > 12 
+                                                        {!!
+                                                            strlen($vendor_product) > 12
                                                                 ? substr($vendor_product, 0, 12)
-                                                                : $vendor_product 
+                                                                : $vendor_product
                                                         !!}
                                                     </span>
                                                     @if(strlen($vendor_product) > 12)
@@ -619,10 +619,10 @@
                                                         $client = !empty($vendor['client']) ? $vendor['client'] : '';
                                                     @endphp
                                                     <span title="{{ $client }}">
-                                                        {!! 
-                                                            strlen($client) > 12 
+                                                        {!!
+                                                            strlen($client) > 12
                                                                 ? substr($client, 0, 12)
-                                                                : $client 
+                                                                : $client
                                                         !!}
                                                     </span>
                                                     @if(strlen($client) > 12)
@@ -652,10 +652,10 @@
                                                         $certifications = !empty($vendor['certifications']) ? $vendor['certifications'] : '';
                                                     @endphp
                                                     <span title="{{ $certifications }}">
-                                                        {!! 
-                                                            strlen($certifications) > 12 
+                                                        {!!
+                                                            strlen($certifications) > 12
                                                                 ? substr($certifications, 0, 12)
-                                                                : $certifications 
+                                                                : $certifications
                                                         !!}
                                                     </span>
                                                     @if(strlen($certifications) > 12)
@@ -875,18 +875,11 @@
                         data-bs-toggle="modal" data-bs-target="#createAuctionModal"><span
                         class="bi bi-calendar-date font-size-12" aria-hidden="true"></span> VIEW/EDIT AUCTION
                     </button>
-                    <button type="button"
-                        class="ra-btn btn-outline-primary ra-btn-outline-primary text-uppercase text-nowrap font-size-10"
-                        data-bs-toggle="modal" data-bs-target="#messageModal"><span class="bi bi-send font-size-12"
-                        aria-hidden="true"></span> SEND MESSAGE
-                    </button>
-                    <a type="button" href="{{ route('buyer.rfq.counter-offer', ['rfq_id' => $rfq['rfq_id'], 'vendor_id' => 1]) }}"
-                        class="ra-btn btn-outline-primary ra-btn-outline-primary-light text-uppercase text-nowrap font-size-10"><span
-                        class="bi bi-repeat font-size-12" aria-hidden="true"></span> COUNTER OFFER
-                    </a>
-                    <a type="button" 
+                   
+                   
+                    <a type="button"
                         class="ra-btn btn-primary ra-btn-primary text-uppercase text-nowrap font-size-10 proceed-to-order-btn"><span
-                        class="bi bi-check2-square font-size-12" aria-hidden="true"></span> PROCEED TO ORDER 
+                        class="bi bi-check2-square font-size-12" aria-hidden="true"></span> PROCEED TO ORDER
                     </a>
                     {{-- href="{{ route('buyer.unapproved-orders.create', ['rfq_id' => $rfq['rfq_id']]) }}" --}}
                 </div>
@@ -894,8 +887,8 @@
         </div>
     </main>
 
-     
-    
+
+
     <!-- Modal Create Auction -->
     @include('buyer.auction.partials.create-auction-modal', [
         'modalId'               => 'createAuctionModal',
@@ -914,248 +907,245 @@
     ])
 
 
-
-    <!-- Modal Message -->
-    <div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-md">
-            <div class="modal-content">
-                <div class="modal-header bg-graident text-white">
-                    <h2 class="modal-title font-size-12" id="messageModalLabel"><span class="bi bi-pencil"
-                            aria-hidden="true"></span> New Message</h2>
-                    <button type="button" class="btn-close font-size-10" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="message pt-3">
-                        <div class="dropdown">
-                            <button id="dropdownButtonLastVendor"
-                                class="btn btn-outline-default custom-multiselect-dropdown-btn dropdown-toggle justify-content-between"
-                                type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Select Vendor
-                            </button>
-                            <div class="dropdown-menu custom-multiselect-dropdown-menu">
-                                <div class="sticky-top-option">
-                                    <div class="mt-1">
-                                        <label class="ra-custom-checkbox mb-0">
-                                            <input type="checkbox">
-                                            <span class="font-size-13 ra-custom-checkbox-label">Select
-                                                All</span>
-                                            <span class="checkmark "></span>
-                                        </label>
-                                    </div>
-                                </div>
-                                <ul class="filter-list scroll-list p-0">
-                                    <li>
-                                        <div class="mt-1">
-                                            <label class="ra-custom-checkbox mb-0">
-                                                <input type="checkbox">
-                                                <span class="font-size-13 ra-custom-checkbox-label">RONIT VENDOR
-                                                    PROFILE COMPANY QWE</span>
-                                                <span class="checkmark "></span>
-                                            </label>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div class="mt-1">
-                                            <label class="ra-custom-checkbox mb-0">
-                                                <input type="checkbox">
-                                                <span class="font-size-13 ra-custom-checkbox-label">GURU VENDOR
-                                                    PVT AND LTD</span>
-                                                <span class="checkmark "></span>
-                                            </label>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div class="mt-1">
-                                            <label class="ra-custom-checkbox mb-0">
-                                                <input type="checkbox">
-                                                <span class="font-size-13 ra-custom-checkbox-label">MY RAPROCURE
-                                                    VENDOR PVT LTD</span>
-                                                <span class="checkmark "></span>
-                                            </label>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div class="mt-1">
-                                            <label class="ra-custom-checkbox mb-0">
-                                                <input type="checkbox">
-                                                <span class="font-size-13 ra-custom-checkbox-label">ABC GURU
-                                                    TEST VENDOR PVT LTD</span>
-                                                <span class="checkmark "></span>
-                                            </label>
-                                        </div>
-                                    </li>
-                                </ul>
-
-                            </div>
-
-                        </div>
-                    </div>
-                    <div class="message pt-2">
-                        <input type="text" value="RONI-25-00056" class="form-control" readonly>
-                    </div>
-
-                    <section class="ck-editor-section py-2">
-                        <textarea name="" id="" rows="5" class="form-control height-inherit"
-                            placeholder="This is the placeholder of the editor."></textarea>
-                    </section>
-                    <section class="upload-file py-2">
-                        <div class="file-upload-block justify-content-start">
-                            <div class="file-upload-wrapper">
-                                <input type="file" class="file-upload" style="display: none;">
-                                <button type="button"
-                                    class="custom-file-trigger form-control text-start text-dark font-size-13">Upload
-                                    file</button>
-                            </div>
-                            <div class="file-info" style="display: none;"></div>
-                        </div>
-                    </section>
-
-                </div>
-                <div class="modal-footer">
-                    <button type="button"
-                        class="ra-btn btn-primary ra-btn-primary text-uppercase text-nowrap font-size-11">Send</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
 @endsection
 
+@php
+    // ====== Normalize auction date/time for JS countdown ======
+    $auctionDateISO  = null;
+    $auctionStartTime = null;
+    $auctionEndTime   = null;
+
+    if (!empty($liveAuction ?? null)) {
+        try {
+            $auctionDateISO = \Carbon\Carbon::parse($liveAuction->auction_date, 'Asia/Kolkata')->format('Y-m-d');
+        } catch (\Throwable $e) {
+            $auctionDateISO = $liveAuction->auction_date; // fallback
+        }
+        $auctionStartTime = $liveAuction->auction_start_time; // "HH:mm:ss" or "h:i A"
+        $auctionEndTime   = $liveAuction->auction_end_time;   // "HH:mm:ss" or "h:i A"
+    }
+
+    // Auto-refresh page when auction finishes?
+    $refreshWhenEnds = 'yes';
+@endphp
+
 @section('scripts')
-    <script src="{{ asset('public/assets/library/datetimepicker/jquery.datetimepicker.full.min.js') }}"></script>
-    <script src="{{ asset('public/assets/library/sumoselect-v3.4.9-2/js/jquery.sumoselect.min.js') }}"></script>
+<script src="{{ asset('public/assets/library/datetimepicker/jquery.datetimepicker.full.min.js') }}"></script>
+<script src="{{ asset('public/assets/library/sumoselect-v3.4.9-2/js/jquery.sumoselect.min.js') }}"></script>
 
-    {{-- <script src="{{ asset('public/assets/login/crypto-js/crypto.js') }}"></script> --}}
+{{-- <script src="{{ asset('public/assets/login/crypto-js/crypto.js') }}"></script> --}}
 
-    <script>
-        $('.location-sumo-select').SumoSelect({selectAll: true, nativeOnDevice: [], maxHeight:100, csvDispCount: 7, placeholder: 'Select Location' });
-        $('.favourite-vendor-sumo-select').SumoSelect({selectAll: true, nativeOnDevice: [], maxHeight:100, csvDispCount: 7, placeholder: 'Select Favorite' });
-        $('.last-vendor-sumo-select').SumoSelect({selectAll: true, nativeOnDevice: [], maxHeight:100, csvDispCount: 7, placeholder: 'Select Last Vendor' });
+<script>
+    $('.location-sumo-select').SumoSelect({selectAll: true, nativeOnDevice: [], maxHeight:100, csvDispCount: 7, placeholder: 'Select Location' });
+    $('.favourite-vendor-sumo-select').SumoSelect({selectAll: true, nativeOnDevice: [], maxHeight:100, csvDispCount: 7, placeholder: 'Select Favorite' });
+    $('.last-vendor-sumo-select').SumoSelect({selectAll: true, nativeOnDevice: [], maxHeight:100, csvDispCount: 7, placeholder: 'Select Last Vendor' });
 
-        jQuery(function () {
-            const today = new Date();
+    jQuery(function () {
+        const today = new Date();
 
-            function parseDate(str) {
-                if (!str) return null;
-                const [d, m, y] = str.split('/');
-                return new Date(`${y}-${m}-${d}`);
+        function parseDate(str) {
+            if (!str) return null;
+            const [d, m, y] = str.split('/');
+            return new Date(`${y}-${m}-${d}`);
+        }
+
+        jQuery('.dateTimePickerStart').datetimepicker({
+            lang: 'en',
+            timepicker: false,
+            format: 'd/m/Y',
+            formatDate: 'd-m-Y',
+            maxDate: today,
+            scrollMonth: false,
+            scrollInput: false,
+            onShow: function () {
+                const toDateVal = parseDate(jQuery('.dateTimePickerEnd').val());
+                this.setOptions({
+                    maxDate: toDateVal && toDateVal < today ? toDateVal : today
+                });
+            },
+            onChangeDateTime: function () {
+                // jQuery('.dateTimePickerEnd').datetimepicker('show');  // Trigger update of restrictions
+            }
+        });
+
+        jQuery('.dateTimePickerEnd').datetimepicker({
+            lang: 'en',
+            timepicker: false,
+            format: 'd/m/Y',
+            formatDate: 'd-m-Y',
+            maxDate: today,
+            scrollMonth: false,
+            scrollInput: false,
+            onShow: function () {
+                const fromDateVal = parseDate(jQuery('.dateTimePickerStart').val());
+                this.setOptions({
+                    minDate: fromDateVal || false,
+                    maxDate: today
+                });
+            },
+            onChangeDateTime: function () {
+                // jQuery('.dateTimePickerStart').datetimepicker('show');  // Trigger update of restrictions
+            }
+        });
+
+        var isActiveProceedToOrder = false;
+
+        $(document).on('click', '.proceed-to-order-btn', function() {
+            if(isActiveProceedToOrder==false) {
+                if($(".proceed-to-order-input").length<=0){
+                    if($(".vendor-variant-price").length>=0){
+                        toastr.error("No Product quantity has been left to send order.");
+                    }else{
+                        toastr.error("No Price Counter found.");
+                    }
+                    return false;
+                }
+                $(".proceed-to-order-input").prop("checked", false).parent().removeClass('d-none');
+                toastr.success("Kindly select Vendor or Product to proceed further.");
+                isActiveProceedToOrder = true;
+                return false;
             }
 
-            jQuery('.dateTimePickerStart').datetimepicker({
-                lang: 'en',
-                timepicker: false,
-                format: 'd/m/Y',
-                formatDate: 'd-m-Y',
-                maxDate: today,
-                scrollMonth: false,
-                scrollInput: false,
-                onShow: function () {
-                    const toDateVal = parseDate(jQuery('.dateTimePickerEnd').val());
-                    this.setOptions({
-                        maxDate: toDateVal && toDateVal < today ? toDateVal : today
-                    });
-                },
-                onChangeDateTime: function () {
-                    // jQuery('.dateTimePickerEnd').datetimepicker('show');  // Trigger update of restrictions
-                }
+            if($(".proceed-to-order-input:checked").length<=0){
+                toastr.error("Please select the vendors or products individually.");
+                return false;
+            }
+
+            let vendor_data = [];
+            $(".proceed-to-order-input:checked").each(function() {
+                vendor_data.push($(this).val()+"-"+$(this).data("variant-id"));
             });
 
-            jQuery('.dateTimePickerEnd').datetimepicker({
-                lang: 'en',
-                timepicker: false,
-                format: 'd/m/Y',
-                formatDate: 'd-m-Y',
-                maxDate: today,
-                scrollMonth: false,
-                scrollInput: false,
-                onShow: function () {
-                    const fromDateVal = parseDate(jQuery('.dateTimePickerStart').val());
-                    this.setOptions({
-                        minDate: fromDateVal || false,
-                        maxDate: today
-                    });
-                },
-                onChangeDateTime: function () {
-                    // jQuery('.dateTimePickerStart').datetimepicker('show');  // Trigger update of restrictions
-                }
-            });
-
-            var isActiveProceedToOrder = false;
-
-            $(document).on('click', '.proceed-to-order-btn', function() {
-                if(isActiveProceedToOrder==false) {
-                    if($(".proceed-to-order-input").length<=0){
-                        if($(".vendor-variant-price").length>=0){
-                            toastr.error("No Product quantity has been left to send order.");
-                        }else{
-                            toastr.error("No Price Counter found.");
-                        }
-                        return false;
-                    }
-                    $(".proceed-to-order-input").prop("checked", false).parent().removeClass('d-none');
-                    toastr.success("Kindly select Vendor or Product to proceed further.");
-                    isActiveProceedToOrder = true;
-                    return false;
-                }
-
-                if($(".proceed-to-order-input:checked").length<=0){
-                    toastr.error("Please select the vendors or products individually.");
-                    return false;
-                }
-                
-                let vendor_data = [];
-                $(".proceed-to-order-input:checked").each(function() {
-                    vendor_data.push($(this).val()+"-"+$(this).data("variant-id"));
-                });
-                
-                // console.log(vendor_data);
-                let vendor_str_data = vendor_data.join(",");
-                let url = "{{ route('buyer.unapproved-orders.create', ['rfq_id' => $rfq['rfq_id']]) }}";
-                url = url + "?q="+encodeURIComponent(btoa(vendor_str_data));
-                window.location.href = url;
-            });
-
-            // function encryptString(string_data) {
-            //     var CryptoJSAesJson = {
-            //         stringify: function (cipherParams) {
-            //                 var j = {ct: cipherParams.ciphertext.toString(CryptoJS.enc.Base64)};
-            //                 if (cipherParams.iv) j.iv = cipherParams.iv.toString();
-            //                 if (cipherParams.salt) j.s = cipherParams.salt.toString();
-            //                 return JSON.stringify(j);
-            //         },
-            //         parse: function (jsonStr) {
-            //                 var j = JSON.parse(jsonStr);
-            //                 var cipherParams = CryptoJS.lib.CipherParams.create({ciphertext: CryptoJS.enc.Base64.parse(j.ct)});
-            //                 if (j.iv) cipherParams.iv = CryptoJS.enc.Hex.parse(j.iv)
-            //                 if (j.s) cipherParams.salt = CryptoJS.enc.Hex.parse(j.s)
-            //                 return cipherParams;
-            //         }
-            //     }
-            //     let key = '{{ env("AUTH_ENCRYPTION_KEY", "C7zjDVG0fnjVVwjd") }}';
-            //     return CryptoJS.AES.encrypt(JSON.stringify(string_data), key, {format: CryptoJSAesJson}).toString();
-            // }
-
-            $(document).on('click', '.select-vendor-product', function() {
-                if(isActiveProceedToOrder){
-                    $(".proceed-to-order-"+$(this).val()).prop("checked", $(this).prop("checked"));
-                }
-            });
+            // console.log(vendor_data);
+            let vendor_str_data = vendor_data.join(",");
+            let url = "{{ route('buyer.unapproved-orders.create', ['rfq_id' => $rfq['rfq_id']]) }}";
+            url = url + "?q="+encodeURIComponent(btoa(vendor_str_data));
+            window.location.href = url;
         });
-        
-        $(document).on('change', '.location-sumo-select', function() {
-            let state_arr = new Array();
-            let country_arr = new Array();
-            $(".domestic-vendor-location:checked").each(function() {
-                state_arr.push(parseInt($(this).val()));
-            });
-            $(".international-vendor-location:checked").each(function() {
-                country_arr.push(parseInt($(this).val()));
-            });
-            $(".state-location-hidden").val(state_arr);
-            $(".international-location-hidden").val(country_arr);
+
+        $(document).on('click', '.select-vendor-product', function() {
+            if(isActiveProceedToOrder){
+                $(".proceed-to-order-"+$(this).val()).prop("checked", $(this).prop("checked"));
+            }
         });
-    </script>
-     <!-- <script src="{{ asset('public/assets/buyer/js/create-auction-modal.js') }}"></script> -->
+    });
+
+    $(document).on('change', '.location-sumo-select', function() {
+        let state_arr = new Array();
+        let country_arr = new Array();
+        $(".domestic-vendor-location:checked").each(function() {
+            state_arr.push(parseInt($(this).val()));
+        });
+        $(".international-vendor-location:checked").each(function() {
+            country_arr.push(parseInt($(this).val()));
+        });
+        $(".state-location-hidden").val(state_arr);
+        $(".international-location-hidden").val(country_arr);
+    });
+</script>
+
+<!-- ===== Auction LIVE countdown (fixed: no infinite refresh) ===== -->
+<script>
+(function () {
+    // From backend
+    var auctionDate       = @json($auctionDateISO);           // "YYYY-MM-DD" or null
+    var auctionStartTime  = @json($auctionStartTime);         // "HH:mm:ss" or "h:i A"
+    var auctionEndTime    = @json($auctionEndTime);           // "HH:mm:ss" or "h:i A"
+    var refreshOnEnd      = @json($refreshWhenEnds) === 'yes';
+    var rfqId             = @json($rfq['rfq_id'] ?? null);
+    var currentStatus     = @json($current_status ?? null);   // 1=Active, 2=Scheduled, 3=Closed
+
+    var $countdown = document.getElementById('countdown');
+    var $liveText  = document.getElementById('live-text');
+    var $liveWrap  = document.getElementById('live-text-div');
+    var $timer     = document.getElementById('timer');
+
+    if (!$timer || !$countdown || !$liveText || !$liveWrap) return;
+
+    // If server already says "Closed", hide UI and stop.
+    if (currentStatus === 3) {
+        $timer.textContent = '';
+        $countdown.style.display = 'none';
+        $liveText.style.display  = 'none';
+        $liveWrap.style.display  = 'none';
+        return;
+    }
+
+    function toLocalMs(dateStr, timeStr) {
+        if (!dateStr || !timeStr) return null;
+        var t = (/[AP]M/i.test(timeStr)) ? timeStr : (timeStr.length === 5 ? (timeStr + ':00') : timeStr);
+        var dt = new Date(dateStr + ' ' + t);
+        if (isNaN(dt.getTime())) dt = new Date(dateStr + 'T' + t);
+        return isNaN(dt.getTime()) ? null : dt.getTime();
+    }
+
+    var startMs = toLocalMs(auctionDate, auctionStartTime);
+    var endMs   = toLocalMs(auctionDate, auctionEndTime);
+
+    // Hide initially
+    $countdown.style.display = 'none';
+    $liveText.style.display  = 'none';
+    $liveWrap.style.display  = 'none';
+
+    // No valid schedule → nothing to do
+    if (!startMs || !endMs) return;
+
+    // Handle cross-midnight: if end <= start, push end by +1 day
+    if (endMs <= startMs) endMs += 24 * 60 * 60 * 1000;
+
+    // Guard keys to prevent repeated reloads after end
+    var endKey = rfqId ? ('auction-refresh-done-' + rfqId + '-' + endMs) : null;
+    var reloadAlreadyDone = endKey ? localStorage.getItem(endKey) === '1' : false;
+
+    // Track whether this page actually saw the auction in LIVE state
+    var wasLive = false;
+
+    var tick = setInterval(function () {
+        var now = Date.now();
+        var distance;
+
+        if (now < startMs) {
+            // Pre-live → countdown to start
+            distance = startMs - now;
+            $liveText.style.display = 'none';
+            $liveWrap.style.display = 'inline';
+            $countdown.style.display = 'inline';
+        } else {
+            // Live or finished → countdown to end
+            distance = endMs - now;
+            if (distance > 0) {
+                wasLive = true; // we have entered live window at least once
+                $liveText.style.display = 'inline';
+                $liveWrap.style.display = 'inline';
+                $countdown.style.display = 'inline';
+            }
+        }
+
+        // Ended
+        if (distance <= 0) {
+            clearInterval(tick);
+            $timer.textContent = '';
+            $countdown.style.display = 'none';
+            $liveText.style.display  = 'none';
+            $liveWrap.style.display  = 'none';
+
+            // Only refresh ONCE, and only if we actually saw it live on this page
+            // Also: only if we haven't already refreshed before (persisted in localStorage)
+            if (refreshOnEnd && wasLive && !reloadAlreadyDone && endKey) {
+                try { localStorage.setItem(endKey, '1'); } catch (e) {}
+                // Use replace() so the back button doesn’t return to a stale state
+                window.location.replace(window.location.href);
+            }
+            return;
+        }
+
+        // Render H:M:S
+        var hours   = Math.floor((distance % (1000*60*60*24)) / (1000*60*60));
+        var minutes = Math.floor((distance % (1000*60*60)) / (1000*60));
+        var seconds = Math.floor((distance % (1000*60)) / 1000);
+
+        $timer.textContent = hours + "h " + minutes + "m " + seconds + "s";
+    }, 1000);
+})();
+</script>
 @endsection

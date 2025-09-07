@@ -30,6 +30,25 @@
                 2 => "View",
                 3 => "View",
             ];
+
+            // Helpers for flexible parsing
+            $tz = 'Asia/Kolkata';
+            $parseDate = function ($v) use ($tz) {
+                if (!$v) return null;
+                $v = trim($v);
+                foreach (['Y-m-d', 'd/m/Y', 'd-m-Y', 'm/d/Y'] as $fmt) {
+                    try { return Carbon::createFromFormat($fmt, $v, $tz)->startOfDay(); } catch (\Throwable $e) {}
+                }
+                try { return Carbon::parse($v, $tz)->startOfDay(); } catch (\Throwable $e) { return null; }
+            };
+            $parseTime = function ($v) use ($tz) {
+                if (!$v) return null;
+                $v = strtoupper(trim($v));
+                foreach (['H:i:s', 'H:i', 'h:i A', 'g:i A', 'h:iA', 'g:iA'] as $fmt) {
+                    try { return Carbon::createFromFormat($fmt, $v, $tz); } catch (\Throwable $e) {}
+                }
+                try { return Carbon::parse($v, $tz); } catch (\Throwable $e) { return null; }
+            };
         @endphp
 
         @forelse ($results as $result)
@@ -39,49 +58,49 @@
                 foreach ($result->rfqProducts as $variant) {
                     $products[] = $variant->masterProduct?->product_name;
                 }
-                $products_name = implode(', ', $products);
+                $products_name = implode(', ', array_filter($products));
 
                 // --- Auction fields via relation (if present) ---
                 $hasAuction = !empty($result->rfq_auction);
-
                 $auctionDateRaw = $hasAuction ? $result->rfq_auction->auction_date : null;
-                $auctionStart   = $hasAuction ? $result->rfq_auction->auction_start_time : null;
-                $auctionEnd     = $hasAuction ? $result->rfq_auction->auction_end_time   : null;
+                $auctionStartRaw = $hasAuction ? $result->rfq_auction->auction_start_time : null;
+                $auctionEndRaw   = $hasAuction ? $result->rfq_auction->auction_end_time   : null;
 
-                // Display strings
-                $auctionDate = ($auctionDateRaw) ? date('d/m/Y', strtotime($auctionDateRaw)) : '—';
-                $auctionTime = ($auctionStart && $auctionEnd)
-                    ? date('h:i A', strtotime($auctionStart)) . ' To ' . date('h:i A', strtotime($auctionEnd))
+                // Parse date/time robustly
+                $d  = $parseDate($auctionDateRaw);
+                $t1 = $parseTime($auctionStartRaw);
+                $t2 = $parseTime($auctionEndRaw);
+
+                // Build display strings from parsed values
+                $auctionDate = $d ? $d->format('d/m/Y') : '—';
+                $auctionTime = ($t1 && $t2)
+                    ? $t1->format('h:i A').' To '.$t2->format('h:i A')
                     : '—';
 
-                // Status logic (Active / Scheduled / Closed) based on today's date & current time
-                $current_status = null; // 1=Active, 2=Scheduled, 3=Closed
+                // Status logic (Active / Scheduled / Closed)
+                $current_status = null;  // 1=Active, 2=Scheduled, 3=Closed
                 $close_btn = 'disabled'; // default disabled
+                if ($hasAuction && $d && $t1 && $t2) {
+                    $start = $d->copy()->setTime($t1->hour, $t1->minute, $t1->second);
+                    $end   = $d->copy()->setTime($t2->hour, $t2->minute, $t2->second);
+                    // Cross-midnight window support
+                    if ($end->lessThanOrEqualTo($start)) {
+                        $end->addDay();
+                    }
 
-                if ($hasAuction && $auctionDateRaw && $auctionStart && $auctionEnd) {
-                    $today_date   = date('Y-m-d');
-                    $current_time = date('H:i:s');
-
-                    if ($auctionDateRaw == $today_date) {
-                        if ($current_time >= $auctionStart && $current_time <= $auctionEnd) {
-                            $current_status = 1; // Active
-                            $close_btn = "disabled";
-                        } elseif ($current_time < $auctionStart) {
-                            $current_status = 2; // Scheduled
-                            $close_btn = ""; // allow closing only when scheduled
-                        } else {
-                            $current_status = 3; // Closed
-                            $close_btn = "disabled";
-                        }
-                    } elseif ($auctionDateRaw < $today_date) {
-                        $current_status = 3; // Closed
+                    $now = Carbon::now($tz);
+                    if ($now->betweenIncluded($start, $end)) {
+                        $current_status = 1; // Active
                         $close_btn = "disabled";
-                    } else {
+                    } elseif ($now->lt($start)) {
                         $current_status = 2; // Scheduled
                         $close_btn = ""; // allow closing only when scheduled
+                    } else {
+                        $current_status = 3; // Closed
+                        $close_btn = "disabled";
                     }
                 } else {
-                    // No auction: show dashes and keep Close disabled
+                    // Not enough data to determine — show dashes, keep Close disabled
                     $current_status = null;
                     $close_btn = "disabled";
                 }
@@ -98,7 +117,7 @@
 
                 <td class="clickable-td">
                     <a href="{{ route('buyer.rfq.details', $result->rfq_id) }}?page=active-rfq">
-                        {{ date('d/m/Y', strtotime($result->created_at)) }}
+                        {{ \Carbon\Carbon::parse($result->created_at, $tz)->format('d/m/Y') }}
                     </a>
                 </td>
 
@@ -132,7 +151,7 @@
                         </a>
 
                         <a href="javascript:void(0)"
-                           class="ra-btn small-btn ra-btn-outline-danger  close-auction {{ $close_btn }}"
+                           class="ra-btn small-btn ra-btn-outline-danger close-auction {{ $close_btn }}"
                            data-id="{{ $result->rfq_id }}">
                            Close
                         </a>
