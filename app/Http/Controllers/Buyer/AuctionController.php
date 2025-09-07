@@ -576,15 +576,17 @@ class AuctionController extends Controller
     # -------------------------------------------------------------------------
     public function closeAuction(Request $request)
     {
+        // 1) Validate input
+        $request->validate([
+            'rfq_no' => 'required|string|max:100',
+        ]);
         $rfqNo = $request->post('rfq_no');
 
-        if (!$rfqNo) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid auction ID.'
-            ], 422);
-        }
+        // 2) Always work in Asia/Kolkata for this op
+        $tz  = 'Asia/Kolkata';
+        $now = Carbon::now($tz);
 
+        // 3) Fetch auction
         $auction = DB::table('rfq_auctions')
             ->where('rfq_no', $rfqNo)
             ->first();
@@ -592,40 +594,66 @@ class AuctionController extends Controller
         if (!$auction) {
             return response()->json([
                 'success' => false,
-                'message' => 'Auction not found or already closed.'
+                'message' => 'Auction not found or already closed.',
             ], 404);
         }
 
-        $start = Carbon::parse($auction->auction_date.' '.$auction->auction_start_time);
-        $end   = Carbon::parse($auction->auction_date.' '.$auction->auction_end_time);
+        // 4) Build start/end in the same timezone
+        //    Assuming auction_date is a Y-m-d string and times are HH:MM:SS
+        $start = Carbon::parse($auction->auction_date.' '.$auction->auction_start_time, $tz)->setTimezone($tz);
+        $end   = Carbon::parse($auction->auction_date.' '.$auction->auction_end_time,   $tz)->setTimezone($tz);
+
+        // If end time is <= start (cross-midnight case), push end to next day
         if ($end->lessThanOrEqualTo($start)) {
             $end->addDay();
         }
 
-        if (Carbon::now()->greaterThanOrEqualTo($start)) {
+        // 5) Business rule: cannot close if already running or completed
+        if ($now->greaterThanOrEqualTo($start)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Auction already running or completed. You cannot close it.'
+                'message' => 'Auction already running or completed. You cannot close it.',
             ], 422);
         }
 
-        $deleted = DB::table('rfq_auctions')
-            ->where('rfq_no', $rfqNo)
-            ->delete();
+        // 6) Delete both parent and related rows atomically
+        try {
+            $totalDeleted = 0;
 
-        if ($deleted) {
+            DB::transaction(function () use ($rfqNo, &$totalDeleted) {
+                // Delete child rows first to avoid orphan issues (if FKs are present)
+                $deletedChild = DB::table('rfq_vendor_auctions')
+                    ->where('rfq_no', $rfqNo)
+                    ->delete();
+
+                $deletedParent = DB::table('rfq_auctions')
+                    ->where('rfq_no', $rfqNo)
+                    ->delete();
+
+                $totalDeleted = ($deletedChild ?: 0) + ($deletedParent ?: 0);
+            });
+
+            if ($totalDeleted > 0) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Auction closed successfully.',
+                ]);
+            }
+
+            // Nothing deleted (very rare if we found it earlier, but handle anyway)
             return response()->json([
-                'success' => true,
-                'message' => 'Auction closed successfully.'
-            ]);
+                'success' => false,
+                'message' => 'Failed to close auction.',
+            ], 500);
+
+        } catch (\Throwable $e) {
+            // Log error if you want: \Log::error($e);
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error while closing auction.',
+            ], 500);
         }
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to close auction.'
-        ], 500);
     }
-
 
     # -------------------------------------------------------------------------
     # FORCE STOP (force_stop)
