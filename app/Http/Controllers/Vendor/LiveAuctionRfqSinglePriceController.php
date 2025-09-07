@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Carbon\Carbon;
 
 class LiveAuctionRfqSinglePriceController extends Controller
 {
@@ -318,6 +319,9 @@ class LiveAuctionRfqSinglePriceController extends Controller
             }
         });
 
+        $variantIds = $variants->pluck('rfq_variant_id')->map(fn($v) => (int) $v)->all();
+        $this->maybeExtendAuctionTail($auction, $rfqId, $vendorId, $variantIds);
+
         return response()->json(['status'=>true,'message'=>'Saved successfully.']);
     }
 
@@ -502,5 +506,101 @@ class LiveAuctionRfqSinglePriceController extends Controller
             ->where('rfq_no', $rfqId)
             ->orderByDesc('id')
             ->first();
+    }
+
+    /**
+     * If auction is about to end and vendor ranks in top 2 for any variant, extend end time by 2 minutes.
+     */
+    private function maybeExtendAuctionTail(object $auction, string $rfqId, int $vendorId, array $variantIds): void
+    {
+        $tz = 'Asia/Kolkata';
+
+        $fresh = DB::table('rfq_auctions')->where('id', $auction->id)->first();
+        if (!$fresh) return;
+
+        $now = Carbon::now($tz);
+
+        try {
+            $end = Carbon::createFromFormat(
+                'Y-m-d H:i:s',
+                $fresh->auction_date . ' ' . $fresh->auction_end_time,
+                $tz
+            );
+        } catch (\Throwable $e) {
+            return;
+        }
+
+        $secondsLeft = $now->diffInSeconds($end, false);
+        if ($secondsLeft <= 0 || $secondsLeft > 120) {
+            return;
+        }
+
+        foreach ($variantIds as $vid) {
+            $myPrice = DB::table('rfq_vendor_auction_price')
+                ->where('rfq_no', $rfqId)
+                ->where('rfq_auction_id', $fresh->id)
+                ->where('vendor_id', $vendorId)
+                ->where('rfq_product_veriant_id', (int) $vid)
+                ->orderByDesc('id')
+                ->value('vend_price');
+
+            if ($myPrice === null) {
+                continue;
+            }
+
+            $rank = $this->computeDenseRankForVariant($rfqId, (int) $fresh->id, (int) $vid, (float) $myPrice);
+
+            if ($rank !== null && $rank <= 2) {
+                $newEnd = (clone $end)->addMinutes(2);
+
+                DB::table('rfq_auctions')
+                    ->where('id', $fresh->id)
+                    ->update([
+                        'auction_date'     => $newEnd->toDateString(),
+                        'auction_end_time' => $newEnd->format('H:i:s'),
+                        'updated_at'       => now($tz),
+                    ]);
+
+                break;
+            }
+        }
+    }
+
+    /**
+     * Compute dense rank for a vendor's price among latest prices for a variant.
+     */
+    private function computeDenseRankForVariant(string $rfqId, int $auctionId, int $variantId, ?float $vendorPrice): ?int
+    {
+        if ($vendorPrice === null) {
+            return null;
+        }
+
+        $latestPrices = DB::table('rfq_vendor_auction_price as ap')
+            ->join(
+                DB::raw('(SELECT MAX(id) as max_id
+                             FROM rfq_vendor_auction_price
+                             WHERE rfq_no = ? AND rfq_auction_id = ? AND rfq_product_veriant_id = ?
+                             GROUP BY vendor_id) t'),
+                't.max_id', '=', 'ap.id'
+            )
+            ->setBindings([$rfqId, $auctionId, $variantId])
+            ->pluck('ap.vend_price')
+            ->map(fn($v) => (float) $v)
+            ->sort()
+            ->values();
+
+        if ($latestPrices->isEmpty()) {
+            return null;
+        }
+
+        $distinctPrices = $latestPrices->unique()->values();
+
+        foreach ($distinctPrices as $i => $price) {
+            if (bccomp((string) $price, (string) $vendorPrice, 2) === 0) {
+                return $i + 1;
+            }
+        }
+
+        return $distinctPrices->count() + 1;
     }
 }
