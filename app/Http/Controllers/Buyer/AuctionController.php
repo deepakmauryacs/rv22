@@ -578,13 +578,52 @@ class AuctionController extends Controller
     {
         $rfqNo = $request->post('rfq_no');
 
-        $exists = DB::table('rfq_auctions')->where('rfq_no', $rfqNo)->first();
-
-        if ($exists) {
-            DB::table('rfq_auctions')->where('rfq_no', $rfqNo)->delete();
-            return response()->json(['success' => true]);
+        if (!$rfqNo) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid auction ID.'
+            ], 422);
         }
-        return response()->json(['success' => false]);
+
+        $auction = DB::table('rfq_auctions')
+            ->where('rfq_no', $rfqNo)
+            ->first();
+
+        if (!$auction) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Auction not found or already closed.'
+            ], 404);
+        }
+
+        $start = Carbon::parse($auction->auction_date.' '.$auction->auction_start_time);
+        $end   = Carbon::parse($auction->auction_date.' '.$auction->auction_end_time);
+        if ($end->lessThanOrEqualTo($start)) {
+            $end->addDay();
+        }
+
+        if (Carbon::now()->greaterThanOrEqualTo($start)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Auction already running or completed. You cannot close it.'
+            ], 422);
+        }
+
+        $deleted = DB::table('rfq_auctions')
+            ->where('rfq_no', $rfqNo)
+            ->delete();
+
+        if ($deleted) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Auction closed successfully.'
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to close auction.'
+        ], 500);
     }
 
 

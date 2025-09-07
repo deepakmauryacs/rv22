@@ -116,7 +116,35 @@
                 }
             });
         }
-        
+
+        $(document).on('click', '.close-auction', function(e) {
+            e.preventDefault();
+            const rfqNo = $(this).data('rfq');
+            if (!rfqNo) return;
+            if (confirm("Are you sure you want to close this auction?")) {
+                $.ajax({
+                    url: "{{ route('buyer.auction.close') }}",
+                    type: 'POST',
+                    data: {
+                        rfq_no: rfqNo,
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        alert(response.message || 'Failed to close auction.');
+                        if (response.success) {
+                            loadTable(window.location.href);
+                        }
+                    },
+                    error: function(xhr) {
+                        let msg = 'Failed to close auction.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            msg = xhr.responseJSON.message;
+                        }
+                        alert(msg);
+                    }
+                });
+            }
+        });
 
         let dateToday = new Date();
 
