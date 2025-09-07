@@ -16,9 +16,12 @@
         @forelse ($results as $result)
         @php
             // --- Derive auction fields safely ---
-            $auction = $result->rfq_auction ?? null;
+            // Accessing related auction details can fail when the relation is missing
+            // (e.g. an RFQ was created without an auction).  Using the nullsafe
+            // operator avoids "Attempt to read property ... on null" errors.
+            $auction      = $result->rfq_auction ?? null;
             $rfqCreatedAt = $result->rfq_auction?->rfq?->created_at;
-            $rfqDate = $rfqCreatedAt ? date('d/m/Y', strtotime($rfqCreatedAt)) : '-';
+            $rfqDate      = $rfqCreatedAt ? date('d/m/Y', strtotime($rfqCreatedAt)) : '-';
             $auction_date = $auction->auction_date ?? null;            // 'Y-m-d'
             $auction_start = $auction->auction_start_time ?? null;     // 'H:i:s'
             $auction_end   = $auction->auction_end_time ?? null;       // 'H:i:s'
@@ -74,7 +77,8 @@
             <td class="align-middle">{{ $rfqDate }}</td>
             <td>
                 @php
-                    $variant = $result->rfq_auction->rfq_auction_variant->first();
+                    // Guard against missing auction relation when resolving product
+                    $variant = $auction?->rfq_auction_variant?->first();
                     $product = $variant?->product;
                 @endphp
                 @if($product)
@@ -85,8 +89,8 @@
                     -
                 @endif
             </td>
-            <td class="align-middle">{{ $result->rfq_auction->buyer->legal_name ?? '-' }}</td>
-            <td class="align-middle">{{ $result->rfq_auction->buyer->users->name ?? '-' }}</td>
+            <td class="align-middle">{{ $auction?->buyer->legal_name ?? '-' }}</td>
+            <td class="align-middle">{{ $auction?->buyer->users->name ?? '-' }}</td>
             <td class="align-middle">{{ $auction_date ? date('d/m/Y', strtotime($auction_date)) : '-' }}</td>
             <td class="align-middle">
                 @if($auction_start && $auction_end)
