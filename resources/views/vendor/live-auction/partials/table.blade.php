@@ -17,6 +17,8 @@
         @php
             // --- Derive auction fields safely ---
             $auction = $result->rfq_auction ?? null;
+            $rfqCreatedAt = $result->rfq_auction?->rfq?->created_at;
+            $rfqDate = $rfqCreatedAt ? date('d/m/Y', strtotime($rfqCreatedAt)) : '-';
             $auction_date = $auction->auction_date ?? null;            // 'Y-m-d'
             $auction_start = $auction->auction_start_time ?? null;     // 'H:i:s'
             $auction_end   = $auction->auction_end_time ?? null;       // 'H:i:s'
@@ -69,7 +71,7 @@
 
         <tr>
             <td class="align-middle">{{ $result->rfq_no }}</td>
-            <td class="align-middle">{{ date('d/m/Y', strtotime($result->rfq_auction->rfq->created_at)) }}</td>
+            <td class="align-middle">{{ $rfqDate }}</td>
             <td>
                 @php
                     $variant = $result->rfq_auction->rfq_auction_variant->first();
