@@ -50,7 +50,14 @@
                             <h1 class="text-primary-blue font-size-27 mb-0">Comparative Information Statement</h1>
                         </div>
 
-                        <!-- END (right): Refresh -->
+                        <!-- END (right): Controls -->
+                        @if(isset($current_status) && $current_status == 1)
+                        <div class="flex-shrink-0 ms-2">
+                            <a href="javascript:void(0);" class="btn btn-danger float-right mr-3 py-1 px-2" onclick="forceStopAuction('{{ $rfq['rfq_id'] }}')">
+                               <i class="bi bi-stop-circle"></i> Stop Auction
+                            </a>
+                        </div>
+                        @endif
                         <div class="flex-shrink-0 ms-2">
                             <button type="button" class="ra-btn ra-btn-outline-primary px-2 font-size-11" onclick="window.location.reload();">
                                 <span class="bi bi-arrow-clockwise font-size-12" aria-hidden="true"></span>
@@ -1147,5 +1154,28 @@
         $timer.textContent = hours + "h " + minutes + "m " + seconds + "s";
     }, 1000);
 })();
+</script>
+<script>
+function forceStopAuction(rfqNo) {
+    if (confirm("Are you sure you want to force stop this auction?")) {
+        fetch("{{ url('buyer/auction/force-stop') }}", {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ rfq_no: rfqNo })
+        })
+        .then(response => response.json())
+        .then(response => {
+            if (response.status === 'success') {
+                toastr.success(response.message);
+                setTimeout(function () { window.location.reload(); }, 1000);
+            } else {
+                toastr.error(response.message);
+            }
+        });
+    }
+}
 </script>
 @endsection
