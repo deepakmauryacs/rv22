@@ -20,7 +20,7 @@ class AuctionController extends Controller
 {
     public function __construct()
     {
-        
+        date_default_timezone_set('Asia/Kolkata');
     }
 
     public function index(Request $request)
