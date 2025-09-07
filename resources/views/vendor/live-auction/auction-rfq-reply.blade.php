@@ -928,6 +928,11 @@ $(function () {
             variant_ids: variantIds
         })
         .done(function (res) {
+            if (res && res.status && res.is_forcestop === '1') {
+                alert("Auction has ended.");
+                setTimeout(function(){ window.location.reload(); }, 300);
+                return;
+            }
             if (!res || !res.status || !res.data) return;
             $.each(res.data, function (vid, payload) {
                 updateOne(parseInt(vid, 10), payload || {});

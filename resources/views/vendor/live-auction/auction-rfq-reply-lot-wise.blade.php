@@ -837,6 +837,11 @@ $(function(){
             _token: '{{ csrf_token() }}',
             rfq_id: rfqId
         }).done(function(res){
+            if(res && res.status && res.is_forcestop === '1'){
+                alert("Auction has ended.");
+                setTimeout(function(){ window.location.reload(); }, 300);
+                return;
+            }
             if(res && res.status && res.data){
                 render(res.data);
             }

@@ -340,6 +340,7 @@ class LiveAuctionRfqSinglePriceController extends Controller
         if (!$auction) {
             return response()->json(['status' => false, 'message' => 'Auction not found'], 404);
         }
+        $isForcestop = (string)($auction->is_forcestop ?? '2');
 
         $hasAuctionIdCol = Schema::hasColumn('rfq_vendor_auction_price_total', 'rfq_auction_id');
 
@@ -360,7 +361,11 @@ class LiveAuctionRfqSinglePriceController extends Controller
         $rows = $rowsQuery->get();
 
         if ($rows->isEmpty()) {
-            return response()->json(['status' => true, 'data' => ['l1' => null, 'rank' => null, 'vendorPrice' => null]]);
+            return response()->json([
+                'status'       => true,
+                'is_forcestop' => $isForcestop,
+                'data'         => ['l1' => null, 'rank' => null, 'vendorPrice' => null],
+            ]);
         }
 
         $l1 = $rows->min('total_price');
@@ -382,8 +387,9 @@ class LiveAuctionRfqSinglePriceController extends Controller
         }
 
         return response()->json([
-            'status' => true,
-            'data' => [
+            'status'       => true,
+            'is_forcestop' => $isForcestop,
+            'data'         => [
                 'l1'          => $l1 !== null ? round((float) $l1, 2) : null,
                 'rank'        => $rank,
                 'vendorPrice' => $vendorPrice !== null ? round((float) $vendorPrice, 2) : null,
