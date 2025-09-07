@@ -147,13 +147,12 @@
                             {{ $rfq_button[$current_status] ?? 'View' }}
                         </a>
 
-                        @if ($show_close)
                         <a href="javascript:void(0)"
-                           class="ra-btn small-btn ra-btn-outline-danger close-auction"
+                           class="ra-btn small-btn ra-btn-outline-danger close-auction disabled"
+                           aria-disabled="true"
                            data-rfq="{{ $result->rfq_id }}">
                            Close
                         </a>
-                        @endif
                     </div>
                 </td>
             </tr>
