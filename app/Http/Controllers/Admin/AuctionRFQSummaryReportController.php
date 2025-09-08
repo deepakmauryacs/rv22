@@ -68,17 +68,23 @@ class AuctionRFQSummaryReportController extends Controller
 
     public function exportTotal(Request $request)
     {
-        $total = $this->baseQuery($request)->count();
+        $total = DB::query()->fromSub(
+            $this->baseQuery($request)->select('ra.id', 'rva.vendor_id'),
+            'ra_summary'
+        )->count();
 
         return response()->json(['total' => $total]);
     }
 
     public function exportBatch(Request $request)
     {
-        $offset = intval($request->input('start'));
         $limit = intval($request->input('limit'));
+        $lastRfqId = $request->input('last_rfq_id');
+        $lastVendorId = $request->input('last_vendor_id');
 
         $query = $this->baseQuery($request)->select(
+            'ra.id as ra_id',
+            'rva.vendor_id',
             'ra.rfq_no',
             'ra.auction_date',
             'ra.auction_start_time',
@@ -89,12 +95,19 @@ class AuctionRFQSummaryReportController extends Controller
             'u.email',
             'u.mobile',
             'u.status as vendor_user_status'
-        );
+        )->orderBy('ra.id')->orderBy('rva.vendor_id');
 
-        $dataList = $query->orderBy('ra.auction_date')
-            ->offset($offset)
-            ->limit($limit)
-            ->get();
+        if ($lastRfqId !== null && $lastVendorId !== null) {
+            $query->where(function ($q) use ($lastRfqId, $lastVendorId) {
+                $q->where('ra.id', '>', $lastRfqId)
+                    ->orWhere(function ($sub) use ($lastRfqId, $lastVendorId) {
+                        $sub->where('ra.id', $lastRfqId)
+                            ->where('rva.vendor_id', '>', $lastVendorId);
+                    });
+            });
+        }
+
+        $dataList = $query->take($limit)->get();
 
         $result = [];
         foreach ($dataList as $value) {
@@ -116,6 +129,12 @@ class AuctionRFQSummaryReportController extends Controller
             ];
         }
 
-        return response()->json(['data' => $result]);
+        $lastRow = $dataList->last();
+
+        return response()->json([
+            'data' => $result,
+            'last_rfq_id' => $lastRow->ra_id ?? null,
+            'last_vendor_id' => $lastRow->vendor_id ?? null,
+        ]);
     }
 }

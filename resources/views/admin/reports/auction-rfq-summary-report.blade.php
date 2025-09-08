@@ -43,7 +43,7 @@
                         <h1>Auction RFQs Summary Reports</h1>
                         <div class="row">
                             <div class="col-md-12">
-                                <div id="export-progress">
+                                <div id="export-progress" style="display:none;">
                                     <p>Export Progress: <span id="progress-text">0%</span></p>
                                     <div id="progress-bar" style="width: 100%; background: #f3f3f3;">
                                         <div id="progress" style="height: 20px; width: 0%; background: green;"></div>
@@ -156,39 +156,116 @@
         });
     </script>
 
-    <script src="{{ asset('public/assets/xlsx/xlsx.full.min.js') }}"></script>
-    <script src="{{ asset('public/assets/xlsx/export.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     <script>
         $(document).ready(function() {
-            const exporter = new Exporter({
-                chunkSize: 100,
-                rowLimitPerSheet: 200000,
-                headers: ["RFQ No", "Auction Date", "Auction Time", "Buyer Name", "Products", "Vendor Name",
-                    "Email", "Mobile", "Status", "Is Participated", "Order Confirmed"
-                ],
-                totalUrl: "{{ route('admin.auction-rfqs-summary.exportTotal') }}",
-                batchUrl: "{{ route('admin.auction-rfqs-summary.exportBatch') }}",
-                token: "{{ csrf_token() }}",
-                exportName: "rfqs-rummary-report",
-                expButton: '#export-btn',
-                exportProgress: '#export-progress',
-                progressText: '#progress-text',
-                progress: '#progress',
-                fillterReadOnly: '.fillter-form-control',
-                getParams: function() {
-                    return {
-                        buyer_name: $('#buyer_name').val(),
-                        from_date: $('#from_date').val(),
-                        to_date: $('#to_date').val()
-                    };
-                }
-            });
-
-            $('#export-btn').on('click', function() {
-                exporter.start();
-            });
-
             $('#export-progress').hide();
+
+            let exporting = false;
+
+            $('#export-btn').on('click', function(e) {
+                e.preventDefault();
+                if (exporting) return;
+                exporting = true;
+
+                const chunkSize = 10000;
+                const workbook = new ExcelJS.Workbook();
+                const worksheet = workbook.addWorksheet('Sheet1');
+                worksheet.addRow(["RFQ No", "Auction Date", "Auction Time", "Buyer Name", "Products", "Vendor Name", "Email", "Mobile", "Status", "Is Participated", "Order Confirmed"]);
+
+                $('#export-progress').show();
+                $('#progress').css('width', '0%');
+                $('#progress-text').text('0%');
+                $('.fillter-form-control').attr('readonly', true);
+                $(this).attr('disabled', true);
+
+                const filters = {
+                    buyer_name: $('#buyer_name').val(),
+                    from_date: $('#from_date').val(),
+                    to_date: $('#to_date').val()
+                };
+
+                function resetExport() {
+                    $('#export-progress').hide();
+                    $('#progress').css('width', '0%');
+                    $('#progress-text').text('0%');
+                    $('.fillter-form-control').attr('readonly', false);
+                    $('#export-btn').attr('disabled', false);
+                    exporting = false;
+                }
+
+                $.ajax({
+                    url: "{{ route('admin.auction-rfqs-summary.exportTotal') }}",
+                    method: 'GET',
+                    data: filters,
+                    success: function(res) {
+                        const total = res.total;
+                        if (!total) {
+                            alert('No data found');
+                            resetExport();
+                            return;
+                        }
+
+                        let fetched = 0;
+                        let lastRfqId = null;
+                        let lastVendorId = null;
+
+                        const fetchBatch = () => {
+                            const params = Object.assign({}, filters, { limit: chunkSize });
+                            if (lastRfqId !== null && lastVendorId !== null) {
+                                params.last_rfq_id = lastRfqId;
+                                params.last_vendor_id = lastVendorId;
+                            }
+
+                            $.ajax({
+                                url: "{{ route('admin.auction-rfqs-summary.exportBatch') }}",
+                                method: 'GET',
+                                data: params,
+                                success: function(batch) {
+                                    batch.data.forEach(row => worksheet.addRow(row));
+                                    fetched += batch.data.length;
+                                    lastRfqId = batch.last_rfq_id;
+                                    lastVendorId = batch.last_vendor_id;
+
+                                    const percent = Math.round((fetched / total) * 100);
+                                    $('#progress').css('width', percent + '%');
+                                    $('#progress-text').text(percent + '%');
+
+                                    if (fetched < total && batch.data.length > 0) {
+                                        fetchBatch();
+                                    } else {
+                                        workbook.xlsx.writeBuffer().then(buffer => {
+                                            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                                            const url = URL.createObjectURL(blob);
+                                            const a = document.createElement('a');
+                                            a.href = url;
+                                            a.download = 'auction-rfq-summary-report_' + Date.now() + '.xlsx';
+                                            document.body.appendChild(a);
+                                            a.click();
+                                            document.body.removeChild(a);
+                                            URL.revokeObjectURL(url);
+                                        }).catch(() => {
+                                            alert('Error generating file');
+                                        }).finally(() => {
+                                            resetExport();
+                                        });
+                                    }
+                                },
+                                error: function() {
+                                    alert('Error fetching data');
+                                    resetExport();
+                                }
+                            });
+                        };
+
+                        fetchBatch();
+                    },
+                    error: function() {
+                        alert('Error fetching total count');
+                        resetExport();
+                    }
+                });
+            });
         });
     </script>
 @endsection
