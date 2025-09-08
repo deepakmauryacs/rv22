@@ -13,12 +13,12 @@ class AuctionRFQSummaryReportController extends Controller
     {
         $this->ensurePermission('VENDOR_REPORTS');
 
-        $query=RfqAuction::with('rfq_vendor_auction.vendor','rfq_auction_variant','rfq_auction_variant.product','buyer');
+        $query=RfqAuction::with('rfq_vendor_auction.vendor.user','rfq_auction_variant','rfq_auction_variant.product','buyer');
         
         if ($request->filled('buyer_name'))
         {
             $legal_name=$request->buyer_name;
-            $query->whereHas('rfq_auction.buyer', function ($q) use ($legal_name) {
+            $query->whereHas('buyer', function ($q) use ($legal_name) {
                 $q->where('legal_name', 'like', "%$legal_name%");
             });
         }
@@ -42,11 +42,11 @@ class AuctionRFQSummaryReportController extends Controller
 
     public function exportTotal(Request $request)
     {
-        $query=RfqAuction::with('rfq_vendor_auction.vendor','rfq_auction_variant','rfq_auction_variant.product','buyer');
+        $query=RfqAuction::with('rfq_vendor_auction.vendor.user','rfq_auction_variant','rfq_auction_variant.product','buyer');
         if ($request->filled('buyer_name'))
         {
             $legal_name=$request->buyer_name;
-            $query->whereHas('rfq_auction.buyer', function ($q) use ($legal_name) {
+            $query->whereHas('buyer', function ($q) use ($legal_name) {
                 $q->where('legal_name', 'like', "%$legal_name%");
             });
         }
@@ -66,11 +66,11 @@ class AuctionRFQSummaryReportController extends Controller
     {
         $offset = intval($request->input('start'));
         $limit = intval($request->input('limit'));
-        $query=RfqAuction::with('rfq_vendor_auction.vendor','rfq_auction_variant','rfq_auction_variant.product','buyer');
+        $query=RfqAuction::with('rfq_vendor_auction.vendor.user','rfq_auction_variant','rfq_auction_variant.product','buyer');
         if ($request->filled('buyer_name'))
         {
             $legal_name=$request->buyer_name;
-            $query->whereHas('rfq_auction.buyer', function ($q) use ($legal_name) {
+            $query->whereHas('buyer', function ($q) use ($legal_name) {
                 $q->where('legal_name', 'like', "%$legal_name%");
             });
         }
