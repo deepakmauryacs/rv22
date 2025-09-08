@@ -10,17 +10,18 @@ use App\Traits\HasModulePermission;
 class ForwardAuctionSummaryReportController extends Controller
 {
     use HasModulePermission;
+
     protected function baseQuery(Request $request)
     {
         $query = DB::table('forward_auctions as fa')
-            ->selectRaw('fa.auction_id, GROUP_CONCAT(DISTINCT fap.product_name SEPARATOR ", ") as products, b.legal_name as buyer_name, v.legal_name as vendor_name, fa.schedule_date, fa.schedule_start_time, fa.schedule_end_time, CASE WHEN COUNT(far.id) > 0 THEN "Yes" ELSE "No" END as participated')
+            ->selectRaw('fa.id as fa_id, fa.auction_id, fav.vendor_id, GROUP_CONCAT(DISTINCT fap.product_name SEPARATOR ", ") as products, b.legal_name as buyer_name, v.legal_name as vendor_name, fa.schedule_date, fa.schedule_start_time, fa.schedule_end_time, CASE WHEN COUNT(far.id) > 0 THEN "Yes" ELSE "No" END as participated')
             ->join('forward_auction_products as fap', 'fa.auction_id', '=', 'fap.auction_id')
             ->join('forward_auction_vendors as fav', 'fav.auction_product_id', '=', 'fap.id')
             ->join('vendors as v', 'fav.vendor_id', '=', 'v.user_id')
             ->join('buyers as b', 'fa.buyer_id', '=', 'b.user_id')
             ->leftJoin('forward_auction_replies as far', function ($join) {
                 $join->on('far.auction_id', '=', 'fa.auction_id')
-                    ->on('far.vendor_id', '=', 'fav.vendor_id');
+                     ->on('far.vendor_id', '=', 'fav.vendor_id');
             });
 
         if ($request->filled('auction_id')) {
@@ -40,9 +41,7 @@ class ForwardAuctionSummaryReportController extends Controller
             $query->where('fa.schedule_date', '<=', $request->to_date);
         }
 
-        $query->groupBy('fa.auction_id', 'b.legal_name', 'v.legal_name', 'fa.schedule_date', 'fa.schedule_start_time', 'fa.schedule_end_time', 'fav.vendor_id')
-            ->orderByDesc('fa.schedule_date')
-            ->orderByDesc('fa.schedule_start_time');
+        $query->groupBy('fa.id', 'fa.auction_id', 'b.legal_name', 'v.legal_name', 'fa.schedule_date', 'fa.schedule_start_time', 'fa.schedule_end_time', 'fav.vendor_id');
 
         return $query;
     }
@@ -51,7 +50,9 @@ class ForwardAuctionSummaryReportController extends Controller
     {
         $this->ensurePermission('VENDOR_REPORTS');
 
-        $query = $this->baseQuery($request);
+        $query = $this->baseQuery($request)
+            ->orderByDesc('fa.schedule_date')
+            ->orderByDesc('fa.schedule_start_time');
         $perPage = $request->input('per_page', 25);
         $results = $query->paginate($perPage)->appends($request->all());
 
@@ -64,15 +65,29 @@ class ForwardAuctionSummaryReportController extends Controller
 
     public function exportTotal(Request $request)
     {
-        $total = $this->baseQuery($request)->get()->count();
+        $total = DB::query()->fromSub($this->baseQuery($request), 'fa_summary')->count();
         return response()->json(['total' => $total]);
     }
 
     public function exportBatch(Request $request)
     {
-        $offset = intval($request->input('start'));
         $limit = intval($request->input('limit'));
-        $data_list = $this->baseQuery($request)->skip($offset)->take($limit)->get();
+        $lastFaId = $request->input('last_auction_id');
+        $lastVendorId = $request->input('last_vendor_id');
+
+        $query = $this->baseQuery($request)->orderBy('fa.id')->orderBy('fav.vendor_id');
+
+        if ($lastFaId !== null && $lastVendorId !== null) {
+            $query->where(function ($q) use ($lastFaId, $lastVendorId) {
+                $q->where('fa.id', '>', $lastFaId)
+                  ->orWhere(function ($sub) use ($lastFaId, $lastVendorId) {
+                      $sub->where('fa.id', $lastFaId)
+                          ->where('fav.vendor_id', '>', $lastVendorId);
+                  });
+            });
+        }
+
+        $data_list = $query->take($limit)->get();
 
         $result = [];
         foreach ($data_list as $row) {
@@ -85,7 +100,13 @@ class ForwardAuctionSummaryReportController extends Controller
                 $row->participated,
             ];
         }
-        return response()->json(['data' => $result]);
+
+        $lastRow = $data_list->last();
+        return response()->json([
+            'data' => $result,
+            'last_auction_id' => $lastRow->fa_id ?? null,
+            'last_vendor_id' => $lastRow->vendor_id ?? null,
+        ]);
     }
 }
 
