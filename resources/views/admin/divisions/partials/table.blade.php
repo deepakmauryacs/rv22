@@ -29,7 +29,9 @@
                 </td>
 
                 <td>
-                    <a href="{{ route('admin.divisions.edit', $division->id) }}" class="btn-rfq btn-sm btn-rfq-secondary edit_page  mr-1">Edit</a>
+                    @if(checkPermission('PRODUCT_DIRECTORY','edit','3'))
+                        <a href="{{ route('admin.divisions.edit', $division->id) }}" class="btn-rfq btn-sm btn-rfq-secondary edit_page  mr-1">Edit</a>
+                    @endif
                 </td>
             </tr>
             @endforeach
