@@ -42,7 +42,7 @@
                         <h1>Forward Auction Reports</h1>
                         <div class="row">
                             <div class="col-md-12">
-                                <div id="export-progress">
+                                <div id="export-progress" style="display:none;">
                                     <p>Export Progress: <span id="progress-text">0%</span></p>
                                     <div id="progress-bar" style="width: 100%; background: #f3f3f3;">
                                         <div id="progress" style="height: 20px; width: 0%; background: green;"></div>
@@ -162,12 +162,12 @@
         });
     </script>
 
-    <script src="{{ asset('public/assets/xlsx/xlsx.full.min.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     <script src="{{ asset('public/assets/xlsx/export.js') }}"></script>
     <script>
         $(document).ready(function() {
             const exporter = new Exporter({
-                chunkSize: 100,
+                chunkSize: 10000,
                 rowLimitPerSheet: 200000,
                 headers: ["Auction ID", "Product Details", "Buyer Name", "Vendor Name", "Start Date & Time", "Participated"],
                 totalUrl: "{{ route('admin.forward-auctions-summary.exportTotal') }}",
@@ -179,6 +179,7 @@
                 progressText: '#progress-text',
                 progress: '#progress',
                 fillterReadOnly: '.fillter-form-control',
+                cursorKeys: ['last_auction_id','last_vendor_id'],
                 getParams: function() {
                     return {
                         auction_id: $('#auction_id').val(),

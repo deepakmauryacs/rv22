@@ -9,17 +9,23 @@ class Exporter {
         this.getParams = options.getParams || (() => ({}));
         this.exportName = options.exportName || 'Export';
         this.expButton = options.expButton || null;
-        this.exportProgress='#export-progress';
-        this.progressText='#progress-text';
-        this.progress='#progress';
-        this.fillterReadOnly='.fillter-form-control';
+        this.exportProgress = options.exportProgress || '#export-progress';
+        this.progressText = options.progressText || '#progress-text';
+        this.progress = options.progress || '#progress';
+        this.fillterReadOnly = options.fillterReadOnly || '.fillter-form-control';
+        this.cursorKeys = options.cursorKeys || [];
+        this.cursor = {};
 
         this.sheetCount = 1;
         this.currentSheetRows = 0;
         this.currentProgress = 0;
         this.currentChunk = 0;
         this.totalChunks = 0;
-        this.currentSheet = XLSX.utils.book_new();
+        this.workbook = new ExcelJS.Workbook();
+        this.currentSheet = this.workbook.addWorksheet(`Sheet${this.sheetCount}`);
+        if (this.headers.length) {
+            this.currentSheet.addRow(this.headers);
+        }
     }
 
     start() {
@@ -29,6 +35,14 @@ class Exporter {
         $(this.exportProgress).show();
         $(this.progressText).text('Progress: 0%');
         $(this.fillterReadOnly).attr('readonly', true);
+        this.cursor = {};
+        this.workbook = new ExcelJS.Workbook();
+        this.sheetCount = 1;
+        this.currentSheet = this.workbook.addWorksheet(`Sheet${this.sheetCount}`);
+        if (this.headers.length) {
+            this.currentSheet.addRow(this.headers);
+        }
+        this.currentSheetRows = 0;
 
         $.ajax({
             url: this.totalUrl,
@@ -49,33 +63,47 @@ class Exporter {
     }
 
     fetchChunk(chunkIndex) {
+        const payload = {
+            ...this.getParams(),
+            limit: this.chunkSize,
+            _token: this.token
+        };
+
+        if (this.cursorKeys.length === 0) {
+            payload.start = chunkIndex * this.chunkSize;
+        } else {
+            this.cursorKeys.forEach(key => {
+                if (this.cursor[key]) {
+                    payload[key] = this.cursor[key];
+                }
+            });
+        }
+
         $.ajax({
             url: this.batchUrl,
             type: 'GET',
-            data: {
-                ...this.getParams(),
-                start: chunkIndex * this.chunkSize,
-                limit: this.chunkSize,
-                _token: this.token
-            },
+            data: payload,
             dataType: 'json',
             success: (response) => {
                 const data = response.data;
                 if (data.length > 0) {
-                    if (this.currentSheetRows === 0) {
-                        this.currentSheet.Sheets[`Sheet${this.sheetCount}`] = XLSX.utils.aoa_to_sheet([this.headers]);
-                        this.currentSheet.SheetNames = [`Sheet${this.sheetCount}`];
-                    }
-
                     data.forEach(row => {
                         if (this.currentSheetRows >= this.rowLimitPerSheet) {
                             this.sheetCount++;
-                            this.currentSheet.Sheets[`Sheet${this.sheetCount}`] = XLSX.utils.aoa_to_sheet([this.headers]);
-                            this.currentSheet.SheetNames.push(`Sheet${this.sheetCount}`);
+                            this.currentSheet = this.workbook.addWorksheet(`Sheet${this.sheetCount}`);
+                            if (this.headers.length) {
+                                this.currentSheet.addRow(this.headers);
+                            }
                             this.currentSheetRows = 0;
                         }
-                        XLSX.utils.sheet_add_aoa(this.currentSheet.Sheets[`Sheet${this.sheetCount}`], [row], { origin: -1 });
+                        this.currentSheet.addRow(row);
                         this.currentSheetRows++;
+                    });
+                }
+
+                if (this.cursorKeys.length) {
+                    this.cursorKeys.forEach(key => {
+                        this.cursor[key] = response[key];
                     });
                 }
 
@@ -97,7 +125,7 @@ class Exporter {
     }
 
     finish() {
-        if (Object.keys(this.currentSheet.Sheets).length === 0) {
+        if (this.workbook.worksheets.length === 0) {
             this.showError('No data to export!');
             return;
         }
@@ -107,17 +135,20 @@ class Exporter {
         const time = now.toLocaleTimeString('en-GB', { hour12: false }).replace(/:/g, '-');
         const fileName = `${this.exportName}-${date}-${time}.xlsx`;
 
-        const wbout = XLSX.write(this.currentSheet, { bookType: 'xlsx', type: 'binary' });
-        const blob = new Blob([this.s2ab(wbout)], { type: 'application/octet-stream' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = fileName;
-        link.click();
-
-        $(this.exportProgress).hide();
-        $(this.progress).css('width', '0%');
-        $(this.fillterReadOnly).attr('readonly', false);
-        $(this.expButton).attr('disabled', false);
+        this.workbook.xlsx.writeBuffer().then(buffer => {
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = fileName;
+            link.click();
+        }).catch(() => {
+            this.showError('Error generating file');
+        }).finally(() => {
+            $(this.exportProgress).hide();
+            $(this.progress).css('width', '0%');
+            $(this.fillterReadOnly).attr('readonly', false);
+            $(this.expButton).attr('disabled', false);
+        });
     }
 
     showError(message) {
@@ -127,14 +158,5 @@ class Exporter {
         $(this.progress).css('width', '0%');
         $(this.fillterReadOnly).attr('readonly', false);
         $(this.expButton).attr('disabled', false);
-    }
-
-    s2ab(s) {
-        const buf = new ArrayBuffer(s.length);
-        const view = new Uint8Array(buf);
-        for (let i = 0; i < s.length; i++) {
-            view[i] = s.charCodeAt(i) & 0xff;
-        }
-        return buf;
     }
 }
