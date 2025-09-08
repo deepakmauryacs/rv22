@@ -55,9 +55,11 @@
                                             <i class="bi bi-search"></i> Search
                                         </button>
                                         <a href="{{ route('admin.categories.index', ['id' => $id]) }}" class="btn-style btn-style-danger mx-2">RESET</a>
+                                        @if(checkPermission('PRODUCT_DIRECTORY','add','3'))
                                         <a href="{{ route('admin.categories.create', ['id' => $id]) }}" class="btn-style btn-style-white">
                                             <i class="bi bi-plus-square d-none d-sm-inline-block"></i> CATEGORY
                                         </a>
+                                        @endif
                                     </li>
                                 </ul>
                             </div>

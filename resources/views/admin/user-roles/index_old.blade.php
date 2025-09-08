@@ -27,9 +27,11 @@
     <div class="card mt-4">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">User Roles</h4>
+            @if(checkPermission('MANAGE_ROLE','add','3'))
             <a href="{{ route('admin.user-roles.create') }}" class="btn btn-primary btn-sm">
                 <i class="fas fa-plus me-1"></i> Add New Role
             </a>
+            @endif
         </div>
         <div class="card-body">
             <div class="table-responsive">

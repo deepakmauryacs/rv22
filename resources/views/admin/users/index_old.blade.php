@@ -24,7 +24,9 @@
     <div class="card shadow mb-4 mt-4">
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
             <h6 class="m-0 font-weight-bold text-primary">User Management</h6>
+            @if(checkPermission('ADMIN_USERS','add','3'))
             <a href="{{ route('admin.users.create') }}" class="btn btn-primary">Add New User</a>
+            @endif
         </div>
         <div class="card-body">
             <!-- Search Filter Section -->

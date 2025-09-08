@@ -60,19 +60,23 @@
                                     <li class="notShow_on_mobile">
                                         <a href="{{ route('admin.products.index', ['id' => $id]) }}" class="btn-style btn-style-danger">RESET</a>
                                     </li>
+                                    @if(checkPermission('PRODUCT_DIRECTORY','add','3'))
                                     <li class="notShow_on_mobile">
                                         <a href="{{ route('admin.products.create', ['id' => $id]) }}" class="btn-style btn-style-white">
                                             <i class="bi bi-plus-square"></i> PRODUCT
                                         </a>
                                     </li>
+                                    @endif
                                     <li class="d-md-none">
                                         <button type="submit" class="btn-style btn-style-primary">
                                             <i class="bi bi-search"></i> Search
                                         </button>
                                         <a href="{{ route('admin.products.index', ['id' => $id]) }}" class="btn-style btn-style-danger mx-2">RESET</a>
+                                        @if(checkPermission('PRODUCT_DIRECTORY','add','3'))
                                         <a href="{{ route('admin.products.create', ['id' => $id]) }}" class="btn-style btn-style-white">
                                             <i class="bi bi-plus-square"></i> PRODUCT
                                         </a>
+                                        @endif
                                     </li>
                                 </ul>
                             </div>

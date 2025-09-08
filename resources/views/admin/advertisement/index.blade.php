@@ -19,9 +19,11 @@
                 <div class="col-md-12 botom-border">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h1>Manage Advertisements</h1>
+                        @if(checkPermission('ADVERTISEMENT_AND_MARKETING','add','3'))
                         <a href="{{ route('admin.advertisement.create') }}" class="btn-rfq btn-rfq-white">
-                            <i class="bi bi-plus"></i> Add 
+                            <i class="bi bi-plus"></i> Add
                         </a>
+                        @endif
                     </div>
            
                     <div id="table-container">

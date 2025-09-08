@@ -112,10 +112,12 @@
                                             EXPORT
                                         </button>
                                     </div>
+                                    @if(checkPermission('VENDOR_MODULE','add','3'))
                                     <div class="col-auto mt-3 mt-sm-4">
                                         <a href="{{ route('admin.vendor.registration') }}"
                                             class="btn-rfq btn-rfq-white"> + Add New Vendor</a>
                                     </div>
+                                    @endif
                                 </div>
                                 {{-- <ul class="rfq-filter-button">
                                     <li>

@@ -7,7 +7,9 @@
     <div class="card shadow mb-4 mt-4">
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
             <h6 class="m-0 font-weight-bold text-primary">Manage Plan</h6>
+            @if(checkPermission('PLAN_MODULE','add','3'))
             <a href="{{ route('admin.plan.create') }}" class="btn btn-primary">Add New</a>
+            @endif
         </div>
         <div class="card-body">
             <div class="table-responsive">
