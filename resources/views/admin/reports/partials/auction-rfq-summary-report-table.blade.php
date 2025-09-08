@@ -26,10 +26,11 @@
                     <td>{{ date('h:i A', strtotime($result->auction_start_time)) }} To {{ date('h:i A', strtotime($result->auction_end_time)) }}</td>
                     <td>{{$result->buyer?->legal_name??''}}</td>
                     <td>{{$result->rfq_auction_variant->product->product_name ?? ''}}</td>
-                    <td>{{$result->rfq_vendor_auction->vendor?->legal_name}}</td>
-                    <td>{{$result->rfq_vendor_auction->vendor?->user->email}}</td>
-                    <td>{{$result->rfq_vendor_auction->vendor?->user->mobile}}</td>
-                    <td>{{$result->rfq_vendor_auction->vendor?->user->status==1?'Active':'Inactive'}}</td>
+                    <td>{{$result->rfq_vendor_auction?->vendor?->legal_name ?? ''}}</td>
+                    <td>{{$result->rfq_vendor_auction?->vendor?->user?->email ?? ''}}</td>
+                    <td>{{$result->rfq_vendor_auction?->vendor?->user?->mobile ?? ''}}</td>
+                    @php($status = $result->rfq_vendor_auction?->vendor?->user?->status)
+                    <td>{{ $status === 1 ? 'Active' : ($status === 0 ? 'Inactive' : '') }}</td>
                     <td></td>
                     <td></td>
                 </tr>
