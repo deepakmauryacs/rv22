@@ -16,29 +16,28 @@
             </tr>
         </thead>
         <tbody>
-            @php
-                $i = ($results->currentPage() - 1) * $results->perPage() + 1;
-            @endphp
-            @forelse ($results as $result)
-                <tr>
-                    <td>{{ $result->rfq_no??''}}</td>
-                    <td>{{ date('d/m/Y', strtotime($result->auction_date)) ?? ''}}</td>
-                    <td>{{ date('h:i A', strtotime($result->auction_start_time)) }} To {{ date('h:i A', strtotime($result->auction_end_time)) }}</td>
-                    <td>{{$result->buyer?->legal_name??''}}</td>
-                    <td>{{$result->rfq_auction_variant->product->product_name ?? ''}}</td>
-                    <td>{{$result->rfq_vendor_auction?->vendor?->legal_name ?? ''}}</td>
-                    <td>{{$result->rfq_vendor_auction?->vendor?->user?->email ?? ''}}</td>
-                    <td>{{$result->rfq_vendor_auction?->vendor?->user?->mobile ?? ''}}</td>
-                    @php($status = $result->rfq_vendor_auction?->vendor?->user?->status)
-                    <td>{{ $status === 1 ? 'Active' : ($status === 0 ? 'Inactive' : '') }}</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="12" class="text-center">No data available in table</td>
-                </tr>
-            @endforelse
+        @php
+            $i = ($results->currentPage() - 1) * $results->perPage() + 1;
+        @endphp
+        @forelse ($results as $result)
+            <tr>
+                <td>{{ $result->rfq_no ?? '' }}</td>
+                <td>{{ date('d/m/Y', strtotime($result->auction_date)) ?? '' }}</td>
+                <td>{{ date('h:i A', strtotime($result->auction_start_time)) }} To {{ date('h:i A', strtotime($result->auction_end_time)) }}</td>
+                <td>{{ $result->buyer_legal_name ?? '' }}</td>
+                <td>{{ $result->product_name ?? '' }}</td>
+                <td>{{ $result->vendor_legal_name ?? '' }}</td>
+                <td>{{ $result->email ?? '' }}</td>
+                <td>{{ $result->mobile ?? '' }}</td>
+                <td>{{ $result->vendor_user_status == 1 ? 'Active' : ($result->vendor_user_status == 0 ? 'Inactive' : '') }}</td>
+                <td></td>
+                <td></td>
+            </tr>
+        @empty
+            <tr>
+                <td colspan="12" class="text-center">No data available in table</td>
+            </tr>
+        @endforelse
         </tbody>
     </table>
 </div>
