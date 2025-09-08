@@ -33,10 +33,11 @@
                     </span>
                 </td>
                 <td>
-                    <a href="{{ route('admin.users.edit', $user->id) }}" class="btn-rfq btn-rfq-secondary btn-sm">
-                         Edit
-                    </a>
-
+                    @if(checkPermission('ADMIN_USERS','edit','3'))
+                        <a href="{{ route('admin.users.edit', $user->id) }}" class="btn-rfq btn-rfq-secondary btn-sm">
+                             Edit
+                        </a>
+                    @endif
                 </td>
             </tr>
         @empty
