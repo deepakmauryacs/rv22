@@ -45,9 +45,11 @@
                 <td>{{ $result->vendor_products_count ?? ''}}</td>
                 <td>{{ !empty($result->user->country_code) ? '+'.$result->user->country_code : '' }} {{ $result->user->mobile ?? ''}}</td>
                 <td>
-                    @if(!empty($result->vendor_code) && $result->user->status == 1)
-                    <a href="{{ route('admin.vendor.products.create', $result->user_id) }}" class="btn-rfq btn-rfq-secondary btn-sm vendor-product-btn" style="padding: 1px 8px;">+PRD</a>
-            	    <a href="{{ route('admin.vendor.products.bulk_create', $result->user_id) }}" class="btn-rfq btn-rfq-secondary btn-sm vendor-product-btn" style="padding: 1px 8px;">++PRD</a>
+                    @if(checkPermission('VENDOR_MODULE','add','3'))
+                        @if(!empty($result->vendor_code) && $result->user->status == 1)
+                        <a href="{{ route('admin.vendor.products.create', $result->user_id) }}" class="btn-rfq btn-rfq-secondary btn-sm vendor-product-btn" style="padding: 1px 8px;">+PRD</a>
+                        <a href="{{ route('admin.vendor.products.bulk_create', $result->user_id) }}" class="btn-rfq btn-rfq-secondary btn-sm vendor-product-btn" style="padding: 1px 8px;">++PRD</a>
+                        @endif
                     @endif
                 </td>
                 <td>

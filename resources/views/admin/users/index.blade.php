@@ -83,11 +83,13 @@
                                             class="btn-style btn-style-danger">RESET</a>
                                             
                                     </div>
+                                    @if(checkPermission('ADMIN_USERS','add','3'))
                                     <div class="col-auto">
-                                    <a href="{{ route('admin.users.create') }}" class="btn-rfq btn-rfq-white ">
-                                            <i class="bi bi-plus"></i> ADD 
+                                        <a href="{{ route('admin.users.create') }}" class="btn-rfq btn-rfq-white ">
+                                            <i class="bi bi-plus"></i> ADD
                                         </a>
                                     </div>
+                                    @endif
                                 </div>
                             </form>
 

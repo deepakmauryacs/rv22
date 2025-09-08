@@ -55,9 +55,11 @@
                                     <li class="notShow_on_mobile">
                                         <a href="{{ route('admin.divisions.index') }}" class="btn-style btn-style-danger">RESET</a>
                                     </li>
+                                    @if(checkPermission('PRODUCT_DIRECTORY','add','3'))
                                     <li class="notShow_on_mobile">
                                         <a href="{{ route('admin.divisions.create') }}" class="btn-style btn-style-white"><i class="bi bi-plus-square"></i> ADD DIVISION</a>
                                     </li>
+                                    @endif
                                 </ul>
                                 <ul class="rapo_btn-grp">
                                     <li>
@@ -66,9 +68,11 @@
                                     <li>
                                         <a href="{{ route('admin.divisions.index') }}" class="btn-style btn-style-danger">RESET</a>
                                     </li>
+                                    @if(checkPermission('PRODUCT_DIRECTORY','add','3'))
                                     <li>
                                         <a href="{{ route('admin.divisions.create') }}" class="btn-style btn-style-white"><i class="bi bi-plus-square d-none d-sm-block"></i> ADD DIVISION</a>
                                     </li>
+                                    @endif
                                 </ul>
                             </div>
                         </div>
