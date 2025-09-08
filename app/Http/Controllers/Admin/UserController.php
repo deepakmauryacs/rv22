@@ -132,7 +132,7 @@ class UserController extends Controller
             $user = new User();
             $user->name = strtoupper($request->name);
             $user->email = $request->email;
-            $user->password = Hash::make(123456);
+            $user->password = Hash::make(12345678);
             $user->designation = $request->designation;
             $user->country_code = $request->country_code;
             $user->mobile = $request->mobile;
