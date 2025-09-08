@@ -5,9 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Product;
+use App\Traits\HasModulePermission;
 class ProductsCategoryDivisionReportController extends Controller
 {
+    use HasModulePermission;
     public function index(Request $request) {
+
+        $this->ensurePermission('DIVISION_AND_CATEGORY_WISE');
 
         $query = $this->querires($request);
         $results = $query->orderBy('product_name')->paginate(25);

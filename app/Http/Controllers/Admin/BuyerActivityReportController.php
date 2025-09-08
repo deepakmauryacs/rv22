@@ -5,10 +5,14 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Buyer;
+use App\Traits\HasModulePermission;
 
 class BuyerActivityReportController extends Controller
 {
+    use HasModulePermission;
     public function index(Request $request) {
+
+        $this->ensurePermission('BUYER_ACTIVITY_REPORTS');
 
         $query = Buyer::with(['users','latestPlan','latestPlan.plan','buyerUser','rfqs','orders']);
         $query->whereHas('users', function ($q) use ($request) {

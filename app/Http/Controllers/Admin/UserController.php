@@ -14,11 +14,13 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\UsersExport;
+use App\Traits\HasModulePermission;
 
 
 class UserController extends Controller
-{   
-    
+{
+    use HasModulePermission;
+
     /**
      * Constructor to check user authorization.
      */
@@ -37,6 +39,8 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
+        $this->ensurePermission('ADMIN_USERS');
+
         // Initialize the query with eager loading of 'role'
         $query = User::with('role')
                     ->where('user_type', 3)

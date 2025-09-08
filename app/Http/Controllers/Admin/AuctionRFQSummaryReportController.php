@@ -5,10 +5,14 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\RfqAuction;
+use App\Traits\HasModulePermission;
 class AuctionRFQSummaryReportController extends Controller
 {
+    use HasModulePermission;
     public function index(Request $request)
-    {   
+    {
+        $this->ensurePermission('VENDOR_REPORTS');
+
         $query=RfqAuction::with('rfq_vendor_auction.vendor','rfq_auction_variant','rfq_auction_variant.product','buyer');
         
         if ($request->filled('buyer_name'))

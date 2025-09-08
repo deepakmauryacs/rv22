@@ -17,12 +17,14 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use App\Helpers\EmailHelper;
+use App\Traits\HasModulePermission;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class VendorController extends Controller
 {
+    use HasModulePermission;
     public $vendor_profile_dir = 'vendor-profile';
 
     public function __construct()
@@ -32,7 +34,9 @@ class VendorController extends Controller
         }
     }
     public function index(Request $request){
-        
+
+        $this->ensurePermission('VENDOR_MODULE');
+
         $query = Vendor::with(['user'])->withCount(['vendor_products as vendor_products_count' => function ($query) {
             $query->where('approval_status', 1)
                   ->where('edit_status', 0);

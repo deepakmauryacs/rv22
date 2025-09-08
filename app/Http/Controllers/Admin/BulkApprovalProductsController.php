@@ -10,14 +10,18 @@ use App\Models\VendorProduct;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
+use App\Traits\HasModulePermission;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
 
 class BulkApprovalProductsController extends Controller
 {
-   
+    use HasModulePermission;
+
     public function index(Request $request)
     {
+        $this->ensurePermission('EDIT_PRODUCT');
+
         $subQuery = VendorProduct::select(DB::raw('MIN(id) as id'))
             ->where('edit_status',  '!=' ,2)
             ->where('approval_status', '!=', 1)

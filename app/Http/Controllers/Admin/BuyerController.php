@@ -21,18 +21,22 @@ use App\Exports\BuyerExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
 use App\Helpers\EmailHelper;
+use App\Traits\HasModulePermission;
 
 class BuyerController extends Controller
 {
+    use HasModulePermission;
     public function __construct()
     {
         if (auth()->check() && auth()->user()->user_type != 3) {
             abort(403, 'Unauthorized access.');
         }
-    } 
+    }
 
     public function index(Request $request)
-    {   
+    {
+        $this->ensurePermission('BUYER_MODULE');
+
         $currencies= Currency::all();
         $query = Buyer::with(['users']);
         if ($request->filled('user')) {

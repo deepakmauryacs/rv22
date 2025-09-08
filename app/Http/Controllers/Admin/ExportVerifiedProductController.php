@@ -8,11 +8,15 @@ use App\Models\ExportJob;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Traits\HasModulePermission;
 
 class ExportVerifiedProductController extends Controller
 {
+    use HasModulePermission;
     public function index()
     {
+        $this->ensurePermission('ALL_VERIFIED_PRODUCTS');
+
         $exports = ExportJob::orderBy('created_at', 'desc')->paginate(1000);
         return view('admin.verified-products.export', compact('exports'));
     }

@@ -5,18 +5,22 @@ use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
+use App\Traits\HasModulePermission;
 
 class PlanController extends Controller
 {
+    use HasModulePermission;
     public function __construct()
     {
         if (auth()->check() && auth()->user()->user_type != 3) {
             abort(403, 'Unauthorized access.');
         }
     }
-    
+
     public function index(Request $request)
     {
+        $this->ensurePermission('PLAN_MODULE');
+
         $query = Plan::query()->orderBy('id', 'desc');
 
         $perPage = $request->input('per_page', 25); // Default: 25 per page

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
+use App\Traits\HasModulePermission;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 use App\Exports\VerifiedProductsExport;
@@ -32,7 +33,8 @@ use Illuminate\Support\Str;
  * - Managing product tags/badges
  */
 class VerifiedProductController extends Controller
-{   
+{
+    use HasModulePermission;
 
     /**
      * Display a paginated list of verified products with filtering capabilities
@@ -41,8 +43,10 @@ class VerifiedProductController extends Controller
      * @return \Illuminate\View\View|\Illuminate\Http\Response Returns view for HTML or partial table for AJAX
      */
     public function index(Request $request)
-    {   
-        // slected column  
+    {
+        $this->ensurePermission('ALL_VERIFIED_PRODUCTS');
+
+        // slected column
         $query = VendorProduct::with(['vendor', 'product'])->where('approval_status', 1)->orderBy('updated_at', 'desc'); // Order by updated_at in descending order
         if ($request->filled('product_name')) {
             $query->whereHas('product', function ($q) use ($request) {

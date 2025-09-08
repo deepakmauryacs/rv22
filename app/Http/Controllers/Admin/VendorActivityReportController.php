@@ -12,14 +12,18 @@ use App\Models\RfqVendorQuotation;
 use App\Models\Order;
 use App\Models\VendorProduct;
 use Illuminate\Support\Facades\DB;
+use App\Traits\HasModulePermission;
 
 class VendorActivityReportController extends Controller
 {
+    use HasModulePermission;
     /**
      * Display the vendor activity report with filters and statistics.
      */
     public function index(Request $request)
     {
+        $this->ensurePermission('VENDOR_ACTIVITY_REPORTS');
+
         $perPage = $request->input('per_page', 25); // Pagination size
 
         /**

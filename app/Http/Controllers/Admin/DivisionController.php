@@ -10,9 +10,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use App\Traits\HasModulePermission;
 
 class DivisionController extends Controller
-{   
+{
+    use HasModulePermission;
 
     /**
      * Constructor to check user authorization.
@@ -32,6 +34,8 @@ class DivisionController extends Controller
      */
     public function index(Request $request)
     {
+        $this->ensurePermission('PRODUCT_DIRECTORY');
+
         $query = Division::query();
 
         if ($request->division_name) {

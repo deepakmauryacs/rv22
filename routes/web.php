@@ -101,7 +101,7 @@ Route::group(['prefix' => 'super-admin'], function () {
     Route::post('/reset-password', [AdminLoginController::class, 'resetPasswordSubmit'])->name('admin.reset-password.submit');
 
 
-    Route::middleware(['auth', 'usertype:3'])->group(function () {
+    Route::middleware(['auth', 'usertype:3', 'permission'])->group(function () {
         Route::get('/dashboard', function () {
             return view('admin.admin-dashboard');
         })->name('admin.dashboard');

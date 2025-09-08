@@ -5,9 +5,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Advertisement;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
+use App\Traits\HasModulePermission;
 
 class AdvertisementController extends Controller
 {
+    use HasModulePermission;
     public function __construct()
     {
         if (auth()->check() && auth()->user()->user_type != 3) {
@@ -16,6 +18,8 @@ class AdvertisementController extends Controller
     }
     public function index(Request $request)
     {
+        $this->ensurePermission('ADVERTISEMENT_AND_MARKETING');
+
         $query = Advertisement::query()->orderBy('id', 'desc');
 
         $perPage = $request->input('per_page', 25); // Default: 25 per page

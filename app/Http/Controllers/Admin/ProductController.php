@@ -11,9 +11,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use App\Traits\HasModulePermission;
 
 class ProductController extends Controller
-{   
+{
+    use HasModulePermission;
     
     /**
      * Constructor to check user authorization.
@@ -34,6 +36,8 @@ class ProductController extends Controller
      */
     public function index(Request $request, $id = null)
     {
+        $this->ensurePermission('PRODUCT_DIRECTORY');
+
         $query = Product::with(['division', 'category']);
 
         if ($id) {

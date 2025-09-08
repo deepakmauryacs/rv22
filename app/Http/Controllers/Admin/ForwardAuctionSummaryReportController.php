@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Traits\HasModulePermission;
 
 class ForwardAuctionSummaryReportController extends Controller
 {
+    use HasModulePermission;
     protected function baseQuery(Request $request)
     {
         $query = DB::table('forward_auctions as fa')
@@ -47,6 +49,8 @@ class ForwardAuctionSummaryReportController extends Controller
 
     public function index(Request $request)
     {
+        $this->ensurePermission('VENDOR_REPORTS');
+
         $query = $this->baseQuery($request);
         $perPage = $request->input('per_page', 25);
         $results = $query->paginate($perPage)->appends($request->all());

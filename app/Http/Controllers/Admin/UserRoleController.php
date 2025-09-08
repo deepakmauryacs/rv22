@@ -10,10 +10,12 @@ use App\Models\UserRoleModulePermission;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use App\Traits\HasModulePermission;
 
 
 class UserRoleController extends Controller
-{   
+{
+    use HasModulePermission;
 
     /**
      * Constructor to check user authorization.
@@ -32,6 +34,8 @@ class UserRoleController extends Controller
      */
     public function index()
     {
+        $this->ensurePermission('MANAGE_ROLE');
+
         $roles = UserRole::where('role_name_for', 3)->paginate(25);
         return view('admin.user-roles.index', compact('roles'));
     }
