@@ -55,15 +55,6 @@ class AuctionCISController extends Controller
             ->first();
         $editId = $auction->id ?? null;
 
-        // If auction has ended and prices aren't mapped yet, persist them
-        if ($auction && $auction->is_rfq_price_map !== '1') {
-            $status = getAuctionStatus($auction->auction_date, $auction->auction_start_time, $auction->auction_end_time);
-            if ($status === 3) {
-                $this->mapAuctionPricesToQuotation($auction);
-                $auction->is_rfq_price_map = '1';
-            }
-        }
-
         // 5) CIS payload (inline query previously in rfqAuctionDetails)
         $cis_filter_vendors = $this->extractCISFilterVendor($rfq_id);
 
@@ -822,73 +813,5 @@ class AuctionCISController extends Controller
         $cis['vendors'] = $sortedVendors;
 
         return $cis;
-    }
-
-    /**
-     * Map final auction prices into rfq_vendor_quotations and
-     * flag the auction so that it isn't processed again.
-     */
-    private function mapAuctionPricesToQuotation($auction): void
-    {
-        DB::transaction(function () use ($auction) {
-            $latest = DB::table('rfq_vendor_auction_price')
-                ->selectRaw('MAX(id) as id')
-                ->where('rfq_auction_id', $auction->id)
-                ->groupBy('vendor_id', 'rfq_product_veriant_id');
-
-            $rows = DB::table('rfq_vendor_auction_price as ap')
-                ->joinSub($latest, 't', 't.id', '=', 'ap.id')
-                ->select(
-                    'ap.rfq_no',
-                    'ap.vendor_id',
-                    'ap.rfq_product_veriant_id',
-                    'ap.vend_price',
-                    'ap.vend_specs',
-                    'ap.vend_price_basis',
-                    'ap.vend_payment_terms',
-                    'ap.vend_delivery_period',
-                    'ap.vend_price_validity',
-                    'ap.vend_dispatch_branch',
-                    'ap.vend_currency',
-                    'ap.vendor_user_id'
-                )
-                ->get();
-
-            foreach ($rows as $row) {
-                DB::table('rfq_vendor_quotations')->updateOrInsert(
-                    [
-                        'rfq_id' => $row->rfq_no,
-                        'vendor_id' => $row->vendor_id,
-                        'rfq_product_variant_id' => $row->rfq_product_veriant_id,
-                    ],
-                    [
-                        'price' => $row->vend_price,
-                        'mrp' => 0,
-                        'discount' => 0,
-                        'buyer_price' => 0,
-                        'specification' => $row->vend_specs,
-                        'vendor_remarks' => $row->vend_specs,
-                        'vendor_price_basis' => $row->vend_price_basis,
-                        'vendor_payment_terms' => $row->vend_payment_terms,
-                        'vendor_delivery_period' => $row->vend_delivery_period,
-                        'vendor_price_validity' => $row->vend_price_validity,
-                        'vendor_dispatch_branch' => $row->vend_dispatch_branch,
-                        'vendor_currency' => $row->vend_currency,
-                        'buyer_user_id' => $auction->buyer_user_id,
-                        'vendor_user_id' => $row->vendor_user_id,
-                        'status' => 1,
-                        'created_at' => Carbon::now(),
-                        'updated_at' => Carbon::now(),
-                    ]
-                );
-            }
-
-            DB::table('rfq_auctions')
-                ->where('id', $auction->id)
-                ->update([
-                    'is_rfq_price_map' => '1',
-                    'price_map_time' => Carbon::now(),
-                ]);
-        });
     }
 }

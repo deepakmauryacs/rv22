@@ -162,102 +162,36 @@
         });
     </script>
 
-    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+    <script src="{{ asset('public/assets/xlsx/xlsx.full.min.js') }}"></script>
+    <script src="{{ asset('public/assets/xlsx/export.js') }}"></script>
     <script>
-        $(document).ready(function () {
-            var exporting = false;
-
-            $('#export-btn').on('click', function (e) {
-                e.preventDefault();
-                if (exporting) return;
-
-                exporting = true;
-                $('#export-btn').prop('disabled', true);
-                $('#export-progress').show();
-                setProgress(0);
-
-                var filters = {
-                    auction_id: $('#auction_id').val(),
-                    vendor_name: $('#vendor_name').val(),
-                    buyer_name: $('#buyer_name').val(),
-                    from_date: $('#from_date').val(),
-                    to_date: $('#to_date').val()
-                };
-
-                $.ajax({
-                    url: "{{ route('admin.forward-auctions-summary.exportTotal') }}",
-                    method: 'GET',
-                    dataType: 'json',
-                    data: filters
-                }).done(function (init) {
-                    var total = init && init.total ? parseInt(init.total, 10) : 0;
-                    var limit = init && init.chunk_size ? parseInt(init.chunk_size, 10) : 500; // chunk size
-                    var offset = 0;
-
-                    if (total === 0) {
-                        alert('No data found for the selected filters.');
-                        reset();
-                        return;
-                    }
-
-                    var wb = new ExcelJS.Workbook();
-                    var ws = wb.addWorksheet('Forward Auctions');
-                    ws.addRow(['Auction ID', 'Product Details', 'Buyer Name', 'Vendor Name', 'Start Date & Time', 'Participated']);
-
-                    var fetchChunk = function () {
-                        if (offset >= total) {
-                            wb.xlsx.writeBuffer().then(function (buffer) {
-                                var blob = new Blob([buffer], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-                                var url = URL.createObjectURL(blob);
-                                var a = document.createElement('a');
-                                a.href = url;
-                                a.download = 'forward-auction-report-' + Date.now() + '.xlsx';
-                                document.body.appendChild(a);
-                                a.click();
-                                a.remove();
-                                URL.revokeObjectURL(url);
-                                setProgress(100);
-                                reset();
-                            });
-                            return;
-                        }
-
-                        var params = $.extend({}, filters, {start: offset, limit: limit});
-                        $.ajax({
-                            url: "{{ route('admin.forward-auctions-summary.exportBatch') }}",
-                            method: 'GET',
-                            dataType: 'json',
-                            data: params
-                        }).done(function (rows) {
-                            (rows.data || []).forEach(function (r) {
-                                ws.addRow(r);
-                            });
-                            offset += (rows.data || []).length;
-                            var pct = Math.round(Math.min(offset, total) / total * 100);
-                            setProgress(pct);
-                            fetchChunk();
-                        }).fail(function () {
-                            alert('Export error: request failed');
-                            reset();
-                        });
+        $(document).ready(function() {
+            const exporter = new Exporter({
+                chunkSize: 100,
+                rowLimitPerSheet: 200000,
+                headers: ["Auction ID", "Product Details", "Buyer Name", "Vendor Name", "Start Date & Time", "Participated"],
+                totalUrl: "{{ route('admin.forward-auctions-summary.exportTotal') }}",
+                batchUrl: "{{ route('admin.forward-auctions-summary.exportBatch') }}",
+                token: "{{ csrf_token() }}",
+                exportName: "forward-auction-report",
+                expButton: '#export-btn',
+                exportProgress: '#export-progress',
+                progressText: '#progress-text',
+                progress: '#progress',
+                fillterReadOnly: '.fillter-form-control',
+                getParams: function() {
+                    return {
+                        auction_id: $('#auction_id').val(),
+                        vendor_name: $('#vendor_name').val(),
+                        buyer_name: $('#buyer_name').val(),
+                        from_date: $('#from_date').val(),
+                        to_date: $('#to_date').val()
                     };
-
-                    fetchChunk();
-                }).fail(function () {
-                    alert('Export init failed.');
-                    reset();
-                });
-
-                function setProgress(pct) {
-                    $('#progress').css('width', pct + '%');
-                    $('#progress-text').text(pct + '%');
                 }
+            });
 
-                function reset() {
-                    exporting = false;
-                    $('#export-btn').prop('disabled', false);
-                    $('#export-progress').hide();
-                }
+            $('#export-btn').on('click', function() {
+                exporter.start();
             });
 
             $('#export-progress').hide();
