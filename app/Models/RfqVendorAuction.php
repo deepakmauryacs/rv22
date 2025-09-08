@@ -13,6 +13,7 @@ class RfqVendorAuction extends Model
 
     public function vendor()
     {
-        return $this->belongsTo(Vendor::class,'vendor_id','id');
+        // vendor_id references the vendors.user_id column
+        return $this->belongsTo(Vendor::class, 'vendor_id', 'user_id');
     }
 }

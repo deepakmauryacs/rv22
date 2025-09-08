@@ -13,7 +13,11 @@ class AuctionRFQSummaryReportController extends Controller
     {
         $this->ensurePermission('VENDOR_REPORTS');
 
-        $query=RfqAuction::with('rfq_vendor_auction.vendor.user','rfq_auction_variant','rfq_auction_variant.product','buyer');
+        $query = RfqAuction::with([
+            'rfq_vendor_auction.vendor.user',
+            'rfq_auction_variant.product',
+            'buyer',
+        ]);
         
         if ($request->filled('buyer_name'))
         {
@@ -42,7 +46,11 @@ class AuctionRFQSummaryReportController extends Controller
 
     public function exportTotal(Request $request)
     {
-        $query=RfqAuction::with('rfq_vendor_auction.vendor.user','rfq_auction_variant','rfq_auction_variant.product','buyer');
+        $query = RfqAuction::with([
+            'rfq_vendor_auction.vendor.user',
+            'rfq_auction_variant.product',
+            'buyer',
+        ]);
         if ($request->filled('buyer_name'))
         {
             $legal_name=$request->buyer_name;
@@ -66,7 +74,11 @@ class AuctionRFQSummaryReportController extends Controller
     {
         $offset = intval($request->input('start'));
         $limit = intval($request->input('limit'));
-        $query=RfqAuction::with('rfq_vendor_auction.vendor.user','rfq_auction_variant','rfq_auction_variant.product','buyer');
+        $query = RfqAuction::with([
+            'rfq_vendor_auction.vendor.user',
+            'rfq_auction_variant.product',
+            'buyer',
+        ]);
         if ($request->filled('buyer_name'))
         {
             $legal_name=$request->buyer_name;
@@ -91,10 +103,12 @@ class AuctionRFQSummaryReportController extends Controller
                 ( date('h:i A', strtotime($value->auction_start_time)) ).' To '.( date('h:i A', strtotime($value->auction_end_time)) ),
                 ($value->buyer?->legal_name??''),
                 ($value->rfq_auction_variant->product->product_name ?? ''),
-                ($value->rfq_vendor_auction->vendor?->legal_name),
-                ($value->rfq_vendor_auction->vendor?->user->email),
-                ($value->rfq_vendor_auction->vendor?->user->mobile),
-                ($value->rfq_vendor_auction->vendor?->user->status==1?'Active':'Inactive'),
+                ($value->rfq_vendor_auction?->vendor?->legal_name ?? ''),
+                ($value->rfq_vendor_auction?->vendor?->user?->email ?? ''),
+                ($value->rfq_vendor_auction?->vendor?->user?->mobile ?? ''),
+                ((($status = $value->rfq_vendor_auction?->vendor?->user?->status) === 1)
+                    ? 'Active'
+                    : ($status === 0 ? 'Inactive' : '')),
                 '',
                ''];
         }
