@@ -8,14 +8,18 @@ use Illuminate\Support\Facades\File;
 use App\Models\VendorProduct;
 use App\Models\ProductAlias;
 use App\Models\RfqProduct; // Model for rfq_products
+use App\Traits\HasModulePermission;
 
 class VendorDisabledProductReportController extends Controller
 {
+    use HasModulePermission;
     /**
      * Display a listing of the disabled products report.
      */
     public function index(Request $request)
     {
+        $this->ensurePermission('VENDOR_REPORTS');
+
         $query = VendorProduct::where('vendor_status', 2); //  2 = disabled
 
         // Optional filters

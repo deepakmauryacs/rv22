@@ -9,13 +9,17 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
+use App\Traits\HasModulePermission;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 
 class ProductApprovalController extends Controller
 {
+    use HasModulePermission;
     public function index(Request $request)
     {
+        $this->ensurePermission('PRODUCTS_FOR_APPROVAL');
+
         $query = VendorProduct::with(['vendor', 'product' , 'receivedfrom'])
             ->where('edit_status', 3)
             ->where('approval_status', '!=', 1)

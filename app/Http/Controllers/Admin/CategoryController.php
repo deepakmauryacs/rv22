@@ -10,9 +10,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use App\Traits\HasModulePermission;
 
 class CategoryController extends Controller
-{   
+{
+    use HasModulePermission;
     
     /**
      * Constructor to check user authorization.
@@ -32,7 +34,9 @@ class CategoryController extends Controller
      * @return \Illuminate\View\View|\Illuminate\Http\JsonResponse Returns a view with categories or JSON response for AJAX requests
      */
     public function index(Request $request, $id)
-    {   
+    {
+        $this->ensurePermission('PRODUCT_DIRECTORY');
+
         $query = Category::with('division');
 
         // If ID parameter is provided, filter by division_id

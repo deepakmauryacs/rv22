@@ -11,8 +11,10 @@ use App\Models\UserPlan;
 use App\Models\User;
 use Carbon\Carbon;
 use PDF;
+use App\Traits\HasModulePermission;
 class AccountController extends Controller
-{
+{ 
+    use HasModulePermission;
     public function __construct()
     {
         if (auth()->check() && auth()->user()->user_type != 3) {
@@ -21,6 +23,8 @@ class AccountController extends Controller
     }
     public function vendor(Request $request)
     {
+        $this->ensurePermission('VENDORS_ACCOUNTS');
+
         $query = Vendor::with(['user','latestPlan']);
 
         if ($request->filled('vendor_name')) {
@@ -268,6 +272,8 @@ class AccountController extends Controller
     }
     public function buyer(Request $request)
     {
+        $this->ensurePermission('BUYERS_ACCOUNTS');
+
         $query = Buyer::with(['users','latestPlan']);
         if ($request->filled('buyer_name')) {
             $query->where('legal_name', 'like', '%' . $request->input('buyer_name') . '%');

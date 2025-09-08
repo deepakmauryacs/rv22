@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'validate_account' => \App\Http\Middleware\ValidateAccount::class,
             'usertype' => \App\Http\Middleware\UserTypeMiddleware::class,
             'profile_verified' => \App\Http\Middleware\ProfileVerified::class,
+            'permission' => \App\Http\Middleware\EnsurePermission::class,
         ])->validateCsrfTokens(except: [
             'buyer/ajax/*',
         ]);

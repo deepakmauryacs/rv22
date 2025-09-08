@@ -11,12 +11,17 @@ use App\Models\RfqProductVariant;
 use App\Models\RfqVendorQuotation;
 use App\Models\Order;
 use Illuminate\Support\Facades\DB;
+use App\Traits\HasModulePermission;
 
 class RFQSummaryReportController extends Controller
 {
 
+    use HasModulePermission;
+
     public function index(Request $request)
     {
+        $this->ensurePermission('BUYER_REPORTS');
+
         $perPage = $request->input('per_page', 25);
 
         // 1. Build the base query with necessary joins

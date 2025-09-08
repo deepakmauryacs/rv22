@@ -4,9 +4,13 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\HelpSupport;
 use App\Models\User;
+use App\Traits\HasModulePermission;
 class HelpSupportController extends Controller
 {
+    use HasModulePermission;
     public function index(Request $request){
+        $this->ensurePermission('HELP_AND_SUPPORT');
+
         $query = HelpSupport::with('venderBuyer')->where('id', '>', '0');
 
         if ($request->filled('legal_name'))

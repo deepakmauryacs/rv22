@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Notification;
+use App\Traits\HasModulePermission;
 class NotificationController extends Controller
 {
+    use HasModulePermission;
      /**
      * Constructor to check user authorization.
      */
@@ -18,6 +20,8 @@ class NotificationController extends Controller
     }
 
     public function index(Request $request) {
+        $this->ensurePermission('INTERNAL');
+
         $query = Notification::with(['users', 'senders']);
 
         if ($request->filled('user')) {

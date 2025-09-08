@@ -10,13 +10,17 @@ use App\Models\VendorProduct;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
+use App\Traits\HasModulePermission;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
 
 class NewProductRequestController extends Controller
 {
+    use HasModulePermission;
     public function index(Request $request)
     {
+        $this->ensurePermission('NEW_PRODUCT_REQUEST');
+
         $query = VendorProduct::with(['vendor','receivedfrom'])
             ->where('edit_status', 2) // 1 => New Request
             ->where('approval_status', '!=', 1)
