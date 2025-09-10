@@ -1,7 +1,9 @@
 @extends('buyer.layouts.app', ['title'=>'Edit User'])
 
 @section('css')
-{{-- <link rel="stylesheet" href="{{ asset('public/assets/library/datetimepicker/jquery.datetimepicker.css') }}" /> --}}
+    {{-- <link rel="stylesheet" href="{{ asset('public/assets/library/datetimepicker/jquery.datetimepicker.css') }}" /> --}}
+    <link href="{{ asset('public/assets/library/sumoselect-v3.4.9-2/css/sumoselect.min.css') }}" rel="stylesheet">
+    <link href="{{ asset('public/assets/library/sumoselect-v3.4.9-2/css/sumo-select-style.css') }}" rel="stylesheet">
 @endsection
 
 @section('content')
@@ -34,32 +36,15 @@
                                     </small>
                                 </div>
                                 <div class="mb-3 col-12 col-sm-6">
-                                    <label class="form-label">
+                                    <label for="branchId" class="form-label">
                                         Branch/Unit<sup class="text-danger">*</sup>
                                     </label>
-                                    <div class="dropdown multiselect-dropdown">
-                                        <button
-                                            class="btn btn-outline-default custom-multiselect-dropdown-btn dropdown-toggle w-100 text-truncate"
-                                            type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                            Select Location
-                                        </button>
-                                        <div class="dropdown-menu custom-multiselect-dropdown-menu w-100">
-                                            <ul class="filter-list scroll-list p-0">
-                                                @foreach ($branches as $branche)
-                                                <li>
-                                                    <label class="ra-custom-checkbox mb-0">
-                                                        <input type="checkbox" name="branchId[]"
-                                                            class="location-checkbox" value="{{$branche->id}}"
-                                                            {{in_array($branche->id, $userBranches) ? 'checked' : ''}}>
-                                                        <span class="font-size-11">{{$branche->name}}</span>
-                                                        <span class="checkmark"></span>
-                                                    </label>
-                                                </li>
-                                                @endforeach
-                                            </ul>
-                                        </div>
-                                    </div>
-                                    <small id="branchId_error" class="text-danger branchId[]_error font-size-13">
+                                    <select name="branchId[]" id="branchId" class="form-select branch-sumo-select" multiple>
+                                        @foreach ($branches as $branche)
+                                            <option value="{{$branche->id}}" {{in_array($branche->id, $userBranches) ? 'selected' : ''}}>{{$branche->name}}</option>
+                                        @endforeach
+                                    </select>
+                                    <small id="branchId_error" class="text-danger branchId_error font-size-13">
 
                                     </small>
                                 </div>
@@ -155,8 +140,10 @@
 @endsection
 
 @section('scripts')
+<script src="{{ asset('public/assets/library/sumoselect-v3.4.9-2/js/jquery.sumoselect.min.js') }}"></script>
 <script>
 $(document).ready(function() {
+    $('.branch-sumo-select').SumoSelect({selectAll: true, nativeOnDevice: [], maxHeight:100, csvDispCount: 7, placeholder: 'Select Branch/Unit'});
     // Clear error messages on input change
     $('#updateUserForm input, #updateUserForm select').on('keyup change', function() {
         var fieldName = $(this).attr('name');
@@ -282,3 +269,4 @@ $(document).ready(function() {
 });
 </script>
 @endsection
+
