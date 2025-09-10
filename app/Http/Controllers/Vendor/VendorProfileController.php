@@ -460,7 +460,7 @@ class VendorProfileController extends Controller
                     }
                 }
             ],
-            'gstin_document' => ['required_without:gstin_document_old', 'file', 'mimes:jpg,jpeg,pdf', 'max:2048'],
+            'gstin_document' => ['required_without:gstin_document_old', 'file', 'mimes:jpg,jpeg,pdf,png', 'max:2048'],
             'website' => ['nullable', 'url'],
             'company_name1' => ['required', 'string', 'max:255'],
             'company_name2' => ['required', 'string', 'max:255'],
