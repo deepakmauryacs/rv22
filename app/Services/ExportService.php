@@ -23,7 +23,7 @@ class ExportService
 
         $filePath = 'exports/' . $fileName;
         $stored = Excel::store($export, $filePath, 'public');
-        File::move(storage_path('app/public/'.$filePath), public_path('uploads/exl/'.$fileName));
+        // File::move(storage_path('app/public/'.$filePath), public_path('uploads/exl/'.$fileName));
         
 
         if (!$stored) {
@@ -32,7 +32,13 @@ class ExportService
                 'message' => 'Store failed'
             ];
         }
-
+        $sourcePath = storage_path('app/public/' . $filePath);
+        $destinationDir = public_path('uploads/exl');
+        $destinationPath = $destinationDir . '/' . $fileName;
+        if (!File::exists($destinationDir)) {
+            File::makeDirectory($destinationDir, 0775, true); 
+        }
+        File::move($sourcePath, $destinationPath);
         return [
             'success' => true,
             'download_url' => asset('public/uploads/exl/' . $fileName)

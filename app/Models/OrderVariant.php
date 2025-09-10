@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class OrderVariant extends Model
 {
+    protected $guarded = [];
     protected $table = 'order_variants';
     public function order()
     {

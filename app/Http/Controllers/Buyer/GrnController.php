@@ -530,7 +530,7 @@ class GrnController extends Controller
 
 
             // if ($grnQty > 0 && $grnQty <= $remainingQty) {
-            if (bccomp($grnQty, '0', 2) === 1 && bccomp($grnQty, $remainingQty, 2) <= 0) {
+            if ($this->bccomp_fallback($grnQty, '0', 2) === 1 && $this->bccomp_fallback($grnQty, $remainingQty, 2) <= 0) {
                 $validData[] = [
                     'inventory_id'     => $inventoryId,
                     'grn_qty'          => $grnQty,
@@ -571,7 +571,7 @@ class GrnController extends Controller
             $stock_id = $request->stock_return_id[$index];
             $stock_return_for = $request->stock_return_for[$index];
             
-            if (bccomp($grnQty, '0', 2) === 1 && bccomp($grnQty, $remainingQty, 2) <= 0) {
+            if ($this->bccomp_fallback($grnQty, '0', 2) === 1 && $this->bccomp_fallback($grnQty, $remainingQty, 2) <= 0) {
                 $validData[] = [
                     'inventory_id'     => $inventoryId,
                     'grn_qty'          => $grnQty,
@@ -599,6 +599,15 @@ class GrnController extends Controller
 
         return $validData;
     }
+    protected function bccomp_fallback($left, $right, $scale = 2) {
+        $left = round((float) $left, $scale);
+        $right = round((float) $right, $scale);
+
+        if ($left < $right) return -1;
+        if ($left > $right) return 1;
+        return 0;
+    }
+
     //-------------------------------------GRN REPORT TABLE & EXCEL----------------------------------------------------------
     public function grnReportlistdata(Request $request)
     {
@@ -1051,7 +1060,7 @@ class GrnController extends Controller
         ])
         ->where('company_id', $buyerId)
         ->where('grn_type', '3')
-        ->select('inventory_id', 'stock_id', 'grn_type', DB::raw('GROUP_CONCAT(DISTINCT grn_no ORDER BY id ASC SEPARATOR ", ") as grn_no'), DB::raw('max(updated_at) as last_updated_at'), DB::raw('sum(grn_qty) as totalGrnQty'));
+        ->select('inventory_id', 'stock_id', 'grn_type',DB::raw('MAX(id) as max_id'), DB::raw('GROUP_CONCAT(DISTINCT grn_no ORDER BY id ASC SEPARATOR ", ") as grn_no'), DB::raw('max(updated_at) as last_updated_at'), DB::raw('sum(grn_qty) as totalGrnQty'));
 
 
         // Filter by product name
@@ -1090,8 +1099,8 @@ class GrnController extends Controller
         });
 
         return $query->groupBy('inventory_id', 'stock_id','grn_type')
-                    ->orderByDesc('id')
-                    ->orderByDesc('updated_at')
+                    ->orderByDesc('max_id')
+                    ->orderByDesc('last_updated_at')
                     ;
     }
     private function getFormatPendingGrnStockReturnData($grns)

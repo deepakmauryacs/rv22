@@ -1,4 +1,4 @@
-@extends('buyer.layouts.app', ['title'=>'Generate RFQ'])
+@extends('buyer.layouts.app', ['title'=>($draft_rfq->record_type==1 ? 'Generate' : 'Edit').' RFQ'])
 
 @section('css')
     <link rel="stylesheet" href="{{ asset('public/assets/library/datetimepicker/jquery.datetimepicker.css') }}" />
@@ -46,7 +46,7 @@
             <section class="mt-2 mb-2 mx-0 mx-md-2 pt-2">
                 <div class="row align-items-center">
                     <div class="col-md-2 mb-md-4">
-                        <h1 class="font-size-14 py-2">Generate RFQ</h1>
+                        <h1 class="font-size-14 py-2">{{ $draft_rfq->record_type==1 ? 'Generate' : 'Edit' }} RFQ</h1>
                     </div>
                     <div class="col-md-10">
                         <div class="row align-items-center flex-wrap flex-wrap gx-3">
@@ -112,6 +112,7 @@
                                     </div>
                                 </div>
                             </div>
+                            @if($draft_rfq->record_type==1)
                             <div class="col-4 col-md-auto mb-4">
                                 <div class="generate-rfq-action">
                                     <button class="ra-btn btn-sm ra-btn-outline-danger font-size-11 px-2 px-md-3 w-100" id="delete-draft-rfq">
@@ -120,6 +121,19 @@
                                     </button>
                                 </div>
                             </div>
+                            @else
+                            <div class="col-6 col-md-auto mb-4">
+                                <div class="input-group generate-rfq-input-group">
+                                    <span class="input-group-text">
+                                        <span class="bi bi-pencil-fill"></span>
+                                    </span>
+                                    <div class="form-floating">
+                                        <input type="text" disabled class="form-control" value="{{ $draft_rfq->edit_rfq_id }}" id="edit-rfq-id" placeholder="RFQ NO.">
+                                        <label for="edit-rfq-id">RFQ NO.</label>
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
                         </div>
                     </div>
 
@@ -172,7 +186,7 @@
                                 <span class="bi bi-calendar2-date"></span>
                             </span>
                             <div class="form-floating">
-                                <input type="text" class="form-control sync-draft-rfq-changes" id="buyer-delivery-period" placeholder="Delivery Period (In Days)" value="{{ $draft_rfq->buyer_delivery_period }}">
+                                <input type="text" class="form-control sync-draft-rfq-changes" id="buyer-delivery-period" maxlength="3" placeholder="Delivery Period (In Days)" value="{{ $draft_rfq->buyer_delivery_period }}">
                                 <label for="buyer-delivery-period">Delivery Period (In Days)</label>
                             </div>
                         </div>
@@ -194,11 +208,17 @@
             <!-- Floating product options-->
             <section class="floting-product-options">
                 <div class="d-flex flex-wrap flex-md-nowrap align-items-center justify-content-center gap-3">
+                    @if($draft_rfq->record_type==1 || ($draft_rfq->record_type==3 && $draft_rfq->buyer_rfq_status==2))
                     <button type="button" class="ra-btn btn-outline-primary ra-btn-outline-primary-light text-uppercase text-nowrap font-size-10" id="schedule-rfq-btn">
-                        <span class="bi bi-calendar-plus font-size-12"></span> Schedule RFQ
+                        <span class="bi bi-calendar-plus font-size-12"></span> {{ $draft_rfq->record_type==3 && $draft_rfq->buyer_rfq_status==2 ? ' Re-Schedule RFQ' : 'Schedule RFQ' }} 
                     </button>
+                    @endif
                     <button type="button" class="ra-btn btn-primary ra-btn-primary text-uppercase text-nowrap font-size-10" id="compose-draft-rfq">
+                        @if($draft_rfq->record_type==1)
                         <span class="bi bi-lightning-charge font-size-12"></span> Generate RFQ
+                        @else
+                        <span class="bi bi-check2-all font-size-12"></span> Update RFQ
+                        @endif
                     </button>
                     <button type="button" class="ra-btn ra-btn-outline-danger text-uppercase text-nowrap font-size-10">
                         <span class="bi bi-arrow-left font-size-14"></span> Back
@@ -217,57 +237,7 @@
         <div class="px-3">
             <h3 class="font-size-18">Location </h3>
         </div>
-        <div class="filter-list offcanvas-filter-scroll-list py-2" id="location-list-div">
-            {{-- <div class="mt-1">
-                <label class="ra-custom-checkbox mb-0">
-                    <input type="checkbox">
-                    <span class="font-size-11">Assam</span>
-                    <span class="checkmark "></span>
-                </label>
-            </div>
-            <div class="mt-1">
-                <label class="ra-custom-checkbox mb-0">
-                    <input type="checkbox">
-                    <span class="font-size-11">Delhi</span>
-                    <span class="checkmark "></span>
-                </label>
-            </div>
-            <div class="mt-1">
-                <label class="ra-custom-checkbox mb-0">
-                    <input type="checkbox">
-                    <span class="font-size-11">Goa</span>
-                    <span class="checkmark "></span>
-                </label>
-            </div>
-            <div class="mt-1">
-                <label class="ra-custom-checkbox mb-0">
-                    <input type="checkbox">
-                    <span class="font-size-11">Haryana</span>
-                    <span class="checkmark "></span>
-                </label>
-            </div>
-            <div class="mt-1">
-                <label class="ra-custom-checkbox mb-0">
-                    <input type="checkbox">
-                    <span class="font-size-11">Jharkhand</span>
-                    <span class="checkmark "></span>
-                </label>
-            </div>
-            <div class="mt-1">
-                <label class="ra-custom-checkbox mb-0">
-                    <input type="checkbox">
-                    <span class="font-size-11">Karnataka</span>
-                    <span class="checkmark "></span>
-                </label>
-            </div>
-            <div class="mt-1">
-                <label class="ra-custom-checkbox mb-0">
-                    <input type="checkbox">
-                    <span class="font-size-11">Kerala</span>
-                    <span class="checkmark "></span>
-                </label>
-            </div> --}}
-        </div>
+        <div class="filter-list offcanvas-filter-scroll-list py-2" id="location-list-div"></div>
     </section>
 
     <!-- Modal Add Product -->
@@ -415,6 +385,7 @@
         </div>
     </div>
 
+    @if($draft_rfq->record_type==1 || ($draft_rfq->record_type==3 && $draft_rfq->buyer_rfq_status==2))
     <!-- Modal Scheduled RFQ -->
     <div class="modal fade" id="schedule-rfq-modal" tabindex="-1" aria-labelledby="scheduleRFQModalLabel"
         aria-hidden="true">
@@ -446,6 +417,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     <!-- Modal Filter -->
     <div class="modal fade" id="submitSpecification" tabindex="-1" aria-labelledby="submitSpecificationLabel" aria-hidden="true">
@@ -479,6 +451,7 @@
     <script src="{{ asset('public/assets/library/sumoselect-v3.4.9-2/js/jquery.sumoselect.min.js') }}"></script>
 
     <script>
+        $(".category_division, .product-serach-box").addClass("d-none");
         var hasMore = true;
         var currentQuery = '';
         var vendor_array = new Array();
@@ -487,7 +460,6 @@
     <script src="{{ asset('public/assets/buyer/js/rfq-scripts.js') }}"></script>
 
     <script>
-        $(".category_division, .product-serach-box").addClass("d-none");
         $(document).ready(function () {
             loadDraftProduct();
             $('.location-sumo-select').SumoSelect({selectAll: true, csvDispCount: 2, placeholder: 'Select Location' });
@@ -782,7 +754,7 @@
             formData.append('buyer_pay_term', $("#buyer-pay-term").val());
             formData.append('buyer_delivery_period', $("#buyer-delivery-period").val());
             formData.append('warranty_gurarantee', $("#buyer-gurantee-warranty").val());
-            formData.append('rfq_schedule_date', $("#rfq-schedule-date").val());
+            formData.append('rfq_schedule_date', ($("#rfq-schedule-date").val() ? $("#rfq-schedule-date").val() : ''));
 
             let selectedVendors = [];
             $('.vendor-input-checkbox:checked').each(function() {
@@ -826,6 +798,12 @@
         }
 
         $(document).on("click", ".remove-product-btn", function() {
+            @if($draft_rfq->record_type==3)
+            if($(".rfq-product-row").length < 2){
+                alert("There should be atleast 1 product in the RFQ.");
+                return false;
+            }
+            @endif
             if (confirm("Are you sure want to remove this product from RFQ?")) {
                 let master_product_id = $(this).parents(".product-form-section").find(".master-product-id").val();
                 deleteRFQProduct(master_product_id);
@@ -950,6 +928,47 @@
             });
         });
 
+        
+        $(document).on('click', 'a', function() {
+            hrefAttribute = $(this).attr('href');
+            let hrefTarget = $(this).attr('target');
+            if(hrefTarget!='' && hrefTarget=="_blank"){
+                window.open(hrefAttribute, '_blank').focus();
+                return false;
+            }
+            if ($(this).hasClass("show-searched-product") || $(this).hasClass("menubtn") || $(this).hasClass("close-icon") || hrefAttribute.indexOf('#') > -1 ) {} else {
+                if ($(".product-form-section").length > 0) {
+                    if (confirm('Are you sure, you want to leave the page?') === false) {
+                        return false;
+                    } else {
+                        @if($draft_rfq->record_type==3)                        
+                        $.ajax({
+                            type: "POST",
+                            url: '{{ route('buyer.rfq.delete-edited-rfq') }}',
+                            dataType: 'json',
+                            data: {
+                                rfq_draft_id: "{{ $draft_rfq->rfq_id }}"
+                            },
+                            beforeSend: function() {},
+                            success: function(responce) {
+                                if (responce.status == false) {
+                                    toastr.error(responce.message);
+                                }
+                            },
+                            error: function() {
+                                // toastr.error('Something Went Wrong..');
+                            },
+                            complete: function() {}
+                        });
+                        @else
+                        finalUpdateRFQ();
+                        @endif
+                        saveformData(hrefAttribute);
+                    }
+                }
+            }
+        });
+
         function finalUpdateRFQ(){
             $('.quantity').each(function() {
                 $(this).sanitizeNumberField();
@@ -1013,6 +1032,8 @@
                 $(this).removeAttr("disabled");
             }
         });
+
+        @if($draft_rfq->record_type==1 || ($draft_rfq->record_type==3 && $draft_rfq->buyer_rfq_status==2))
         $(document).on("click", "#schedule-and-generate-rfq", function() {
             if($("#rfq-schedule-date").val() == ""){
                 toastr.error('Please select RFQ Schedule date.');
@@ -1023,16 +1044,17 @@
             $("#schedule-rfq-modal").modal('hide');
             generateRFQ();
         });
-        $(document).on("click", "#schedule-and-generate-rfq", function() {
-            if($("#rfq-schedule-date").val() == ""){
-                toastr.error('Please select RFQ Schedule date.');
-                return false;
-            }
-            $(this).attr("disabled", "disabled");
-            $(this).prop("disabled", true);
-            $("#schedule-rfq-modal").modal('hide');
-            generateRFQ();
-        });
+        // $(document).on("click", "#schedule-and-generate-rfq", function() {
+        //     if($("#rfq-schedule-date").val() == ""){
+        //         toastr.error('Please select RFQ Schedule date.');
+        //         return false;
+        //     }
+        //     $(this).attr("disabled", "disabled");
+        //     $(this).prop("disabled", true);
+        //     $("#schedule-rfq-modal").modal('hide');
+        //     generateRFQ();
+        // });
+        @endif
         function generateRFQ() {
             //start loader
             $("#compose-rfq-loader").modal('show').addClass('show');
@@ -1044,7 +1066,7 @@
 
                         $.ajax({
                             type: "POST",
-                            url: "{{ route('buyer.rfq.compose') }}",
+                            url: "{{ $draft_rfq->record_type==1 ? route('buyer.rfq.compose') : route('buyer.rfq.update') }}",
                             data: {
                                 rfq_draft_id: "{{ $draft_rfq->rfq_id }}"
                             },

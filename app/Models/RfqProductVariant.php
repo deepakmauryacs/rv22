@@ -83,9 +83,9 @@ class RfqProductVariant extends Model
     public function latestVendorQuotation($vendorId)
     {
         return $this->vendorQuotations()
-                    ->where('vendor_id', $vendorId)
-                    ->latest()
-                    ->first();
+            ->where('vendor_id', $vendorId)
+            ->latest()
+            ->first();
     }
     // In your Variant model (likely RfqProductVariant or similar)
     // public function vendor_quotations()
@@ -95,7 +95,8 @@ class RfqProductVariant extends Model
     //                ->latest(); // gets the most recent quotation
     // }
 
-    public function vendorQuotations(){
+    public function vendorQuotations()
+    {
         return $this->hasMany(RfqVendorQuotation::class, 'rfq_product_variant_id');
     }
 

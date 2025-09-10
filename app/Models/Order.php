@@ -6,13 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
 {
-    //
+
+    protected $guarded = [];
 
     public function order_variants()
     {
         return $this->hasMany(OrderVariant::class, 'po_number', 'po_number');
     }
-    
+
     public function buyer()
     {
         return $this->belongsTo(Buyer::class, 'buyer_id', 'user_id');
@@ -32,9 +33,9 @@ class Order extends Model
     {
         return $this->belongsTo(User::class, 'buyer_user_id', 'id');
     }
+
     public function po_generated_by()
     {
         return $this->belongsTo(User::class, 'unapprove_by_user_id', 'id');
     }
-
 }

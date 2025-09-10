@@ -35,8 +35,9 @@ class BuyerController extends Controller
 
     public function index(Request $request)
     {
+ 
         $this->ensurePermission('BUYER_MODULE');
-
+ 
         $currencies= Currency::all();
         $query = Buyer::with(['users']);
         if ($request->filled('user')) {
@@ -122,12 +123,12 @@ class BuyerController extends Controller
                                 ->select("id", "division_name")
                                 ->orderBy("division_name", "ASC")
                                 ->pluck("division_name", "id")->toArray();
-        
+
         $countries = DB::table("countries")
                             ->select("id", "name")
                             ->orderBy("name", "ASC")
                             ->pluck("name", "id")->toArray();
-        
+
         $director_designations = DB::table("director_designations")
                             ->select("id", "designation_name")
                             ->orderBy("id", "DESC")
@@ -141,10 +142,10 @@ class BuyerController extends Controller
 
         $buyer_plan = Plan::where('type', 1)->where('status', 1)->orderBy('no_of_user', 'asc')->get();
         $india_states = array();
-        
+
         return view('admin.buyer.profile', compact('countries', 'buyer_data', 'director_designations', 'divisions', 'india_states', 'subscribed', 'buyer_plan'));
     }
-     
+
     public function updateProfile(Request $request)
     {
         $user_id = $request->user_id;
@@ -209,11 +210,11 @@ class BuyerController extends Controller
             // update buyer code in buyer table
             $state_id = $buyer_data->buyer->state ? $buyer_data->buyer->state : 0;
             $buyer_code = generateBuyerCode($state_id);
-            
+
             $buyer->buyer_code = $buyer_code;
             $buyer->plan_id = $plan->id;
             $buyer->save();
-            
+
             // logout company session
             UserSession::where('user_id', $buyer_data->id)->update(['data' => null]);
 
@@ -260,7 +261,7 @@ class BuyerController extends Controller
                 'message' => $validator->errors()->first()
             ]);
         }
-        
+
         $user = User::with(["buyer", "branchDetails", "topManagamantDetails"])->where("id", $request->user_id)->first();
 
         if(empty($user)){
@@ -299,7 +300,7 @@ class BuyerController extends Controller
             }
 
             $email = $user->email;
-            
+
             // Delete branchDetails and their files
             foreach ($user->branchDetails as $branch) {
                 if ($branch->gstin_file) {
@@ -327,7 +328,7 @@ class BuyerController extends Controller
 
             // delete subscription
             Subscription::where('email', $email)->delete();
-            
+
             DB::commit();
 
             return response()->json([
@@ -351,12 +352,12 @@ class BuyerController extends Controller
         $buyer = Buyer::find($id);
         $plans = Plan::where('type', 1)->where('status', 1)->orderBy('no_of_user', 'asc')->get();
         $user_plans = UserPlan::where('user_id', $buyer->users->id)->orderBy('id', 'desc')->first();
-        
+
         return view('admin.buyer.plan', compact('buyer','plans','user_plans'));
     }
 
     public function planUpdate(Request $request, $id)
-    {   
+    {
         $validator = Validator::make($request->all(), [
             'plan_id'=>'required|exists:plans,id',
             // 'no_of_user'=>'required',
@@ -391,13 +392,13 @@ class BuyerController extends Controller
             ]);
         }
         $total = $discounted_amount + ($discounted_amount * $gst / 100);
-        
+
         DB::beginTransaction();
 
         try {
 
             $invoice_no = InvoiceNumber::generateInvoiceNumber($buyer->user_id);
-            
+
             UserPlan::where('user_id', $buyer->user_id)->where('is_expired', 2)->update(['is_expired' => 1]);
 
             $userPlan = new UserPlan;
@@ -417,7 +418,7 @@ class BuyerController extends Controller
             $userPlan->transaction_no = $invoice_no;
             $userPlan->activated_by = auth()->user()->id;
             $userPlan->save();
-            
+
             DB::commit();
 
             return response()->json([
@@ -456,7 +457,7 @@ class BuyerController extends Controller
     }
 
     public function exportTotalBuyer(Request $request)
-    { 
+    {
         $query = Buyer::with(['users']);
         if ($request->filled('user')) {
             $query->whereHas('users', function ($q) use ($request) {
@@ -473,9 +474,9 @@ class BuyerController extends Controller
         $total = $query->count();
         return response()->json(['total' => $total]);
     }
-    
+
     public function exportBatchBuyer(Request $request)
-    { 
+    {
         $offset = intval($request->input('start'));
         $limit = intval($request->input('limit'));
         $query = Buyer::with(['users']);
@@ -515,7 +516,7 @@ class BuyerController extends Controller
 
 
     public function exportTotalUser(Request $request)
-    { 
+    {
         $id = $request->input('parent_id');
         $query = User::where('parent_id',$id);
         if ($request->filled('name')) {
@@ -530,9 +531,9 @@ class BuyerController extends Controller
         $total = $query->count();
         return response()->json(['total' => $total]);
     }
-    
+
     public function exportBatchUser(Request $request)
-    { 
+    {
         $offset = intval($request->input('start'));
         $limit = intval($request->input('limit'));
         $id=$request->input('parent_id');
@@ -560,4 +561,36 @@ class BuyerController extends Controller
         return response()->json(['data'=>$result]);
     }
 
+    public function primaryContactDetails(Request $request,$id)
+    {
+        $user = User::find($id);
+        $countries = DB::table('countries')->select('name', 'phonecode')->get();
+        return view('admin.buyer.primary-contact', compact('user','countries'));
+    }
+
+    public function primaryContactDetailsUpdate(Request $request)
+    {
+        $id=$request->user_id;
+        $name = $request->input('name');
+        $email = $request->input('email');
+        $mobile = $request->input('mobile');
+        $country_code = $request->input('country_code');
+        $checEmail = User::where('email', $email)->where('id', '!=', $id)->first();
+        if(!empty($checEmail))
+        {
+            return redirect()->back()->with('error','Email already exists.');
+        }
+        $checMobile = User::where('mobile', $mobile)->where('country_code', $country_code)->where('id', '!=', $id)->first();
+        if(!empty($checMobile))
+        {
+            return redirect()->back()->with('error','Mobile number already exists.');
+        }
+        $user = User::find($id);
+        $user->name = $name;
+        $user->email = $email;
+        $user->mobile = $mobile;
+        $user->country_code = $country_code;
+        $user->save();
+        return redirect()->back()->with('success','Contact details updated successfully.');
+    }
 }

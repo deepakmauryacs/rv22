@@ -22,11 +22,11 @@
 
 <body>
   @include('vendor.layouts.navigation')
-  
+
   <!-- Body Section -->
   <div class="d-flex">
     @include('vendor.layouts.sidebar')
-    
+
     <!---Main Content-->
     <main class="main main-dashboard-page flex-grow-1 py-2">
       @yield('content')
@@ -39,7 +39,7 @@
       <span class="bi bi-arrow-up-short font-size-20" aria-hidden="true"></span>
     </span>
   </button>
-  
+
   <!---bootsrap-->
   <script src="{{ asset('public/assets/vendor/bootstrap/js/bootstrap.bundle.js') }}"></script>
   <!---local-js-->
@@ -77,6 +77,9 @@
       });
     }
   </script>
+  {{-- toastr --}}
+        <link href="{{ asset('public/assets/library/toastr/css/toastr.min.css') }}" rel="stylesheet" />
+        <script src="{{ asset('public/assets/library/toastr/js/toastr.min.js') }}"></script>
   @yield('scripts')
 </body>
 </html>

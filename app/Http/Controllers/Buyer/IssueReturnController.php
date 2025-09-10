@@ -242,8 +242,7 @@ class IssueReturnController extends Controller
             $fromDate = Carbon::createFromFormat('d-m-Y', trim($request->input('from_date')))->startOfDay();
             $toDate = Carbon::createFromFormat('d-m-Y', trim($request->input('to_date')))->endOfDay();
             $q->where(function ($query) use ($fromDate, $toDate) {
-                $query->whereBetween('created_at', [$fromDate, $toDate])
-                    ->orWhereBetween('updated_at', [$fromDate, $toDate]);
+                $query->WhereBetween('updated_at', [$fromDate, $toDate]);
             });
         });
         $query->where('buyer_id', Auth::user()->parent_id ?? Auth::id());
@@ -281,7 +280,7 @@ class IssueReturnController extends Controller
                 'inventory_grouping' => TruncateWithTooltipHelper::wrapText($row->inventory->inventory_grouping ?? ''),
                 'issued_return_type' => $row->issuedType->name ?? '',
                 'added_bY' => $row->updater->name ?? '',
-                'added_date' => $row->created_at ? Carbon::parse($row->created_at)->format('d-m-Y') : '',
+                'added_date' => $row->updated_at ? Carbon::parse($row->updated_at)->format('d-m-Y') : '',
                 'quantity' => NumberFormatterHelper::formatQty($row->qty,session('user_currency')['symbol'] ?? '₹'),
                 'uom' => $row->inventory->uom->uom_name ?? '',
                 'remarks' => TruncateWithTooltipHelper::wrapText($row->remarks ?? '') ,

@@ -31,6 +31,11 @@ class Product extends Model
     {
         return $this->hasMany(VendorProduct::class, 'product_id', 'id');
     }
+    public function product_vendor()
+    {
+        return $this->hasOne(VendorProduct::class, 'product_id', 'id');
+    }
+
 
     public function product_aliases()
     {

@@ -775,14 +775,19 @@ class RFQComposeController extends Controller
             ]);
         }
 
+        if($is_draft_exists->record_type == 3){
+            return response()->json([
+                'status' => false,
+                'type' => "DraftNotFound",
+                'message' => 'Edited RFQ cannot be deleted.',
+            ]);
+        }
+
         $rfqProductVariant = DB::table('rfq_product_variants')
                                 ->where("rfq_id", $draft_id)
                                 ->select("attachment")
                                 ->get();
-
-        // echo "<pre>";
-        // print_r($rfqProductVariant);
-        // die;
+        // 
 
         DB::beginTransaction();
 
@@ -803,6 +808,62 @@ class RFQComposeController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Draft deleted successfully',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            // Handle the error
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to delete Draft. '.$e->getMessage(),
+                'complete_message' => $e
+            ]);
+        }
+
+    }
+    function deleteEditedRFQ(Request $request) {
+        $draft_id = $request->rfq_draft_id;
+        $company_id = getParentUserId();
+        $is_draft_exists = $this->isDraftExists($draft_id, $company_id);
+        if(empty($is_draft_exists)){
+            return response()->json([
+                'status' => false,
+                'type' => "DraftNotFound",
+                'message' => 'Products from this tab has already been processed.',
+            ]);
+        }
+
+        if($is_draft_exists->record_type == 1){
+            return response()->json([
+                'status' => false,
+                'message' => 'Draft RFQ cannot be deleted.',
+            ]);
+        }
+
+        $rfqProductVariant = DB::table('rfq_product_variants')
+                                ->where("rfq_id", $draft_id)
+                                ->select("attachment")
+                                ->get();
+        // 
+
+        DB::beginTransaction();
+
+        try {
+
+            RfqProductVariant::where("rfq_id", $draft_id)->delete();
+            RfqProduct::where("rfq_id", $draft_id)->delete();
+            RfqVendor::where("rfq_id", $draft_id)->delete();
+            Rfq::where("rfq_id", $draft_id)->delete();
+            DB::commit();
+
+            foreach ($rfqProductVariant as $key => $value) {
+                if(!empty($value->attachment) && is_file(public_path('uploads/'.$this->rfq_attachment_dir.'/'.$value->attachment))){
+                    removeFile(public_path('uploads/'.$this->rfq_attachment_dir.'/'.$value->attachment));
+                }
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Edited RFQ deleted successfully',
             ]);
         } catch (\Exception $e) {
             DB::rollBack();

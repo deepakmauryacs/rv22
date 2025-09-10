@@ -50,7 +50,7 @@ use App\Http\Controllers\Buyer\OrderConfirmedController;
 
 use App\Http\Controllers\Buyer\AuctionCISController;
 
-Route::name('buyer.')->group(function() {
+Route::name('buyer.')->group(function () {
 
     Route::middleware(['auth', 'validate_account', 'usertype:1'])->group(function () {
 
@@ -90,16 +90,17 @@ Route::name('buyer.')->group(function() {
                 Route::post('/list', [HelpSupportController::class, 'list'])->name('help_support.list');
             });
 
-            Route::prefix('category')->group(function() {
+            Route::prefix('category')->group(function () {
                 Route::get('/category-product/{id}', [CategoryController::class, 'index'])->name('category.product');
                 Route::post('/get-category-product', [CategoryController::class, 'getCategoryProduct'])->name('category.get-product');
             });
 
-            Route::prefix('vendor-product')->group(function() {
+            Route::prefix('vendor-product')->group(function () {
                 Route::get('/{id}', [VendorProductController::class, 'index'])->name('vendor.product');
+                Route::get('details/{product_id}/{vendor_id}', [VendorProductController::class, 'vendorProductDetails'])->name('vendor.product.details');
             });
 
-            Route::prefix('rfq')->group(function() {
+            Route::prefix('rfq')->group(function () {
                 Route::post('draft/add', [RFQDraftController::class, 'addToDraft'])->name('rfq.add-to-draft');
                 Route::get('compose/draft-rfq/{draft_id}', [RFQComposeController::class, 'index'])->name('rfq.compose-draft-rfq');
                 Route::post('draft-rfq/add', [RFQDraftController::class, 'addToDraftRFQ'])->name('rfq.add-to-draft-rfq');
@@ -129,12 +130,18 @@ Route::name('buyer.')->group(function() {
                 Route::post('order-confirmed/cancel/{id}', [OrderConfirmedController::class, 'cancel'])->name('rfq.order-confirmed.cancel');
             });
 
+
             Route::prefix('unapproved-orders')->group(function() {
                 Route::get('list', [RFQUnapprovedOrderController::class, 'index'])->name('unapproved-orders.list');
                 Route::get('create/{rfq_id}', [RFQUnapprovedOrderController::class, 'create'])->name('unapproved-orders.create');
+                Route::post('generate-po', [RFQUnapprovedOrderController::class, 'generatePO'])->name('unapproved-orders.generatePO');
+                Route::get('approve-po/{rfq_id}', [RFQUnapprovedOrderController::class, 'approvePO'])->name('unapproved-orders.approvePO');
+                Route::post('export-po', [RFQUnapprovedOrderController::class, 'exportPOData'])->name('unapproved-orders.exportPOData');
+                Route::post('delete-po', [RFQUnapprovedOrderController::class, 'deletePO'])->name('unapproved-orders.deletePO');
+                Route::post('download-po/{rfq_id}', [RFQUnapprovedOrderController::class, 'downloadPOPdf'])->name('unapproved-orders.downloadPOPdf');
             });
 
-            Route::prefix('user-management')->group(function() {
+            Route::prefix('user-management')->group(function () {
                 Route::get('users', [UserManagementController::class, 'index'])->name('user-management.users');
                 Route::get('add-user', [UserManagementController::class, 'create'])->name('user-management.create-user');
                 Route::post('store-user', [UserManagementController::class, 'store'])->name('user-management.store-user');
@@ -142,7 +149,7 @@ Route::name('buyer.')->group(function() {
                 Route::put('update-user/{id}', [UserManagementController::class, 'update'])->name('user-management.update-user');
             });
 
-            Route::prefix('role-permission')->group(function() {
+            Route::prefix('role-permission')->group(function () {
                 Route::get('roles', [RolePermissionController::class, 'index'])->name('role-permission.roles');
                 Route::get('add-role', [RolePermissionController::class, 'create'])->name('role-permission.create-role');
                 Route::post('store-role', [RolePermissionController::class, 'store'])->name('role-permission.store-role');
@@ -152,24 +159,26 @@ Route::name('buyer.')->group(function() {
                 Route::put('status-role/{id}', [RolePermissionController::class, 'updateStatus'])->name('role-permission.status');
             });
 
-            Route::prefix('add-vendor')->group(function() {
+            Route::prefix('add-vendor')->group(function () {
                 Route::get('/', [AddYourVendorController::class, 'index'])->name('add-vendor.create');
                 Route::post('store', [AddYourVendorController::class, 'store'])->name('add-vendor.store');
             });
 
-            Route::prefix('search-vendor')->group(function() {
+            Route::prefix('search-vendor')->group(function () {
                 Route::get('/', [VendorSearchController::class, 'index'])->name('search-vendor.index');
                 Route::post('search', [VendorSearchController::class, 'search'])->name('search-vendor.search');
                 Route::post('favourite-block-vendor', [VendorSearchController::class, 'favouriteBlockVendor'])->name('search-vendor.favourite-blacklist');
             });
 
-            Route::prefix('vendor')->group(function() {
+            Route::prefix('vendor')->group(function () {
                 Route::get('favourite', [PreferenceVendorController::class, 'favourite'])->name('vendor.favourite');
                 Route::get('blacklisted', [PreferenceVendorController::class, 'blacklist'])->name('vendor.blacklist');
                 Route::delete('deleted/{id}', [PreferenceVendorController::class, 'deleted'])->name('vendor.deleted');
             });
 
+
             Route::prefix('ajax')->group(function() {
+
                 Route::post('get-vendor-product', [VendorProductController::class, 'getVendorProduct'])->name('vendor.get-product');
 
                 Route::post('compose/get-draft-product', [RFQComposeController::class, 'getDraftProduct'])->name('rfq.get-draft-product');
@@ -179,9 +188,11 @@ Route::name('buyer.')->group(function() {
                 Route::post('compose/rfq-delete-product', [RFQComposeController::class, 'deleteProduct'])->name('rfq.delete-product');
                 Route::post('compose/rfq-delete-product-variant', [RFQComposeController::class, 'deleteProductVariant'])->name('rfq.delete-product-variant');
                 Route::post('compose/rfq-delete-draft', [RFQComposeController::class, 'deleteDraftRFQ'])->name('rfq.delete-draft');
+                Route::post('compose/delete-edited-rfq', [RFQComposeController::class, 'deleteEditedRFQ'])->name('rfq.delete-edited-rfq');
                 Route::post('compose/rfq/search-vendors', [RFQComposeController::class, 'searchVendors'])->name('rfq.search-vendors');
                 Route::post('compose/rfq/add-vendor-to-rfq', [RFQComposeController::class, 'addVendorToRFQ'])->name('rfq.add-vendor-to-rfq');
                 Route::post('compose/rfq-compose', [ComposeRFQController::class, 'composeRFQ'])->name('rfq.compose');
+                Route::post('compose/rfq-update', [ComposeRFQController::class, 'updateRFQ'])->name('rfq.update');
 
                 Route::post('search/vendor-product', [SearchProductController::class, 'searchVendorActiveProduct'])->name('search.vendor-product');
                 Route::post('search-by-division', [SearchProductController::class, 'getSearchByDivision'])->name('search-by-division');
@@ -191,7 +202,6 @@ Route::name('buyer.')->group(function() {
                 Route::post('save-counter-offer/{rfq_id}', [CISController::class, 'save_counter_offer'])->name('rfq.save-counter-offer');
 
                 Route::post('cis/save-technical-approval', [TechnicalApprovalController::class, 'save'])->name('cis.technical-approval.save');
-
             });
 
             // List auctions (index)
@@ -237,7 +247,7 @@ Route::name('buyer.')->group(function() {
 
             Route::get('/auction/live-auction-rfq', [AuctionController::class, 'index'])->name('auction.index');
 
-           Route::get('auction/live-auction-rfq/cis-sheet/{rfq_id}', [AuctionCISController::class, 'index'])->name('auction.cis-sheet');
+            Route::get('auction/live-auction-rfq/cis-sheet/{rfq_id}', [AuctionCISController::class, 'index'])->name('auction.cis-sheet');
 
             Route::post('/auction/create', [AuctionController::class, 'createAuction'])->name('auction.create');
             Route::post('/auction/get', [AuctionController::class, 'getAuction'])->name('auction.get');
@@ -469,7 +479,6 @@ Route::name('buyer.')->group(function() {
                 });
             });
 
-
         });
 
         Route::get('forward-auction/view/{auction}', [ForwardAuctionController::class, 'view'])->name('forward-auction.show');
@@ -490,7 +499,6 @@ Route::name('buyer.')->group(function() {
         Route::get('cis-export/{rfq}', [AuctionController::class, 'exportBuyerCisSheetNew'])->name('buyer.auction.cis-export');
         Route::post('/auction/force-stop', [AuctionController::class, 'forceStop'])->name('auction.force-stop');
         Route::post('/auction/booked-times', [AuctionController::class, 'getBookedTimes'])->name('auction.booked-times');
-
     });
 
     // Route::post('api-indent/add-product/{key}', [ApiIndentController::class, 'postmanStore'])->name('apiIndent.postmanStore');

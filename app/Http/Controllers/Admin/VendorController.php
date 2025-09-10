@@ -35,7 +35,9 @@ class VendorController extends Controller
     }
     public function index(Request $request){
 
+
         $this->ensurePermission('VENDOR_MODULE');
+
 
         $query = Vendor::with(['user'])->withCount(['vendor_products as vendor_products_count' => function ($query) {
             $query->where('approval_status', 1)
@@ -61,7 +63,7 @@ class VendorController extends Controller
         }
         $perPage = $request->input('per_page', 25); // default to 25 if not present
         $results = $query->paginate($perPage)->appends($request->all());
-        
+
         if ($request->ajax()) {
             return view('admin.vendor.partials.table', compact('results'))->render();
         }
@@ -69,7 +71,7 @@ class VendorController extends Controller
     }
 
     public function registration(){
-        
+
         // $countries = \DB::table('countries')->get(); // Fetch all countries from database
         $countries = DB::table("countries")
                             ->select("phonecode", "name")
@@ -100,8 +102,8 @@ class VendorController extends Controller
             'name' => ['required', 'string', 'max:255', 'regex:/^([a-zA-Z ]+)$/'],
             'email' => 'required|email|max:255|unique:users,email',
             'country_code' => [
-                'required', 
-                'max:5', 
+                'required',
+                'max:5',
                 'regex:/^[0-9]+$/',
                 Rule::in(DB::table("countries")->select("phonecode")->pluck("phonecode")->toArray())
             ],
@@ -166,7 +168,7 @@ class VendorController extends Controller
             $vendor->save();
 
             session()->flash('success', "Vendor registered successfully");
-            
+
             DB::commit();
             return response()->json([
                 'status' => true,
@@ -202,7 +204,7 @@ class VendorController extends Controller
                     ->select("id", "name")
                     ->orderBy("name", "ASC")
                     ->pluck("name", "id")->toArray();
-        
+
         $india_states = DB::table("states")
                     ->select("id", "name")
                     ->where("country_id", 101)
@@ -277,7 +279,7 @@ class VendorController extends Controller
             'vendor_plan' => trim($request->vendor_plan),
             't_n_c' => trim($request->t_n_c)
         ]);
-        
+
         $company_id = $request->company_id;
 
         $validator = $this->validateVendorProfile($request);
@@ -318,7 +320,7 @@ class VendorController extends Controller
             }else if(!empty($request->profile_img_old)){
                 $vendor->profile_img = $request->profile_img_old;
             }
-                        
+
             $vendor->date_of_incorporation = date("Y-m-d", strtotime(str_replace("/", "-", $request->date_of_incorporation)));
             $vendor->nature_of_organization = $request->nature_of_organization;
             // $vendor->nature_of_business = $request->nature_of_business;
@@ -349,10 +351,10 @@ class VendorController extends Controller
 
             $vendor->description = $request->description;
             $vendor->t_n_c = $request->t_n_c;
-            
+
             $vendor->updated_by = Auth::user()->id;
             $vendor->save();
-            
+
             $vendor_data = User::find($company_id);
             $vendor_data->status = 1;
             $vendor_data->is_verified = 1;
@@ -412,7 +414,7 @@ class VendorController extends Controller
 
             if(empty($vendor->vendor_code)){
                 $plan = Plan::find($request->vendor_plan);
-    
+
                 // update account details
                 UserPlan::updateOrCreate(
                     ['user_id' => $company_id], // Unique identifying field
@@ -430,11 +432,11 @@ class VendorController extends Controller
                         'activated_by' => auth()->user()->id
                     ]
                 );
-    
+
                 // update vendor code in vendor table
                 $state_id = $vendor->state ? $vendor->state : 0;
                 $vendor_code = generateVendorCode($state_id);
-                
+
                 $vendor->vendor_code = $vendor_code;
                 $vendor->plan_id = $plan->id;
                 $vendor->save();
@@ -581,7 +583,7 @@ class VendorController extends Controller
                 function ($attribute, $value, $fail) use ($request, $company_id) {
                     $vendor_data = DB::table("vendors")->select("vendor_code")->where("user_id", $company_id)->first();
                     if(empty($vendor_data->vendor_code) && empty($request->input('vendor_plan'))){
-                        $fail('Please Select a Plan');                        
+                        $fail('Please Select a Plan');
                     }
                     // apply rules for Rule::in(DB::table("plans")->select("id")->where('type', 2)->where('status', 1)->pluck("id")->toArray())
                     if(!in_array($value, DB::table("plans")->select("id")->where('type', 2)->where('status', 1)->pluck("id")->toArray())) {
@@ -608,7 +610,7 @@ class VendorController extends Controller
     public function profileStatus(Request $request)
     {
         $user_id = $request->user_id;
-        
+
         $vendor_data = User::with(["vendor"])->where("id", $user_id)->first();
         if(empty($vendor_data)){
             return response()->json(['status' => false, 'message' => 'Vendor not found.']);
@@ -637,13 +639,13 @@ class VendorController extends Controller
                 ->where('status', 1)
                 ->orderBy('no_of_user', 'asc')
                 ->first();
-                
+
                 if (!empty($plan)) {
 
                     $vendor_data->is_profile_verified = 1;
                     $vendor_data->status = 1;
                     $vendor_data->verified_by = auth()->user()->id;
-                    
+
                     // Add entry in user_plans table
                     UserPlan::create([
                         'user_type'            => 2,
@@ -667,14 +669,14 @@ class VendorController extends Controller
                     // update vendor code in vendor table
                     $state_id = $vendor_data->vendor->state ? $vendor_data->vendor->state : 0;
                     $vendor_code = generateVendorCode($state_id);
-                    
+
                     $vendor->vendor_code = $vendor_code;
                     $vendor->plan_id = $plan->id;
                     $vendor->save();
-                    
+
                     // logout company session
                     UserSession::where('user_id', $vendor_data->id)->update(['data' => null]);
-    
+
                     // send verification mail to vendor
                     $this->sendVendorVerificationMail($vendor_data);
                 }
@@ -720,7 +722,7 @@ class VendorController extends Controller
                 'message' => $validator->errors()->first()
             ]);
         }
-        
+
         $user = User::with(["vendor", "branchDetails", "vendorRegisteredBranch"])->where("id", $request->user_id)->first();
 
         if(empty($user)){
@@ -762,7 +764,7 @@ class VendorController extends Controller
             }
 
             $email = $user->email;
-            
+
             // Delete branchDetails and their files
             foreach ($user->branchDetails as $branch) {
                 $branch->delete();
@@ -784,7 +786,7 @@ class VendorController extends Controller
 
             // delete notification
             Notification::where('sender_id', $request->user_id)->delete();;
-            
+
             DB::commit();
 
             return response()->json([
@@ -807,12 +809,12 @@ class VendorController extends Controller
         $vendor = Vendor::find($id);
         $plans = Plan::where('type', 2)->where('status',1)->orderBy('no_of_user','asc')->get();
         $user_plans = UserPlan::where('user_id', $vendor->user->id)->orderBy('id','desc')->first();
-        
+
         return view('admin.vendor.plan', compact('vendor','plans','user_plans'));
     }
 
     public function planUpdate(Request $request,$id)
-    {   
+    {
         $validator = Validator::make($request->all(), [
             'plan_id'=>'required|exists:plans,id',
             'plan_duration'=>['required', 'integer', Rule::in([3, 6, 12])],
@@ -836,7 +838,7 @@ class VendorController extends Controller
         $vendor = Vendor::find($id);
         $no_of_user = $plan->no_of_user;
         $plan_amount = $plan->price;
-        
+
         $plan_duration = (int) $request->plan_duration;
         switch ($plan_duration) {
             case 6:
@@ -867,7 +869,7 @@ class VendorController extends Controller
         try {
 
             $invoice_no = InvoiceNumber::generateInvoiceNumber($vendor->user_id);
-            
+
             UserPlan::where('user_id', $vendor->user_id)->where('is_expired', 2)->update(['is_expired' => 1]);
 
             $userPlan = new UserPlan;
@@ -887,7 +889,7 @@ class VendorController extends Controller
             $userPlan->transaction_no = $invoice_no;
             $userPlan->activated_by = auth()->user()->id;
             $userPlan->save();
-            
+
             DB::commit();
 
             return response()->json([
@@ -908,7 +910,7 @@ class VendorController extends Controller
     public function profile(Request $request,$id)
     {
         $company_id = $id;
-        
+
         $vendor_data = User::with(["vendor", "branchDetails"])->where("id", $id)->first();
         if(empty($vendor_data)){
             return redirect()->route('admin.vendor.index')->with('error','Vendor not found');
@@ -928,14 +930,14 @@ class VendorController extends Controller
                     ->select("id", "name")
                     ->orderBy("name", "ASC")
                     ->pluck("name", "id")->toArray();
-        
+
         $india_states = array();
 
         $vendor_plan = Plan::where('type', 2)->where('status', 1)->orderBy('no_of_user', 'asc')->get();
 
         return view('admin.vendor.profile', compact('vendor_data', 'countries', 'india_states', 'nature_of_organization', 'nature_of_business', 'vendor_plan'));
     }
-     
+
     public function updateProfile(Request $request)
     {
         $user_id = $request->user_id;
@@ -1000,11 +1002,11 @@ class VendorController extends Controller
             // update vendor code in vendor table
             $state_id = $vendor_data->vendor->state ? $vendor_data->vendor->state : 0;
             $vendor_code = generateVendorCode($state_id);
-            
+
             $vendor->vendor_code = $vendor_code;
             $vendor->plan_id = $plan->id;
             $vendor->save();
-            
+
             // logout company session
             UserSession::where('user_id', $vendor_data->id)->update(['data' => null]);
 
@@ -1124,9 +1126,38 @@ class VendorController extends Controller
                 $res->user->status==1?'Active':'Inactive',
                 $res->user->is_verified==1?'Verified':'Not Verified',
                 $res->user->user_created_by,
-               
+
             ];
         }
         return response()->json(['data'=>$result]);
-    }   
+    }
+
+
+    public function primaryContactDetails(Request $request,$id)
+    {
+        $user = User::find($id);
+        $countries = DB::table('countries')->select('name', 'phonecode')->get();
+        return view('admin.vendor.primary-contact', compact('user','countries'));
+    }
+
+    public function primaryContactDetailsUpdate(Request $request)
+    {
+        $email=User::where('email', $request->email)->where('id', '!=', $request->user_id)->first();
+        if(!empty($email))
+        {
+            return redirect()->back()->with('error','Email already exists.');
+        }
+        $mobile=User::where('mobile', $request->mobile)->where('country_code', $request->country_code)->where('id', '!=', $request->user_id)->first();
+        if(!empty($mobile))
+        {
+             return redirect()->back()->with('error','Mobile number already exists.');
+        }
+        $user = User::find($request->user_id);
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->mobile = $request->mobile;
+        $user->country_code = $request->country_code;
+        $user->save();
+        return redirect()->back()->with('success','Contact details updated successfully.');
+    }
 }

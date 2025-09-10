@@ -377,6 +377,9 @@ if(!function_exists('sendNotifications')){
             'RFQ Closed' => (function () use ($notification_data, $sender_name) {
                 return "<b>".$sender_name."</b> has closed RFQ No. ".$notification_data['rfq_id'].". You will no longer be able to quote.";
             })(),
+            'RFQ Edited' => (function () use ($notification_data, $sender_name) {
+                return "RFQ No. ".$notification_data['rfq_no']." has been edited. Update your quote accordingly.";
+            })(),
             // 'editor' => (function () {
             //     logAccess('editor');
             //     return 'Edit access granted';
@@ -386,7 +389,7 @@ if(!function_exists('sendNotifications')){
 
         if(!empty($notification_message)){
             try {
-                if (is_int($to_user_id)) {
+                if (is_numeric($to_user_id)) {
                     $notification['message']        =   $notification_message;
                     $notification['user_id']        =   $to_user_id;
                     $notification['sender_id']      =   Auth::user()->id;
@@ -394,7 +397,7 @@ if(!function_exists('sendNotifications')){
                     $notification['sender_name']    =   $sender_name;
                     $notification['status']         =   2;
                     DB::table('notifications')->insert($notification);
-                }else if (is_array($to_user_id)) {
+                } else if (is_array($to_user_id)) {
                     $batch_notification = array();
                     foreach ($to_user_id as $key => $user_id) {
                         $notification = array();
@@ -407,11 +410,11 @@ if(!function_exists('sendNotifications')){
                         $batch_notification[] = $notification;
                     }
                     if(!empty($batch_notification)){
-                        DB::table('notifications')->insert($notification);
+                        DB::table('notifications')->insert($batch_notification);
                     }
                 }
                 return true;
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 // Optional: log the error for debugging
                 Log::error('Notifications Insert failed: ' . $e->getMessage());
                 return false;
@@ -1169,7 +1172,7 @@ if (!function_exists('makeDuplicateRFQData')) {
         $newRfqArray['record_type'] = $record_type;
         $newRfqArray['buyer_id'] = $buyer_id;
         $newRfqArray['is_bulk_rfq'] = 2;
-        $newRfqArray['buyer_rfq_status'] = 1;
+        // $newRfqArray['buyer_rfq_status'] = 1;
         $newRfqArray['buyer_user_id'] = $current_user_id;
         $newRfqArray['edit_by'] = $type == 'edit' ? $current_user_id : NULL;
         $newRfqArray['edit_rfq_id'] = $edited_rfq_id;

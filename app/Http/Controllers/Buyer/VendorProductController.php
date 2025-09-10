@@ -242,4 +242,44 @@ class VendorProductController extends Controller
 
         return array('states'=> $states, 'countries'=> $countries);
     }
+
+    public function vendorProductDetails(Request $request, $product_id, $vendor_id){
+        $product = Product::with([
+            "category:id,category_name",
+            "division:id,division_name",
+            'product_vendor' => function ($q) use ($vendor_id) {
+                // $q->select('vendor_products.id', 'vendor_products.vendor_id', 'vendor_products.product_id', 'vendor_products.description')
+                $q->where('vendor_status', 1)
+                ->where('edit_status', 0)
+                ->where('approval_status', 1)
+                ->where('vendor_id', $vendor_id);
+            },
+            'product_vendor.vendor_profile:id,user_id,legal_name,profile_img,city,state,country,gstin',
+            'product_vendor.vendor_profile.user:id,country_code,mobile',
+            'product_vendor.vendor_profile.vendor_city:id,city_name',
+            'product_vendor.vendor_profile.vendor_state:id,name',
+            'product_vendor.vendor_profile.vendor_country:id,name',
+        ])
+        ->select("id", "division_id", "category_id", "product_name")
+        ->where("id", $product_id)
+        ->where("status", 1)
+        ->first();
+
+        if(empty($product->product_vendor)){
+            session()->flash('error', "Vendor Product not found");
+            if(auth()->user_type == 1){
+                return redirect()->to(route('buyer.dashboard'));
+            }else if(auth()->user_type == 2){
+                return redirect()->to(route('vendor.dashboard'));
+            }else{
+                return redirect()->to(route('admin.dashboard'));
+            }
+        }
+
+        // echo "<pre>";
+        // print_r($product);
+        // die;
+
+        return view('buyer.vendor-product.product-details', compact('product'));
+    }                
 }

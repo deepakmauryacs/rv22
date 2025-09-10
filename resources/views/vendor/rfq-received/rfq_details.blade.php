@@ -13,30 +13,30 @@
 </style>
 
 @php
-    $is_international_vendor = is_national();
-    $is_international_buyer_check = is_national_buyer($rfq->buyer_id);
-    $normal_product_data = common_rfq_data($rfq->rfq_id);
+$is_international_vendor = is_national();
+$is_international_buyer_check = is_national_buyer($rfq->buyer_id);
+$normal_product_data = common_rfq_data($rfq->rfq_id);
 
-    /**
-     * Format amount in Indian currency style (e.g., 1,23,456.78)
-     * @param string $amount
-     * @return string
-     */
-    function IND_amount_format($amount) {
-        $amount = (string)$amount;
-        $main_amount = explode('.', $amount);
-        $amount = $main_amount[0];
-        $lastThree = substr($amount, -3);
-        $otherNumbers = substr($amount, 0, -3);
+/**
+* Format amount in Indian currency style (e.g., 1,23,456.78)
+* @param string $amount
+* @return string
+*/
+function IND_amount_format($amount) {
+$amount = (string)$amount;
+$main_amount = explode('.', $amount);
+$amount = $main_amount[0];
+$lastThree = substr($amount, -3);
+$otherNumbers = substr($amount, 0, -3);
 
-        if ($otherNumbers != '') {
-            $lastThree = ',' . $lastThree;
-        }
+if ($otherNumbers != '') {
+$lastThree = ',' . $lastThree;
+}
 
-        $res = preg_replace('/\B(?=(\d{2})+(?!\d))/', ",", $otherNumbers) . $lastThree;
+$res = preg_replace('/\B(?=(\d{2})+(?!\d))/', ",", $otherNumbers) . $lastThree;
 
-        return count($main_amount) > 1 ? $res . '.' . $main_amount[1] : $res . '.00';
-    }
+return count($main_amount) > 1 ? $res . '.' . $main_amount[1] : $res . '.00';
+}
 @endphp
 
 <section class="container-fluid">
@@ -55,7 +55,7 @@
     </div>
 
     @php
-        $branch = getbuyerBranchById($rfq->buyer_branch);
+    $branch = getbuyerBranchById($rfq->buyer_branch);
     @endphp
 
     <!-- RFQ Details Card -->
@@ -64,7 +64,8 @@
             <div class="card-body">
                 <ul>
                     <li><span class="fw-bold">RFQ No:</span> <span>{{ $rfq->rfq_id }}</span></li>
-                    <li><span class="fw-bold">RFQ Date:</span> <span>{{ \Carbon\Carbon::parse($rfq->created_at)->format('d/m/Y') }}</span></li>
+                    <li><span class="fw-bold">RFQ Date:</span> <span>{{
+                            \Carbon\Carbon::parse($rfq->created_at)->format('d/m/Y') }}</span></li>
                     <li><span class="fw-bold">PRN Number:</span> <span>{{ $rfq->prn_no ?? '-' }}</span></li>
                     <li><span class="fw-bold">Buyer Name:</span> <span>{{ $rfq->buyer_legal_name ?? '-' }}</span></li>
                     <li><span class="fw-bold">User Name:</span> <span>{{ $rfq->buyer_user_name ?? '-' }}</span></li>
@@ -74,23 +75,26 @@
                         <span>
                             {{ Str::limit($branch->address ?? '-', 30) }}
                             @if (!empty($branch->address))
-                                <button type="button" class="ra-btn ra-btn-link height-inherit text-black font-size-14"
-                                    data-bs-toggle="tooltip" data-bs-original-title="{!! $branch->address !!}">
-                                    <span class="bi bi-info-circle-fill font-size-14"></span>
-                                </button>
+                            <button type="button" class="ra-btn ra-btn-link height-inherit text-black font-size-14"
+                                data-bs-toggle="tooltip" data-bs-original-title="{!! $branch->address !!}">
+                                <span class="bi bi-info-circle-fill font-size-14"></span>
+                            </button>
                             @endif
                         </span>
                     </li>
                     <li><span class="fw-bold">Last Date to Response:</span>
-                        <span>{{ $rfq->last_response_date ? \Carbon\Carbon::parse($rfq->last_response_date)->format('d/m/Y') : '-' }}</span>
+                        <span>{{ $rfq->last_response_date ?
+                            \Carbon\Carbon::parse($rfq->last_response_date)->format('d/m/Y') : '-' }}</span>
                     </li>
                     <li><span class="fw-bold">Last Edited Date:</span>
-                        <span>{{ $rfq->updated_at ? \Carbon\Carbon::parse($rfq->updated_at)->format('d/m/Y') : '-' }}</span>
+                        <span>{{ $rfq->updated_at ? \Carbon\Carbon::parse($rfq->updated_at)->format('d/m/Y') : '-'
+                            }}</span>
                     </li>
                     <li><span class="fw-bold"><b class="text-primary">RFQ Terms -</b></span></li>
                     <li><span class="fw-bold">Price Basis:</span> <span>{{ $rfq->buyer_price_basis ?? '-' }}</span></li>
                     <li><span class="fw-bold">Payment Terms:</span> <span>{{ $rfq->buyer_pay_term ?? '-' }}</span></li>
-                    <li><span class="fw-bold">Delivery Period:</span> <span>{{ $rfq->buyer_delivery_period ?? '-' }} Days</span></li>
+                    <li><span class="fw-bold">Delivery Period:</span> <span>{{ $rfq->buyer_delivery_period ?? '-' }}
+                            Days</span></li>
                 </ul>
             </div>
         </div>
@@ -103,267 +107,280 @@
             <div class="card shadow-none mb-3">
                 <div class="card-body card-vendor-list-right-panel toggle-table-wrapper">
                     @foreach ($products as $index => $product)
-                        <div class="d-flex mb-30">
-                            <nav aria-label="breadcrumb">
-                                <ol class="breadcrumb breadcrumb-vendor">
-                                    <li class="breadcrumb-item"><a href="#">{{ $index + 1 }}.{{ $product->division_name }}</a></li>
-                                    <li class="breadcrumb-item"><a href="#">{{ $product->category_name }}</a></li>
-                                    <li class="breadcrumb-item active" aria-current="page">{{ $product->product_name }}</li>
-                                </ol>
-                            </nav>
-                            @if ($product->is_product == 'no')
-                                <p>
-                                    <span class="text-danger">
-                                        (Product is not in your profile.
-                                        <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#addProductModal"
-                                            data-product-name="{{ $product->product_name }}">
-                                            Click Here
-                                        </a>
-                                        to add this product so that you can Quote.)
-                                    </span>
-                                </p>
+                    <div class="d-flex mb-30">
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb breadcrumb-vendor">
+                                <li class="breadcrumb-item"><a href="#">{{ $index + 1 }}.{{ $product->division_name
+                                        }}</a></li>
+                                <li class="breadcrumb-item"><a href="#">{{ $product->category_name }}</a></li>
+                                <li class="breadcrumb-item active" aria-current="page">{{ $product->product_name }}</li>
+                            </ol>
+                        </nav>
+                        @if ($product->is_product == 'no')
+                        <p>
+                            <span class="text-danger">
+                                (Product is not in your profile.
+                                <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#addProductModal"
+                                    data-product-name="{{ $product->product_name }}">
+                                    Click Here
+                                </a>
+                                to add this product so that you can Quote.)
+                            </span>
+                        </p>
+                        @endif
+                    </div>
+
+                    <div class="table-responsive table-product toggle-table-content">
+                        @php
+                        $productVariants = $variants[$product->product_id] ?? collect();
+                        $showCounterOffer = $productVariants->contains(function ($v) {
+                        $hasHistRel = !empty($v->buyer_counter_offers) && count($v->buyer_counter_offers) > 0;
+                        $hasSingle = !empty(optional($v->vendor_quotation)->counter_offer);
+                        return $hasHistRel || $hasSingle;
+                        });
+                        $showHistPrice = $productVariants->contains(function ($v) {
+                        $hasHistRel = !empty($v->vendor_price_history) && count($v->vendor_price_history) > 0;
+                        $hasSingle = !empty(optional($v->vendor_quotation)->hist_price);
+                        return $hasHistRel || $hasSingle;
+                        });
+                        @endphp
+
+                        <table class="table table-product-list table-d-block-mobile">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th style="text-align: start !important;">Specification</th>
+                                    <th>Size</th>
+                                    <th width="125">Quantity/UOM</th>
+                                    <th width="125"><b>Price (<span class="currency-symbol"></span>)</b> <i
+                                            class="bi bi-info-circle-fill text-primary" data-bs-toggle="tooltip"
+                                            data-bs-placement="top" title="Net Price after Discount"></i></th>
+                                    <th width="125">MRP (<span class="currency-symbol"></span>) </th>
+                                    <th width="100">Disc.(%) <i class="bi bi-info-circle-fill text-primary"
+                                            data-bs-toggle="tooltip" data-bs-placement="top"
+                                            title="Discount on MRP"></i></th>
+                                    <th width="125">Total (<span class="currency-symbol"></span>)</th>
+                                    @if ($showCounterOffer)
+                                    <th width="125">Counter Offer (<span class="currency-symbol"></span>)</th>
+                                    @endif
+                                    @if ($showHistPrice)
+                                    <th width="125">Hist. Price (<span class="currency-symbol"></span>)</th>
+                                    @endif
+                                    <th width="400">Specs</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($productVariants as $vIndex => $variant)
+                                <tr>
+                                    <td>{{ $vIndex + 1 }}</td>
+                                    <td>{{ $variant->specification }}</td>
+                                    <td class="text-center">
+                                        @php $sizeStr = strip_tags($variant->size); @endphp
+                                        @if (strlen($sizeStr) > 5)
+                                        {!! mb_substr($sizeStr, 0, 5) !!}
+                                        <button type="button" class="btn btn-link p-0 m-0 align-baseline"
+                                            data-bs-toggle="tooltip" data-bs-placement="top" title="{!! $sizeStr !!}">
+                                            <i class="bi bi-info-circle"></i>
+                                        </button>
+                                        @else
+                                        {!! $variant->size !!}
+                                        @endif
+                                    </td>
+                                    <td class="text-center">{{ $variant->quantity }} {{ getUOMName($variant->uom) }}
+                                    </td>
+                                    <td>
+                                        <input type="number" name="price[{{ $variant->id }}]"
+                                            class="form-control form-control-sm variant-price price-change"
+                                            value="{{ optional($variant->vendor_quotation)->price ?? '' }}" {{
+                                            $product->is_product == 'no' ? 'disabled' : '' }}>
+                                    </td>
+                                    <td>
+                                        <input type="number" name="mrp[{{ $variant->id }}]"
+                                            class="form-control form-control-sm variant-mrp price-change"
+                                            value="{{ optional($variant->vendor_quotation)->mrp ?? '' }}" {{
+                                            $product->is_product == 'no' ? 'disabled' : '' }}>
+                                    </td>
+                                    <td>
+                                        <input type="number" name="disc[{{ $variant->id }}]"
+                                            class="form-control form-control-sm variant-discount price-change"
+                                            value="{{ optional($variant->vendor_quotation)->discount ?? '' }}" {{
+                                            $product->is_product == 'no' ? 'disabled' : '' }}>
+                                    </td>
+                                    <td>
+                                        @php
+                                        $price = optional($variant->vendor_quotation)->price ?? 0;
+                                        $quantity = $variant->quantity;
+                                        $total = $price * $quantity;
+                                        @endphp
+                                        <input type="text" class="form-control form-control-sm totalAmounts"
+                                            value="{{ $total > 0 ? IND_amount_format($total) : '' }}" readonly {{
+                                            $product->is_product == 'no' ? 'disabled' : '' }}>
+                                        <input type="hidden" class="totalQty" value="{{ $variant->quantity }}">
+                                    </td>
+
+                                    @if ($showCounterOffer)
+                                    @php
+                                    $coItems = collect($variant->buyer_counter_offers ?? []);
+                                    if ($coItems->isEmpty() &&
+                                    !empty(optional($variant->vendor_quotation)->buyer_price)) {
+                                    $coItems = collect([(object)[
+                                    'buyer_price' => optional($variant->vendor_quotation)->buyer_price,
+                                    'created_at' => optional($variant->vendor_quotation)->updated_at ??
+                                    optional($variant->vendor_quotation)->created_at,
+                                    ]]);
+                                    }
+                                    $coLatest = optional($coItems->first())->buyer_price;
+                                    $coContent = $coItems->map(function ($item) {
+                                    $amt = number_format((float)$item->buyer_price, 2);
+                                    $dt = $item->updated_at ? \Carbon\Carbon::parse($item->updated_at)->format('d-M') :
+                                    '';
+                                    return "<div>{$amt} <small class='text-white'>({$dt})</small></div>";
+                                    })->implode('');
+                                    @endphp
+                                    <td data-th="Counter Offer" class="counter-offer">
+                                        <span class="form-control h-30 d-inline-flex align-items-center">
+                                            @if ($coItems->isNotEmpty())
+                                            <span class="buyer-old-price" data-bs-toggle="tooltip"
+                                                data-bs-placement="top" data-bs-original-title="{{ $coContent }}">
+                                                <i class="bi bi-info-circle-fill" aria-hidden="true"></i>
+                                            </span>&nbsp;
+                                            {{ number_format((float)$coLatest, 2) }}
+                                            @endif
+                                        </span>
+                                    </td>
+                                    @endif
+
+                                    @if ($showHistPrice)
+                                    @php
+                                    $hpItems = collect($variant->vendor_price_history ?? []);
+                                    if ($hpItems->isEmpty() && !empty(optional($variant->vendor_quotation)->hist_price))
+                                    {
+                                    $hpItems = collect([(object)[
+                                    'price' => optional($variant->vendor_quotation)->hist_price,
+                                    'created_at' => optional($variant->vendor_quotation)->updated_at ??
+                                    optional($variant->vendor_quotation)->created_at,
+                                    ]]);
+                                    }
+                                    $hpLatest = optional($hpItems->first())->price;
+                                    $hpContent = $hpItems->map(function ($item) {
+                                    $amt = number_format((float)$item->price, 2);
+                                    $dt = $item->created_at ? \Carbon\Carbon::parse($item->created_at)->format('d-M') :
+                                    '';
+                                    return "<div>{$amt} <small class='text-white'>({$dt})</small></div>";
+                                    })->implode('');
+                                    @endphp
+                                    <td data-th="Historical Price">
+                                        <span class="form-control h-30 d-inline-flex align-items-center">
+                                            @if ($hpItems->isNotEmpty())
+                                            <span class="vendor-old-price" data-bs-toggle="tooltip"
+                                                data-bs-placement="top" data-bs-original-title="{{ $hpContent }}">
+                                                <i class="bi bi-info-circle-fill" aria-hidden="true"></i>
+                                            </span>&nbsp;
+                                            {{ number_format((float)$hpLatest, 2) }}
+                                            @endif
+                                        </span>
+                                    </td>
+                                    @endif
+
+                                    <td>
+                                        <input type="text" name="vendor_spec[{{ $variant->id }}]"
+                                            id="vendor_spec_{{ $variant->id }}"
+                                            class="form-control form-control-sm specs-trigger"
+                                            value="{{ optional($variant->vendor_quotation)->specification ?? '' }}"
+                                            placeholder="Enter Specs" data-bs-toggle="modal"
+                                            data-bs-target="#submitSpecification"
+                                            data-target-input="vendor_spec_{{ $variant->id }}" {{ $product->is_product
+                                        == 'no' ? 'disabled' : '' }}>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Search by Brand and Remarks -->
+                    <div class="row mt-4">
+                        <div class="col-md-4 mb-4">
+                            <div class="input-group disabled">
+                                <span class="input-group-text">
+                                    <span class="bi bi-pencil" aria-hidden="true"></span>
+                                </span>
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="remarks" value="{{ $product->brand }}"
+                                        placeholder="Remarks" disabled>
+                                    <label for="remarks">Remarks</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="input-group disabled">
+                                <span class="input-group-text">
+                                    <span class="bi bi-tag-fill" aria-hidden="true"></span>
+                                </span>
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="brand" value="{{ $product->remarks }}"
+                                        placeholder="Brand" disabled>
+                                    <label for="brand">Brand</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <span class="bi bi-paperclip" aria-hidden="true"></span>
+                                </span>
+                                <div class="form-floating">
+                                    <div class="form-floating-tooltip">
+                                        <button type="button"
+                                            class="ra-btn ra-btn-link height-inherit text-danger font-size-18"
+                                            data-bs-toggle="tooltip" data-placement="top"
+                                            data-bs-original-title="(Maximum allowed file size 1MB, PDF, DOC, Excel, Image)">
+                                            <span class="bi bi-question-circle font-size-18"></span>
+                                        </button>
+                                    </div>
+                                    <span class="form-floating-label"
+                                        for="uploadFile_{{ $productVariants[0]->id }}">Upload File</span>
+                                    <div class="simple-file-upload">
+                                        <input type="file" id="uploadFile_{{ $productVariants[0]->id }}"
+                                            name="vendor_attachment[{{ $productVariants[0]->id }}]"
+                                            class="real-file-input vendor-attachment" style="display: none;"
+                                            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" {{ $product->is_product
+                                        == 'no' ? 'disabled' : '' }}>
+                                        <div class="file-display-box form-control text-start font-size-12 text-dark"
+                                            role="button" data-bs-toggle="tooltip" data-bs-placement="top"
+                                            onclick="document.getElementById('uploadFile_{{ $productVariants[0]->id }}').click()">
+                                            Attach file
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @php
+                            $existingFile = optional($productVariants[0]->vendor_quotation)->vendor_attachment_file ??
+                            null;
+                            $fileName = $existingFile ? basename($existingFile) : 'Attach file';
+                            @endphp
+                            @if ($existingFile)
+                            <a href="{{ asset('public/uploads/rfq_product/sub_products/' . $existingFile) }}"
+                                target="_blank" class="btn btn-link btn-sm ms-2" title="View file">
+                                {{ $existingFile }}
+                            </a>
                             @endif
                         </div>
-
-                        <div class="table-responsive table-product toggle-table-content">
-                            @php
-                                $productVariants = $variants[$product->product_id] ?? collect();
-                                $showCounterOffer = $productVariants->contains(function ($v) {
-                                    $hasHistRel = !empty($v->buyer_counter_offers) && count($v->buyer_counter_offers) > 0;
-                                    $hasSingle = !empty(optional($v->vendor_quotation)->counter_offer);
-                                    return $hasHistRel || $hasSingle;
-                                });
-                                $showHistPrice = $productVariants->contains(function ($v) {
-                                    $hasHistRel = !empty($v->vendor_price_history) && count($v->vendor_price_history) > 0;
-                                    $hasSingle = !empty(optional($v->vendor_quotation)->hist_price);
-                                    return $hasHistRel || $hasSingle;
-                                });
-                            @endphp
-
-                            <table class="table table-product-list table-d-block-mobile">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th style="text-align: start !important;">Specification</th>
-                                        <th>Size</th>
-                                        <th width="125">Quantity/UOM</th>
-                                        <th width="125"><b>Price (<span class="currency-symbol"></span>)</b> <i class="bi bi-info-circle-fill text-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Net Price after Discount"></i></th>
-                                        <th width="125">MRP (<span class="currency-symbol"></span>) </th>
-                                        <th width="100">Disc.(%) <i class="bi bi-info-circle-fill text-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Discount on MRP"></i></th>
-                                        <th width="125">Total (<span class="currency-symbol"></span>)</th>
-                                        @if ($showCounterOffer)
-                                            <th width="125">Counter Offer (<span class="currency-symbol"></span>)</th>
-                                        @endif
-                                        @if ($showHistPrice)
-                                            <th width="125">Hist. Price (<span class="currency-symbol"></span>)</th>
-                                        @endif
-                                        <th width="400">Specs</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($productVariants as $vIndex => $variant)
-                                        <tr>
-                                            <td>{{ $vIndex + 1 }}</td>
-                                            <td>{{ $variant->specification }}</td>
-                                            <td class="text-center">
-                                                @php $sizeStr = strip_tags($variant->size); @endphp
-                                                @if (strlen($sizeStr) > 5)
-                                                    {!! mb_substr($sizeStr, 0, 5) !!}
-                                                    <button type="button" class="btn btn-link p-0 m-0 align-baseline"
-                                                        data-bs-toggle="tooltip" data-bs-placement="top" title="{!! $sizeStr !!}">
-                                                        <i class="bi bi-info-circle"></i>
-                                                    </button>
-                                                @else
-                                                    {!! $variant->size !!}
-                                                @endif
-                                            </td>
-                                            <td class="text-center">{{ $variant->quantity }} {{ getUOMName($variant->uom) }}</td>
-                                            <td>
-                                                <input type="number" name="price[{{ $variant->id }}]"
-                                                    class="form-control form-control-sm variant-price price-change"
-                                                    value="{{ optional($variant->vendor_quotation)->price ?? '' }}"
-                                                    {{ $product->is_product == 'no' ? 'disabled' : '' }}>
-                                            </td>
-                                            <td>
-                                                <input type="number" name="mrp[{{ $variant->id }}]"
-                                                    class="form-control form-control-sm variant-mrp price-change"
-                                                    value="{{ optional($variant->vendor_quotation)->mrp ?? '' }}"
-                                                    {{ $product->is_product == 'no' ? 'disabled' : '' }}>
-                                            </td>
-                                            <td>
-                                                <input type="number" name="disc[{{ $variant->id }}]"
-                                                    class="form-control form-control-sm variant-discount price-change"
-                                                    value="{{ optional($variant->vendor_quotation)->discount ?? '' }}"
-                                                    {{ $product->is_product == 'no' ? 'disabled' : '' }}>
-                                            </td>
-                                            <td>
-                                                @php
-                                                    $price = optional($variant->vendor_quotation)->price ?? 0;
-                                                    $quantity = $variant->quantity;
-                                                    $total = $price * $quantity;
-                                                @endphp
-                                                <input type="text" class="form-control form-control-sm totalAmounts"
-                                                    value="{{ $total > 0 ? IND_amount_format($total) : '' }}" readonly
-                                                    {{ $product->is_product == 'no' ? 'disabled' : '' }}>
-                                                <input type="hidden" class="totalQty" value="{{ $variant->quantity }}">
-                                            </td>
-
-                                            @if ($showCounterOffer)
-                                                @php
-                                                    $coItems = collect($variant->buyer_counter_offers ?? []);
-                                                    if ($coItems->isEmpty() && !empty(optional($variant->vendor_quotation)->buyer_price)) {
-                                                        $coItems = collect([(object)[
-                                                            'buyer_price' => optional($variant->vendor_quotation)->buyer_price,
-                                                            'created_at' => optional($variant->vendor_quotation)->updated_at ?? optional($variant->vendor_quotation)->created_at,
-                                                        ]]);
-                                                    }
-                                                    $coLatest = optional($coItems->first())->buyer_price;
-                                                    $coContent = $coItems->map(function ($item) {
-                                                        $amt = number_format((float)$item->buyer_price, 2);
-                                                        $dt = $item->updated_at ? \Carbon\Carbon::parse($item->updated_at)->format('d-M') : '';
-                                                        return "<div>{$amt} <small class='text-white'>({$dt})</small></div>";
-                                                    })->implode('');
-                                                @endphp
-                                                <td data-th="Counter Offer" class="counter-offer">
-                                                    <span class="form-control h-30 d-inline-flex align-items-center">
-                                                        @if ($coItems->isNotEmpty())
-                                                            <span class="buyer-old-price" data-bs-toggle="tooltip"
-                                                                data-bs-placement="top" data-bs-original-title="{{ $coContent }}">
-                                                                <i class="bi bi-info-circle-fill" aria-hidden="true"></i>
-                                                            </span>&nbsp;
-                                                            {{ number_format((float)$coLatest, 2) }}
-                                                        @endif
-                                                    </span>
-                                                </td>
-                                            @endif
-
-                                            @if ($showHistPrice)
-                                                @php
-                                                    $hpItems = collect($variant->vendor_price_history ?? []);
-                                                    if ($hpItems->isEmpty() && !empty(optional($variant->vendor_quotation)->hist_price)) {
-                                                        $hpItems = collect([(object)[
-                                                            'price' => optional($variant->vendor_quotation)->hist_price,
-                                                            'created_at' => optional($variant->vendor_quotation)->updated_at ?? optional($variant->vendor_quotation)->created_at,
-                                                        ]]);
-                                                    }
-                                                    $hpLatest = optional($hpItems->first())->price;
-                                                    $hpContent = $hpItems->map(function ($item) {
-                                                        $amt = number_format((float)$item->price, 2);
-                                                        $dt = $item->created_at ? \Carbon\Carbon::parse($item->created_at)->format('d-M') : '';
-                                                        return "<div>{$amt} <small class='text-white'>({$dt})</small></div>";
-                                                    })->implode('');
-                                                @endphp
-                                                <td data-th="Historical Price">
-                                                    <span class="form-control h-30 d-inline-flex align-items-center">
-                                                        @if ($hpItems->isNotEmpty())
-                                                            <span class="vendor-old-price" data-bs-toggle="tooltip"
-                                                                data-bs-placement="top" data-bs-original-title="{{ $hpContent }}">
-                                                                <i class="bi bi-info-circle-fill" aria-hidden="true"></i>
-                                                            </span>&nbsp;
-                                                            {{ number_format((float)$hpLatest, 2) }}
-                                                        @endif
-                                                    </span>
-                                                </td>
-                                            @endif
-
-                                            <td>
-                                                <input type="text" name="vendor_spec[{{ $variant->id }}]"
-                                                    id="vendor_spec_{{ $variant->id }}"
-                                                    class="form-control form-control-sm specs-trigger"
-                                                    value="{{ optional($variant->vendor_quotation)->specification ?? '' }}"
-                                                    placeholder="Enter Specs" data-bs-toggle="modal"
-                                                    data-bs-target="#submitSpecification"
-                                                    data-target-input="vendor_spec_{{ $variant->id }}"
-                                                    {{ $product->is_product == 'no' ? 'disabled' : '' }}>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <!-- Search by Brand and Remarks -->
-                        <div class="row mt-4">
-                            <div class="col-md-4 mb-4">
-                                <div class="input-group disabled">
-                                    <span class="input-group-text">
-                                        <span class="bi bi-pencil" aria-hidden="true"></span>
-                                    </span>
-                                    <div class="form-floating">
-                                        <input type="text" class="form-control" id="remarks" value="{{ $product->brand }}"
-                                            placeholder="Remarks" disabled>
-                                        <label for="remarks">Remarks</label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4 mb-4">
-                                <div class="input-group disabled">
-                                    <span class="input-group-text">
-                                        <span class="bi bi-tag-fill" aria-hidden="true"></span>
-                                    </span>
-                                    <div class="form-floating">
-                                        <input type="text" class="form-control" id="brand" value="{{ $product->remarks }}"
-                                            placeholder="Brand" disabled>
-                                        <label for="brand">Brand</label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4 mb-4">
-                                <div class="input-group">
-                                    <span class="input-group-text">
-                                        <span class="bi bi-paperclip" aria-hidden="true"></span>
-                                    </span>
-                                    <div class="form-floating">
-                                        <div class="form-floating-tooltip">
-                                            <button type="button"
-                                                class="ra-btn ra-btn-link height-inherit text-danger font-size-18"
-                                                data-bs-toggle="tooltip" data-placement="top"
-                                                data-bs-original-title="(Maximum allowed file size 1MB, PDF, DOC, Excel, Image)">
-                                                <span class="bi bi-question-circle font-size-18"></span>
-                                            </button>
-                                        </div>
-                                        <span class="form-floating-label"
-                                            for="uploadFile_{{ $productVariants[0]->id }}">Upload File</span>
-                                        <div class="simple-file-upload">
-                                            <input type="file" id="uploadFile_{{ $productVariants[0]->id }}"
-                                                name="vendor_attachment[{{ $productVariants[0]->id }}]"
-                                                class="real-file-input vendor-attachment" style="display: none;"
-                                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-                                                {{ $product->is_product == 'no' ? 'disabled' : '' }}>
-                                            <div class="file-display-box form-control text-start font-size-12 text-dark"
-                                                role="button" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                onclick="document.getElementById('uploadFile_{{ $productVariants[0]->id }}').click()">
-                                                Attach file
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                @php
-                                    $existingFile = optional($productVariants[0]->vendor_quotation)->vendor_attachment_file ?? null;
-                                    $fileName = $existingFile ? basename($existingFile) : 'Attach file';
-                                @endphp
-                                @if ($existingFile)
-                                    <a href="{{ asset('public/uploads/rfq_product/sub_products/' . $existingFile) }}"
-                                        target="_blank" class="btn btn-link btn-sm ms-2" title="View file">
-                                        {{ $existingFile }}
-                                    </a>
-                                @endif
-                            </div>
-                            <div class="col-md-4 mb-4">
-                                <div class="input-group">
-                                    <span class="input-group-text">
-                                        <span class="bi bi-tag-fill" aria-hidden="true"></span>
-                                    </span>
-                                    <div class="form-floating">
-                                        <input type="text" class="form-control" id="sellerBrand"
-                                            name="sellerbrand[{{ $productVariants[0]->id }}]"
-                                            value="{{ optional($productVariants[0]->vendor_quotation)->vendor_brand ?? '' }}"
-                                            placeholder="Seller Brand" {{ $product->is_product == 'no' ? 'disabled' : '' }}>
-                                        <label for="sellerBrand">Seller Brand</label>
-                                    </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <span class="bi bi-tag-fill" aria-hidden="true"></span>
+                                </span>
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="sellerBrand"
+                                        name="sellerbrand[{{ $productVariants[0]->id }}]"
+                                        value="{{ optional($productVariants[0]->vendor_quotation)->vendor_brand ?? '' }}"
+                                        placeholder="Seller Brand" {{ $product->is_product == 'no' ? 'disabled' : '' }}>
+                                    <label for="sellerBrand">Seller Brand</label>
                                 </div>
                             </div>
                         </div>
+                    </div>
                     @endforeach
                 </div>
             </div>
@@ -458,13 +475,13 @@
                                     <select class="form-select form-control-dispatch-branch" id="vendorDispatchBranch"
                                         name="vendor_dispatch_branch">
                                         @if (count($branches) > 1)
-                                            <option value="">Select</option>
+                                        <option value="">Select</option>
                                         @endif
                                         @foreach ($branches as $branch)
-                                            <option value="{{ $branch->branch_id }}"
-                                                {{ ($normal_product_data->vendor_dispatch_branch ?? '') == $branch->branch_id ? 'selected' : '' }}>
-                                                {{ $branch->name }}
-                                            </option>
+                                        <option value="{{ $branch->branch_id }}" {{ ($normal_product_data->
+                                            vendor_dispatch_branch ?? '') == $branch->branch_id ? 'selected' : '' }}>
+                                            {{ $branch->name }}
+                                        </option>
                                         @endforeach
                                     </select>
                                     <label for="vendorDispatchBranch">Dispatch Branch <span
@@ -475,7 +492,7 @@
                         </div>
 
                         @php
-                            $is_disabled = ($is_international_vendor == '1' && $is_international_buyer_check == '1');
+                        $is_disabled = ($is_international_vendor == '1' && $is_international_buyer_check == '1');
                         @endphp
 
                         <div class="col-12 col-sm-auto flex-xxl-grow-1">
@@ -488,23 +505,25 @@
                                         id="updateCurrency" name="vendor_currency" {{ $is_disabled ? 'disabled' : '' }}
                                         aria-label="Select">
                                         @if (!$is_disabled)
-                                            <option value="">Select</option>
+                                        <option value="">Select</option>
                                         @endif
                                         @foreach ($vendor_currency ?? [] as $val)
-                                            @php
-                                                if ($val->currency_name == '') continue;
-                                                $currency_val = ($val->currency_symbol == 'रु') ? 'NPR' : $val->currency_symbol;
-                                                $currency_symbol = ($val->currency_symbol == 'रु') ? 'NPR' : $val->currency_symbol;
-                                                $selected = ($currency_val == ($normal_product_data->vendor_currency ?? '')) ? 'selected' : '';
-                                            @endphp
-                                            <option value="{{ $currency_val }}" data-symbol="{{ $currency_symbol }}"
-                                                {{ $selected }}>
-                                                {{ $val->currency_name }} ({{ $val->currency_symbol }})
-                                            </option>
+                                        @php
+                                        if ($val->currency_name == '') continue;
+                                        $currency_val = ($val->currency_symbol == 'रु') ? 'NPR' : $val->currency_symbol;
+                                        $currency_symbol = ($val->currency_symbol == 'रु') ? 'NPR' :
+                                        $val->currency_symbol;
+                                        $selected = ($currency_val == ($normal_product_data->vendor_currency ?? '')) ?
+                                        'selected' : '';
+                                        @endphp
+                                        <option value="{{ $currency_val }}" data-symbol="{{ $currency_symbol }}" {{
+                                            $selected }}>
+                                            {{ $val->currency_name }} ({{ $val->currency_symbol }})
+                                        </option>
                                         @endforeach
                                     </select>
                                     @if ($is_disabled)
-                                        <input type="hidden" name="vendor_currency" value="₹">
+                                    <input type="hidden" name="vendor_currency" value="₹">
                                     @endif
                                     <label for="updateCurrency">Currency <span class="text-danger">*</span></label>
                                 </div>
@@ -515,7 +534,8 @@
                     <input type="hidden" name="rfq_id" value="{{ $rfq->rfq_id }}">
                     <div class="row pt-3 gx-3 gy-3 justify-content-center align-items-center">
                         <div class="col-auto">
-                            <button type="button" onclick="messageModal('{{ url('/message/show-popup') }}','{{ auth()->user()->id }}','{{ $rfq->buyer_id }}','{{ $rfq->rfq_id }}','','')"
+                            <button type="button"
+                                onclick="messageModal('{{ route('message.showPopUp') }}','{{ auth()->user()->id }}','{{ $rfq->buyer_id }}','{{ $rfq->rfq_id }}','','')"
                                 class="ra-btn ra-btn-sm px-3 ra-btn-outline-primary">
                                 <i class="bi bi-send" aria-hidden="true"></i>
                                 Send Message
@@ -585,7 +605,8 @@
 </div>
 
 <!-- Modal: Specification -->
-<div class="modal fade" id="submitSpecification" tabindex="-1" aria-labelledby="submitSpecificationLabel" aria-hidden="true">
+<div class="modal fade" id="submitSpecification" tabindex="-1" aria-labelledby="submitSpecificationLabel"
+    aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header justify-content-between bg-graident text-white px-4">
@@ -654,7 +675,7 @@
 </div> --}}
 
 <script>
-// Fill product name when clicking "Click Here"
+    // Fill product name when clicking "Click Here"
 document.addEventListener('click', function (e) {
     if (e.target.matches('[data-product-name]')) {
         document.getElementById('modal_product_name').value = e.target.dataset.productName;

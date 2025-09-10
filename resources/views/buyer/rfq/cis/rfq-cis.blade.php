@@ -46,10 +46,12 @@
                                     </button>
                                 </div>
                                 <div class="col-auto">
-                                    <button type="button" class="ra-btn ra-btn-outline-primary px-2 font-size-11">
-                                    <span class="bi bi-download font-size-12" aria-hidden="true"></span>
-                                    Download CIS
-                                    </button>
+                                    <a target="_blank"
+                                        href="{{ route('buyer.rfq.cis-sheet', ['rfq_id'=>$rfq['rfq_id']]) }}?export=true"
+                                        class="ra-btn ra-btn-outline-primary px-2 font-size-11">
+                                        <span class="bi bi-download font-size-12" aria-hidden="true"></span>
+                                        Download CIS
+                                    </a>
                                 </div>
                             </div>
                         </div>

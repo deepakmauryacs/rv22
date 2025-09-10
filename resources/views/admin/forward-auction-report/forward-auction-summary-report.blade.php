@@ -124,156 +124,156 @@
 @endsection
 
 @section('scripts')
-    <script>
-        $(document).ready(function() {
-            $(document).on('submit', '#searchForm', function(e) {
-                e.preventDefault();
-                loadTable($(this).attr('action') + '?' + $(this).serialize());
-            });
-
-            $(document).on('click', '.pagination a', function(e) {
-                e.preventDefault();
-                loadTable($(this).attr('href'));
-            });
-
-            $(document).on('change', '#perPage', function() {
-                const form = $('#searchForm');
-                const formData = form.serialize();
-                const perPage = $(this).val();
-                const url = form.attr('action') + '?' + formData + '&per_page=' + perPage;
-                loadTable(url);
-            });
-
-            function loadTable(url) {
-                $.ajax({
-                    url: url,
-                    type: 'GET',
-                    beforeSend: function() {
-                        $('#table-container').html('<div class="text-center py-4">Loading...</div>');
-                    },
-                    success: function(response) {
-                        $('#table-container').html(response);
-                        if (history.pushState) {
-                            history.pushState(null, null, url);
-                        }
-                    }
-                });
-            }
+<script>
+    $(document).ready(function() {
+        $(document).on('submit', '#searchForm', function(e) {
+            e.preventDefault();
+            loadTable($(this).attr('action') + '?' + $(this).serialize());
         });
-    </script>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            $('#export-progress').hide();
+        $(document).on('click', '.pagination a', function(e) {
+            e.preventDefault();
+            loadTable($(this).attr('href'));
+        });
 
-            let exporting = false;
+        $(document).on('change', '#perPage', function() {
+            const form = $('#searchForm');
+            const formData = form.serialize();
+            const perPage = $(this).val();
+            const url = form.attr('action') + '?' + formData + '&per_page=' + perPage;
+            loadTable(url);
+        });
 
-            $('#export-btn').on('click', function(e) {
-                e.preventDefault();
-                if (exporting) return;
-                exporting = true;
+        function loadTable(url) {
+            $.ajax({
+                url: url,
+                type: 'GET',
+                beforeSend: function() {
+                    $('#table-container').html('<div class="text-center py-4">Loading...</div>');
+                },
+                success: function(response) {
+                    $('#table-container').html(response);
+                    if (history.pushState) {
+                        history.pushState(null, null, url);
+                    }
+                }
+            });
+        }
+    });
+</script>
 
-                const chunkSize = 10000;
-                const workbook = new ExcelJS.Workbook();
-                const worksheet = workbook.addWorksheet('Sheet1');
-                worksheet.addRow(["Auction ID", "Product Details", "Buyer Name", "Vendor Name", "Start Date & Time", "Participated"]);
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#export-progress').hide();
 
-                $('#export-progress').show();
+        let exporting = false;
+
+        $('#export-btn').on('click', function(e) {
+            e.preventDefault();
+            if (exporting) return;
+            exporting = true;
+
+            const chunkSize = 10000;
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('Sheet1');
+            worksheet.addRow(["Auction ID", "Product Details", "Buyer Name", "Vendor Name", "Start Date & Time", "Participated"]);
+
+            $('#export-progress').show();
+            $('#progress').css('width', '0%');
+            $('#progress-text').text('0%');
+            $('.fillter-form-control').attr('readonly', true);
+            $(this).attr('disabled', true);
+
+            const filters = {
+                auction_id: $('#auction_id').val(),
+                vendor_name: $('#vendor_name').val(),
+                buyer_name: $('#buyer_name').val(),
+                from_date: $('#from_date').val(),
+                to_date: $('#to_date').val()
+            };
+
+            function resetExport() {
+                $('#export-progress').hide();
                 $('#progress').css('width', '0%');
                 $('#progress-text').text('0%');
-                $('.fillter-form-control').attr('readonly', true);
-                $(this).attr('disabled', true);
+                $('.fillter-form-control').attr('readonly', false);
+                $('#export-btn').attr('disabled', false);
+                exporting = false;
+            }
 
-                const filters = {
-                    auction_id: $('#auction_id').val(),
-                    vendor_name: $('#vendor_name').val(),
-                    buyer_name: $('#buyer_name').val(),
-                    from_date: $('#from_date').val(),
-                    to_date: $('#to_date').val()
-                };
+            $.ajax({
+                url: "{{ route('admin.forward-auctions-summary.exportTotal') }}",
+                method: 'GET',
+                data: filters,
+                success: function(res) {
+                    const total = res.total;
+                    if (!total) {
+                        alert('No data found');
+                        resetExport();
+                        return;
+                    }
 
-                function resetExport() {
-                    $('#export-progress').hide();
-                    $('#progress').css('width', '0%');
-                    $('#progress-text').text('0%');
-                    $('.fillter-form-control').attr('readonly', false);
-                    $('#export-btn').attr('disabled', false);
-                    exporting = false;
-                }
+                    let fetched = 0;
+                    let lastAuctionId = null;
+                    let lastVendorId = null;
 
-                $.ajax({
-                    url: "{{ route('admin.forward-auctions-summary.exportTotal') }}",
-                    method: 'GET',
-                    data: filters,
-                    success: function(res) {
-                        const total = res.total;
-                        if (!total) {
-                            alert('No data found');
-                            resetExport();
-                            return;
+                    const fetchBatch = () => {
+                        const params = Object.assign({}, filters, { limit: chunkSize });
+                        if (lastAuctionId !== null && lastVendorId !== null) {
+                            params.last_auction_id = lastAuctionId;
+                            params.last_vendor_id = lastVendorId;
                         }
 
-                        let fetched = 0;
-                        let lastAuctionId = null;
-                        let lastVendorId = null;
+                        $.ajax({
+                            url: "{{ route('admin.forward-auctions-summary.exportBatch') }}",
+                            method: 'GET',
+                            data: params,
+                            success: function(batch) {
+                                batch.data.forEach(row => worksheet.addRow(row));
+                                fetched += batch.data.length;
+                                lastAuctionId = batch.last_auction_id;
+                                lastVendorId = batch.last_vendor_id;
 
-                        const fetchBatch = () => {
-                            const params = Object.assign({}, filters, { limit: chunkSize });
-                            if (lastAuctionId !== null && lastVendorId !== null) {
-                                params.last_auction_id = lastAuctionId;
-                                params.last_vendor_id = lastVendorId;
-                            }
+                                const percent = Math.round((fetched / total) * 100);
+                                $('#progress').css('width', percent + '%');
+                                $('#progress-text').text(percent + '%');
 
-                            $.ajax({
-                                url: "{{ route('admin.forward-auctions-summary.exportBatch') }}",
-                                method: 'GET',
-                                data: params,
-                                success: function(batch) {
-                                    batch.data.forEach(row => worksheet.addRow(row));
-                                    fetched += batch.data.length;
-                                    lastAuctionId = batch.last_auction_id;
-                                    lastVendorId = batch.last_vendor_id;
-
-                                    const percent = Math.round((fetched / total) * 100);
-                                    $('#progress').css('width', percent + '%');
-                                    $('#progress-text').text(percent + '%');
-
-                                    if (fetched < total && batch.data.length > 0) {
-                                        fetchBatch();
-                                    } else {
-                                        workbook.xlsx.writeBuffer().then(buffer => {
-                                            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                                            const url = URL.createObjectURL(blob);
-                                            const a = document.createElement('a');
-                                            a.href = url;
-                                            a.download = 'forward-auction-report_' + Date.now() + '.xlsx';
-                                            document.body.appendChild(a);
-                                            a.click();
-                                            document.body.removeChild(a);
-                                            URL.revokeObjectURL(url);
-                                        }).catch(() => {
-                                            alert('Error generating file');
-                                        }).finally(() => {
-                                            resetExport();
-                                        });
-                                    }
-                                },
-                                error: function() {
-                                    alert('Error fetching data');
-                                    resetExport();
+                                if (fetched < total && batch.data.length > 0) {
+                                    fetchBatch();
+                                } else {
+                                    workbook.xlsx.writeBuffer().then(buffer => {
+                                        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                                        const url = URL.createObjectURL(blob);
+                                        const a = document.createElement('a');
+                                        a.href = url;
+                                        a.download = 'forward-auction-report_' + Date.now() + '.xlsx';
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        document.body.removeChild(a);
+                                        URL.revokeObjectURL(url);
+                                    }).catch(() => {
+                                        alert('Error generating file');
+                                    }).finally(() => {
+                                        resetExport();
+                                    });
                                 }
-                            });
-                        };
+                            },
+                            error: function() {
+                                alert('Error fetching data');
+                                resetExport();
+                            }
+                        });
+                    };
 
-                        fetchBatch();
-                    },
-                    error: function() {
-                        alert('Error fetching total count');
-                        resetExport();
-                    }
-                });
+                    fetchBatch();
+                },
+                error: function() {
+                    alert('Error fetching total count');
+                    resetExport();
+                }
             });
         });
-    </script>
+    });
+</script>
 @endsection

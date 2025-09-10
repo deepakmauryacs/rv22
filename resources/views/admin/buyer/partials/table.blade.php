@@ -25,10 +25,10 @@
             <tr>
                 <td>{{ $result->buyer_code ?? ''}}</td>
                 <td class="text-wrap keep-word">
-                    <a href="{{ route('admin.buyer.user', $result->user_id) }}" style="color: blue;text-decoration: underline !important;"> 
-                     {{ $result->legal_name ?? ''}} 
-                    </a> 
-                    <a href="#" style="margin-left: 5px; color: inherit; text-decoration: none;">
+                    <a href="{{ route('admin.buyer.user', $result->user_id) }}" style="color: blue;text-decoration: underline !important;">
+                     {{ $result->legal_name ?? ''}}
+                    </a>
+                    <a href="{{ route('admin.buyer.primaryContactDetails', $result->user_id) }}" style="margin-left: 5px; color: inherit; text-decoration: none;">
                       <i class="bi bi-pencil-square" style="cursor: pointer;"></i>
                     </a>
                 </td>
@@ -111,9 +111,9 @@
                 <td>
                     <span style="display: flex;gap: 5px;">
                         <a href="{{ route('admin.buyer.profile', $result->user_id) }}" class="btn-rfq btn-rfq-primary btn-sm store-profile">Profile</a>
-                        <a href="{{ route('admin.buyer.plan', $result->id) }}" class="btn-rfq btn-rfq-secondary btn-sm {{ empty($result->buyer_code) ? "disabled" : "" }}">Plan</a> 
+                        <a href="{{ route('admin.buyer.plan', $result->id) }}" class="btn-rfq btn-rfq-secondary btn-sm {{ empty($result->buyer_code) ? "disabled" : "" }}">Plan</a>
                         @if(empty($result->buyer_code))
-                            <a type="button" class="btn-rfq btn-sm btn-rfq-danger {{ $result->users->status==1 ? 'd-none' : '' }} buyer-delete-{{ $result->id }}" href="javascript:void(0)" 
+                            <a type="button" class="btn-rfq btn-sm btn-rfq-danger {{ $result->users->status==1 ? 'd-none' : '' }} buyer-delete-{{ $result->id }}" href="javascript:void(0)"
                             onclick="deleteBuyer(this, '{{ $result->user_id }}', '{{$result->legal_name}}');">Delete</a>
                         @endif
                     </span>
@@ -130,4 +130,3 @@
 </div>
 <x-paginationwithlength :paginator="$results" />
 
-    

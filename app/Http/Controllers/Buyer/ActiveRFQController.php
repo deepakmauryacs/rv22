@@ -339,7 +339,7 @@ class ActiveRFQController extends Controller
                         ->groupBy('vendor_user_id', 'vendor_status')
                         ->where('rfq_id', $rfq_id)
                         ->get()->toArray();
-        // 
+        //
         $status_wise_vendor = [];
         $all_vendors = [];
         foreach ($rfq_vendors as $value) {
@@ -355,7 +355,7 @@ class ActiveRFQController extends Controller
             $status_wise_vendor[$vendor_rfq_status][] = $value->vendor_user_id;
             $all_vendors[$value->vendor_user_id] = true;
         }
-        
+
         unset($rfq_vendors);
 
         return array('update_vendor_rfq_status_wise'=>$status_wise_vendor, 'all_vendors'=>$all_vendors);
@@ -389,8 +389,6 @@ class ActiveRFQController extends Controller
                         ->where('record_type', 2)
                         ->whereNotIn('buyer_rfq_status', [5, 8, 9, 10])
                         ->first()->toArray();
-        // 
-        echo '<pre>';print_r($rfq_data);die;
         DB::beginTransaction();
 
         try {

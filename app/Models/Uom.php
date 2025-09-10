@@ -21,6 +21,4 @@ class Uom extends Model
             $builder->orderBy('uom_name', 'asc');
         });
     }
-
-
 }

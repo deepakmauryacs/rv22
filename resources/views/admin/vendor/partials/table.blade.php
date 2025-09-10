@@ -32,7 +32,7 @@
                     <a href="javascript:void(0)">
                         {{ $result->legal_name ?? ''}}
                     </a>
-                    <a href="javascript:void(0)" style="margin-left: 5px; color: inherit; text-decoration: none;">
+                    <a href="{{ route('admin.vendor.primaryContactDetails', $result->user_id) }}" style="margin-left: 5px; color: inherit; text-decoration: none;">
                         <i class="bi bi-pencil-square" style="cursor: pointer;"></i>
                     </a>
                     @if($result->t_n_c == 1 && empty($result->vendor_code))

@@ -1,4 +1,4 @@
-@extends('buyer.layouts.app', ['title'=>'Add Your Vendor'])
+@extends('buyer.layouts.app', ['title'=>'Vendor Search'])
 
 @section('css')
 @endsection

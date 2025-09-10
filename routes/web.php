@@ -287,6 +287,10 @@ Route::group(['prefix' => 'super-admin'], function () {
         Route::prefix('buyer')->name('admin.')->group(function() {
             Route::get('/', [BuyerController::class, 'index'])->name('buyer.index');
             Route::get('/profile/{id}', [BuyerController::class, 'profile'])->name('buyer.profile');
+
+            Route::get('primary-contact/{id}', [BuyerController::class, 'primaryContactDetails'])->name('buyer.primaryContactDetails');
+            Route::post('primary-contact/update', [BuyerController::class, 'primaryContactDetailsUpdate'])->name('buyer.primaryContactDetailsUpdate');
+
             Route::get('/plan/{id}', [BuyerController::class, 'plan'])->name('buyer.plan');
             Route::get('/user/{id}', [BuyerController::class, 'users'])->name('buyer.user');
             Route::put('/plan/{id}', [BuyerController::class, 'planUpdate'])->name('buyer.plan.update');
@@ -318,6 +322,10 @@ Route::group(['prefix' => 'super-admin'], function () {
             Route::post('/validate-vendor-gstin-vat', [VendorController::class, 'validateVendorGSTINVat'])->name('vendor.validate-vendor-gstin-vat');
             Route::post('/save-sa-vendor-profile', [VendorController::class, 'saveSAVendorProfile'])->name('vendor.save-sa-vendor-profile');
             Route::get('/profile/{id}', [VendorController::class, 'profile'])->name('vendor.profile');
+
+            Route::get('primary-contact/{id}', [VendorController::class, 'primaryContactDetails'])->name('vendor.primaryContactDetails');
+            Route::post('primary-contact/update', [VendorController::class, 'primaryContactDetailsUpdate'])->name('vendor.primaryContactDetailsUpdate');
+
             Route::get('/plan/{id}', [VendorController::class, 'plan'])->name('vendor.plan');
             Route::get('/user/{id}', [VendorController::class, 'users'])->name('vendor.user');
             Route::put('/plan/{id}', [VendorController::class, 'planUpdate'])->name('vendor.plan.update');

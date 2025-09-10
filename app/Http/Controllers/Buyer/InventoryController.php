@@ -70,7 +70,7 @@ class InventoryController extends Controller
             'stock_price'         => ['required', 'numeric', 'min:0', new NoSpecialCharacters(false)],
             'indent_min_qty'      => ['nullable', 'regex:/^\d+(\.\d+)?$/', 'max:20', new NoSpecialCharacters(false)],
 
-            'uom_id'              => 'required|exists:uom,id',
+            'uom_id'              => 'required|exists:uoms,id',
             'inventory_type_id'   => 'nullable|integer|min:1',
         ]);
 

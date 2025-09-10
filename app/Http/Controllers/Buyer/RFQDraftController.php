@@ -196,6 +196,23 @@ class RFQDraftController extends Controller
         }
 
         $rfq_draft_id = $request->draft_id;
+
+        $company_id = getParentUserId();
+        $current_user_id = Auth::user()->id;
+
+        $is_draft_exists = DB::table('rfqs')
+                    ->where('rfq_id', $rfq_draft_id)
+                    ->where('buyer_id', $company_id)
+                    ->whereIn('record_type', [1, 3])
+                    ->first();
+        // 
+        if(empty($is_draft_exists)){
+            return response()->json([
+                'status' => false,
+                'message' => 'Draft RFQ not found'
+            ]);
+        }
+                    
         $product_exists_into_rfq = RfqProduct::where("rfq_id", $rfq_draft_id)->where("product_id", $product_id)->first();
         if(!empty($product_exists_into_rfq)){
             return response()->json([
@@ -203,9 +220,6 @@ class RFQDraftController extends Controller
                 'message' => 'Product already exists into RFQ'
             ]);
         }
-
-        $company_id = getParentUserId();
-        $current_user_id = Auth::user()->id;
 
         DB::beginTransaction();
 
@@ -219,6 +233,7 @@ class RFQDraftController extends Controller
             $rfqProduct->rfq_id = $rfq_draft_id;
             $rfqProduct->product_id = $product_id;
             $rfqProduct->product_order = $rfq_product_order+1;
+            $rfqProduct->edit_rfq_id = $is_draft_exists->edit_rfq_id;
             $rfqProduct->save();
 
             $rfqProductVariant = new RfqProductVariant();

@@ -76,8 +76,12 @@
                 <td>
                     <div class="rfq-table-btn-group">
                         <a class="ra-btn small-btn ra-btn-primary text-white d-inline-block {{ $result->buyer_rfq_status == 1 ? 'disabled' : ''}}" href="{{ route("buyer.rfq.cis-sheet", ['rfq_id'=>$result->rfq_id]) }}">CIS</a>
+                        @if(in_array($result->buyer_rfq_status, [5,8,9]))
                         <button class="ra-btn small-btn ra-btn-outline-primary-light">Edit</button>
+                        @endif
+                        @if(in_array($result->buyer_rfq_status, [5,8,10]))
                         <button class="ra-btn small-btn ra-btn-outline-primary-light">Re-Use</button>
+                        @endif
                     </div>
                 </td>
             </tr>
@@ -89,5 +93,5 @@
 
     </tbody>
 </table>
-<x-paginationwithlength :paginator="$results" /> 
+<x-paginationwithlength :paginator="$results" />
 

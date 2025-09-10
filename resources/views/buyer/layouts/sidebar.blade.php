@@ -25,9 +25,10 @@
                             <li><a href="{{route('buyer.rfq.scheduled-rfq')}}" class="{{ setActiveMenu('buyer.rfq.scheduled-rfq') }}">Scheduled RFQ</a></li>
                             <li><a href="{{ route('buyer.rfq.sent-rfq') }}" class="{{ setActiveMenu('buyer.rfq.sent-rfq') }}">Sent RFQ</a></li>
                             <li><a href="javascript:void(0)">Counter Offer</a></li>
-                            <li><a href="javascript:void(0)"> Unapproved Orders </a></li>
+                            <li><a href="{{ route('buyer.unapproved-orders.list') }}"> Unapproved Orders </a></li>
                             <li><a href="{{route('buyer.rfq.order-confirmed')}}" class="{{ setActiveMenu('buyer.rfq.order-confirmed') }}"> Orders Confirmed </a></li>
                             <li><a href="{{route('buyer.rfq.pi-invoice')}}" class="{{ setActiveMenu('buyer.rfq.pi-invoice') }}"> PI's / Invoices </a></li>
+
                         </ul>
                     </div>
                 </div>

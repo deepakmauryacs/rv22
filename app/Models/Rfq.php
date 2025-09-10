@@ -56,19 +56,23 @@ class Rfq extends Model
     //                 ->orderByDesc('created_at');
     // }
 
-    public function getLastRfqVendorQuotation() {
+    public function getLastRfqVendorQuotation()
+    {
         return $this->hasOne(RfqVendorQuotation::class, 'rfq_id', 'rfq_id')->latest();
     }
 
-    public function buyerUser() {
+    public function buyerUser()
+    {
         return $this->belongsTo(User::class, 'buyer_user_id');
     }
 
-    public function buyerBranch() {
+    public function buyerBranch()
+    {
         return $this->belongsTo(BranchDetail::class, 'buyer_branch', 'branch_id');
     }
 
-    public function buyer() {
+    public function buyer()
+    {
         return $this->belongsTo(Buyer::class, 'buyer_id', 'user_id');
     }
 
@@ -113,84 +117,100 @@ class Rfq extends Model
             ->select(['rfq_no', 'auction_date', 'auction_start_time', 'auction_end_time']);
     }
 
-    public static function rfqAuctionDetails($rfq_id) {
+    public static function rfqAuctionDetails($rfq_id)
+    {
 
         // extract filter vendor
         $cis_filter_vendors = self::extractCISFilterVendor($rfq_id);
-        if(empty($cis_filter_vendors) && !empty($cis_vendors)){
+        if (empty($cis_filter_vendors) && !empty($cis_vendors)) {
             $cis_filter_vendors = $cis_vendors;
         }
 
         $cis = self::where('rfq_id', $rfq_id)
-                    ->select('id', 'rfq_id', 'buyer_id', 'buyer_user_id', 'prn_no', 'buyer_branch', 'last_response_date', 'buyer_price_basis', 'buyer_pay_term', 'buyer_delivery_period', 'edit_by',
-                    'scheduled_date', 'buyer_rfq_status', 'created_at', 'updated_at')
-                    ->with([
-                        'buyer_branchs' => function ($q) {
-                            $q->select('branch_id', 'name');
-                        },
+            ->select(
+                'id',
+                'rfq_id',
+                'buyer_id',
+                'buyer_user_id',
+                'prn_no',
+                'buyer_branch',
+                'last_response_date',
+                'buyer_price_basis',
+                'buyer_pay_term',
+                'buyer_delivery_period',
+                'edit_by',
+                'scheduled_date',
+                'buyer_rfq_status',
+                'created_at',
+                'updated_at'
+            )
+            ->with([
+                'buyer_branchs' => function ($q) {
+                    $q->select('branch_id', 'name');
+                },
 
-                        //  ONLY load auction prices; we won't load/use rfqVendorQuotations here
-                        'rfqVendorAuctionPrices' => function ($q) {
-                            $q->select([
-                                'id',
-                                'rfq_no',
-                                \DB::raw('NULL as rfq_id'),
-                                'vendor_id',
-                                \DB::raw('rfq_product_veriant_id as rfq_product_variant_id'),
-                                \DB::raw('vend_price as price'),
-                                \DB::raw('NULL as mrp'),
-                                \DB::raw('NULL as discount'),
-                                \DB::raw('0 as buyer_price'),
-                                \DB::raw('NULL as vendor_brand'),
-                                \DB::raw('vend_specs as vendor_remarks'),
-                                \DB::raw('NULL as vendor_additional_remarks'),
-                                \DB::raw('vend_price_basis as vendor_price_basis'),
-                                \DB::raw('vend_payment_terms as vendor_payment_terms'),
-                                \DB::raw('vend_delivery_period as vendor_delivery_period'),
-                                \DB::raw('vend_currency as vendor_currency'),
-                                'created_at',
-                                'updated_at',
-                            ])->orderBy('id', 'desc');
-                        },
+                //  ONLY load auction prices; we won't load/use rfqVendorQuotations here
+                'rfqVendorAuctionPrices' => function ($q) {
+                    $q->select([
+                        'id',
+                        'rfq_no',
+                        \DB::raw('NULL as rfq_id'),
+                        'vendor_id',
+                        \DB::raw('rfq_product_veriant_id as rfq_product_variant_id'),
+                        \DB::raw('vend_price as price'),
+                        \DB::raw('NULL as mrp'),
+                        \DB::raw('NULL as discount'),
+                        \DB::raw('0 as buyer_price'),
+                        \DB::raw('NULL as vendor_brand'),
+                        \DB::raw('vend_specs as vendor_remarks'),
+                        \DB::raw('NULL as vendor_additional_remarks'),
+                        \DB::raw('vend_price_basis as vendor_price_basis'),
+                        \DB::raw('vend_payment_terms as vendor_payment_terms'),
+                        \DB::raw('vend_delivery_period as vendor_delivery_period'),
+                        \DB::raw('vend_currency as vendor_currency'),
+                        'created_at',
+                        'updated_at',
+                    ])->orderBy('id', 'desc');
+                },
 
-                        'rfqVendors'=> function ($q) {
-                            $q->select('id', 'rfq_id', 'vendor_user_id', 'product_id', 'vendor_status');
-                        },
-                        'rfqVendors.rfqVendorProfile'=> function ($q) {
-                            $q->select('id', 'user_id', 'legal_name', 'date_of_incorporation', 'nature_of_business', 'company_name1', 'company_name2', 'msme_certificate', 'iso_registration');
-                        },
-                        'rfqVendors.rfqVendorDetails'=> function ($q) {
-                            $q->select('id', 'name', 'country_code', 'mobile');
-                        },
-                        'rfqVendors.vendorMainProduct'=> function ($q) {
-                            $q->select('id', 'vendor_id', 'product_id');
-                        },
-                        'rfqVendors.vendorMainProduct.product'=> function ($q) {
-                            $q->select('id', 'product_name');
-                        },
-                        'rfqProducts'=> function ($q) {
-                            $q->orderBy('product_order', 'asc');
-                        },
-                        'rfqProducts.productVariants'=> function ($q) use($rfq_id) {
-                            $q->where('rfq_id', $rfq_id)->orderBy('variant_order', 'asc');
-                        },
-                        'rfqProducts.masterProduct'=> function ($q) {
-                            $q->select('id', 'product_name', 'division_id', 'category_id');
-                        },
-                        'rfq_auction'=> function ($q) {
-                            $q->select('rfq_no', 'auction_date', 'auction_start_time', 'auction_end_time', 'is_rfq_price_map');
-                        },
-                        'rfqOrders'=> function ($q) {
-                            $q->select('id', 'rfq_id', 'vendor_id', 'po_number')->where('order_status', 1);
-                        },
-                        'rfqOrders.order_variants'=> function ($q) {
-                            $q->select('id', 'po_number', 'rfq_product_variant_id', 'order_quantity');
-                        },
-                        'rfqTechnicalApproval'=> function ($q) {
-                            $q->select('rfq_no', 'vendor_id', 'description', 'technical_approval');
-                        }
-                    ])
-                    ->first();
+                'rfqVendors' => function ($q) {
+                    $q->select('id', 'rfq_id', 'vendor_user_id', 'product_id', 'vendor_status');
+                },
+                'rfqVendors.rfqVendorProfile' => function ($q) {
+                    $q->select('id', 'user_id', 'legal_name', 'date_of_incorporation', 'nature_of_business', 'company_name1', 'company_name2', 'msme_certificate', 'iso_registration');
+                },
+                'rfqVendors.rfqVendorDetails' => function ($q) {
+                    $q->select('id', 'name', 'country_code', 'mobile');
+                },
+                'rfqVendors.vendorMainProduct' => function ($q) {
+                    $q->select('id', 'vendor_id', 'product_id');
+                },
+                'rfqVendors.vendorMainProduct.product' => function ($q) {
+                    $q->select('id', 'product_name');
+                },
+                'rfqProducts' => function ($q) {
+                    $q->orderBy('product_order', 'asc');
+                },
+                'rfqProducts.productVariants' => function ($q) use ($rfq_id) {
+                    $q->where('rfq_id', $rfq_id)->orderBy('variant_order', 'asc');
+                },
+                'rfqProducts.masterProduct' => function ($q) {
+                    $q->select('id', 'product_name', 'division_id', 'category_id');
+                },
+                'rfq_auction' => function ($q) {
+                    $q->select('rfq_no', 'auction_date', 'auction_start_time', 'auction_end_time', 'is_rfq_price_map');
+                },
+                'rfqOrders' => function ($q) {
+                    $q->select('id', 'rfq_id', 'vendor_id', 'po_number')->where('order_status', 1);
+                },
+                'rfqOrders.order_variants' => function ($q) {
+                    $q->select('id', 'po_number', 'rfq_product_variant_id', 'order_quantity');
+                },
+                'rfqTechnicalApproval' => function ($q) {
+                    $q->select('rfq_no', 'vendor_id', 'description', 'technical_approval');
+                }
+            ])
+            ->first();
         // query done
 
         // echo "<pre>";
@@ -210,90 +230,122 @@ class Rfq extends Model
     }
 
 
-    public static function rfqDetails($rfq_id, $cis_vendors=[]) {
+    public static function rfqDetails($rfq_id, $cis_vendors = [])
+    {
 
         // extract filter vendor
         $cis_filter_vendors = self::extractCISFilterVendor($rfq_id);
-        if(empty($cis_filter_vendors) && !empty($cis_vendors)){
+        if (empty($cis_filter_vendors) && !empty($cis_vendors)) {
             $cis_filter_vendors = $cis_vendors;
         }
 
         $cis = self::where('rfq_id', $rfq_id)
-                    ->select('id', 'rfq_id', 'buyer_id', 'buyer_user_id', 'prn_no', 'buyer_branch', 'last_response_date', 'buyer_price_basis', 'buyer_pay_term', 'buyer_delivery_period', 'edit_by',
-                    'scheduled_date', 'buyer_rfq_status', 'created_at', 'updated_at')
-                    ->with([
-                        'buyer_branchs' => function ($q) {
-                            $q->select('branch_id', 'name');
-                        },
-                        'rfqVendorQuotations' => function ($q) {
-                            $q->select('id', 'rfq_id', 'vendor_id', 'rfq_product_variant_id', 'price', 'mrp', 'discount', 'buyer_price',
-                                'vendor_brand', 'vendor_remarks', 'vendor_additional_remarks', 'vendor_price_basis', 'vendor_payment_terms',
-                                'vendor_delivery_period', 'vendor_currency', 'created_at', 'updated_at')
-                              ->where('status', 1)->orderBy('id', 'desc');
-                        },
+            ->select(
+                'id',
+                'rfq_id',
+                'buyer_id',
+                'buyer_user_id',
+                'prn_no',
+                'buyer_branch',
+                'last_response_date',
+                'buyer_price_basis',
+                'buyer_pay_term',
+                'buyer_delivery_period',
+                'edit_by',
+                'scheduled_date',
+                'buyer_rfq_status',
+                'created_at',
+                'updated_at'
+            )
+            ->with([
+                'buyer_branchs' => function ($q) {
+                    $q->select('branch_id', 'name');
+                },
+                'rfqVendorQuotations' => function ($q) {
+                    $q->select(
+                        'id',
+                        'rfq_id',
+                        'vendor_id',
+                        'rfq_product_variant_id',
+                        'price',
+                        'mrp',
+                        'discount',
+                        'buyer_price',
+                        'vendor_brand',
+                        'vendor_remarks',
+                        'vendor_additional_remarks',
+                        'vendor_price_basis',
+                        'vendor_payment_terms',
+                        'vendor_delivery_period',
+                        'vendor_currency',
+                        'created_at',
+                        'updated_at'
+                    )
+                        ->where('status', 1)->orderBy('id', 'desc');
+                },
 
-                        // Load auction prices with aliases to match rfqVendorQuotations
-                        'rfqVendorAuctionPrices' => function ($q) {
-                            $q->select([
-                                'id',
-                                'rfq_no',
-                                \DB::raw('NULL as rfq_id'),
-                                'vendor_id',
-                                \DB::raw('rfq_product_veriant_id as rfq_product_variant_id'),
-                                \DB::raw('vend_price as price'),
-                                \DB::raw('NULL as mrp'),
-                                \DB::raw('NULL as discount'),
-                                \DB::raw('0 as buyer_price'),
-                                \DB::raw('NULL as vendor_brand'),
-                                \DB::raw('vend_specs as vendor_remarks'),
-                                \DB::raw('NULL as vendor_additional_remarks'),
-                                \DB::raw('vend_price_basis as vendor_price_basis'),
-                                \DB::raw('vend_payment_terms as vendor_payment_terms'),
-                                \DB::raw('vend_delivery_period as vendor_delivery_period'),
-                                \DB::raw('vend_currency as vendor_currency'),
-                                'created_at',
-                                'updated_at',
-                            ])->orderBy('id', 'desc');
-                        },
+                // Load auction prices with aliases to match rfqVendorQuotations
+                'rfqVendorAuctionPrices' => function ($q) {
+                    $q->select([
+                        'id',
+                        'rfq_no',
+                        \DB::raw('NULL as rfq_id'),
+                        'vendor_id',
+                        \DB::raw('rfq_product_veriant_id as rfq_product_variant_id'),
+                        \DB::raw('vend_price as price'),
+                        \DB::raw('NULL as mrp'),
+                        \DB::raw('NULL as discount'),
+                        \DB::raw('0 as buyer_price'),
+                        \DB::raw('NULL as vendor_brand'),
+                        \DB::raw('vend_specs as vendor_remarks'),
+                        \DB::raw('NULL as vendor_additional_remarks'),
+                        \DB::raw('vend_price_basis as vendor_price_basis'),
+                        \DB::raw('vend_payment_terms as vendor_payment_terms'),
+                        \DB::raw('vend_delivery_period as vendor_delivery_period'),
+                        \DB::raw('vend_currency as vendor_currency'),
+                        'created_at',
+                        'updated_at',
+                    ])->orderBy('id', 'desc');
+                },
 
-                        'rfqVendors'=> function ($q) {
-                            $q->select('id', 'rfq_id', 'vendor_user_id', 'product_id', 'vendor_status');
-                        },
-                        'rfqVendors.rfqVendorProfile'=> function ($q) {
-                            $q->select('id', 'user_id', 'legal_name', 'date_of_incorporation', 'nature_of_business', 'company_name1', 'company_name2', 'msme_certificate', 'iso_registration');
-                        },
-                        'rfqVendors.rfqVendorDetails'=> function ($q) {
-                            $q->select('id', 'name', 'country_code', 'mobile');
-                        },
-                        'rfqVendors.vendorMainProduct'=> function ($q) {
-                            $q->select('id', 'vendor_id', 'product_id');
-                        },
-                        'rfqVendors.vendorMainProduct.product'=> function ($q) {
-                            $q->select('id', 'product_name');
-                        },
-                        'rfqProducts'=> function ($q) {
-                            $q->orderBy('product_order', 'asc');
-                        },
-                        'rfqProducts.productVariants'=> function ($q) use($rfq_id) {
-                            $q->where('rfq_id', $rfq_id)->orderBy('variant_order', 'asc');
-                        },
-                        'rfqProducts.masterProduct'=> function ($q) {
-                            $q->select('id', 'product_name', 'division_id', 'category_id');
-                        },
-                        'rfq_auction'=> function ($q) {
-                            $q->select('rfq_no', 'auction_date', 'auction_start_time', 'auction_end_time', 'is_rfq_price_map');
-                        },
-                        'rfqOrders'=> function ($q) {
-                            $q->select('id', 'rfq_id', 'vendor_id', 'po_number')->where('order_status', 1);
-                        },
-                        'rfqOrders.order_variants'=> function ($q) {
-                            $q->select('id', 'po_number', 'rfq_product_variant_id', 'order_quantity');
-                        },
-                        'rfqTechnicalApproval'=> function ($q) {
-                            $q->select('rfq_no', 'vendor_id', 'description', 'technical_approval');
-                        }
-                    ])
-                    ->first();
+                'rfqVendors' => function ($q) {
+                    $q->select('id', 'rfq_id', 'vendor_user_id', 'product_id', 'vendor_status');
+                },
+                'rfqVendors.rfqVendorProfile' => function ($q) {
+                    $q->select('id', 'user_id', 'legal_name', 'date_of_incorporation', 'nature_of_business', 'company_name1', 'company_name2', 'msme_certificate', 'iso_registration');
+                },
+                'rfqVendors.rfqVendorDetails' => function ($q) {
+                    $q->select('id', 'name', 'country_code', 'mobile');
+                },
+                'rfqVendors.vendorMainProduct' => function ($q) {
+                    $q->select('id', 'vendor_id', 'product_id');
+                },
+                'rfqVendors.vendorMainProduct.product' => function ($q) {
+                    $q->select('id', 'product_name');
+                },
+                'rfqProducts' => function ($q) {
+                    $q->orderBy('product_order', 'asc');
+                },
+                'rfqProducts.productVariants' => function ($q) use ($rfq_id) {
+                    $q->where('rfq_id', $rfq_id)->orderBy('variant_order', 'asc');
+                },
+                'rfqProducts.masterProduct' => function ($q) {
+                    $q->select('id', 'product_name', 'division_id', 'category_id');
+                },
+                'rfq_auction' => function ($q) {
+                    $q->select('rfq_no', 'auction_date', 'auction_start_time', 'auction_end_time', 'is_rfq_price_map');
+                },
+                'rfqOrders' => function ($q) {
+                    $q->select('id', 'rfq_id', 'vendor_id', 'po_number')->where('order_status', 1);
+                },
+                'rfqOrders.order_variants' => function ($q) {
+                    $q->select('id', 'po_number', 'rfq_product_variant_id', 'order_quantity');
+                },
+                'rfqTechnicalApproval' => function ($q) {
+                    $q->select('rfq_no', 'vendor_id', 'description', 'technical_approval');
+                }
+            ])
+            ->first();
 
         // If auction bids exist, override rfqVendorQuotations with them
         if ($cis && $cis->relationLoaded('rfqVendorAuctionPrices') && $cis->rfqVendorAuctionPrices->count() > 0) {
@@ -308,30 +360,31 @@ class Rfq extends Model
         return array_merge($cis_filter, $cis_array);
     }
 
-    public static function cisFilter($rfq_id) {
+    public static function cisFilter($rfq_id)
+    {
         $cis_filter = self::where('rfq_id', $rfq_id)
-                    ->select('id', 'rfq_id', 'buyer_id', 'buyer_user_id')
-                    ->with([
-                        'rfqVendors'=> function ($q) {
-                            $q->select('id', 'rfq_id', 'vendor_user_id');
-                        },
-                        'rfqVendors.rfqVendorProfile'=> function ($q) {
-                            $q->select('id', 'user_id', 'legal_name', 'country', 'state');
-                        },
-                        'rfqVendors.rfqVendorProfile.vendor_country'=> function ($q) {
-                            $q->select('id', 'name');
-                        },
-                        'rfqVendors.rfqVendorProfile.vendor_state'=> function ($q) {
-                            $q->select('id', 'name');
-                        },
-                        'rfqVendors.vendorOrders'=> function ($q) {
-                            $q->select('id', 'vendor_id')->where('order_status', 1);
-                        },
-                        'rfqVendors.vendorFavorites'=> function ($q) {
-                            $q->select('vend_user_id')->where('fav_or_black', 1)->where('buyer_user_id', getParentUserId());
-                        }
-                    ])
-                    ->first();
+            ->select('id', 'rfq_id', 'buyer_id', 'buyer_user_id')
+            ->with([
+                'rfqVendors' => function ($q) {
+                    $q->select('id', 'rfq_id', 'vendor_user_id');
+                },
+                'rfqVendors.rfqVendorProfile' => function ($q) {
+                    $q->select('id', 'user_id', 'legal_name', 'country', 'state');
+                },
+                'rfqVendors.rfqVendorProfile.vendor_country' => function ($q) {
+                    $q->select('id', 'name');
+                },
+                'rfqVendors.rfqVendorProfile.vendor_state' => function ($q) {
+                    $q->select('id', 'name');
+                },
+                'rfqVendors.vendorOrders' => function ($q) {
+                    $q->select('id', 'vendor_id')->where('order_status', 1);
+                },
+                'rfqVendors.vendorFavorites' => function ($q) {
+                    $q->select('vend_user_id')->where('fav_or_black', 1)->where('buyer_user_id', getParentUserId());
+                }
+            ])
+            ->first();
 
         $last_vendor = [];
         $fav_vendor = [];
@@ -376,7 +429,8 @@ class Rfq extends Model
         ];
     }
 
-    public static function extractCISFilterVendor($rfq_id) {
+    public static function extractCISFilterVendor($rfq_id)
+    {
 
         $location = request('location');
         $state_location = request('state_location');
@@ -385,7 +439,7 @@ class Rfq extends Model
         $favourite_vendor = request('favourite_vendor');
         $from_date = request('from_date');
         $to_date = request('to_date');
-        if(empty($from_date) && empty($to_date) && empty($location) && empty($last_vendor) && empty($favourite_vendor)){
+        if (empty($from_date) && empty($to_date) && empty($location) && empty($last_vendor) && empty($favourite_vendor)) {
             return [];
         }
 
@@ -408,12 +462,12 @@ class Rfq extends Model
             }
 
             $matchingVendorIds = $vendorQuoteQuery->pluck('vendor_id')->unique()->toArray();
-            if(empty($matchingVendorIds)){
+            if (empty($matchingVendorIds)) {
                 return [];
             }
         }
 
-        if(!empty($last_vendor)){
+        if (!empty($last_vendor)) {
             if (!empty($matchingVendorIds)) {
                 $matchingVendorIds = array_intersect($matchingVendorIds, $last_vendor);
             } else {
@@ -421,7 +475,7 @@ class Rfq extends Model
             }
         }
 
-        if(!empty($favourite_vendor)){
+        if (!empty($favourite_vendor)) {
             if (!empty($matchingVendorIds)) {
                 $matchingVendorIds = array_intersect($matchingVendorIds, $favourite_vendor);
             } else {
@@ -430,24 +484,24 @@ class Rfq extends Model
         }
 
         $cis_filter = self::where('rfq_id', $rfq_id)
-                    ->select('id', 'rfq_id', 'buyer_id', 'buyer_user_id')
-                    ->with([
-                        'rfqVendors'=> function ($q) use ($state_location, $country_location, $matchingVendorIds) {
-                            $q->select('id', 'rfq_id', 'vendor_user_id');
-                            if(!empty($matchingVendorIds)){
-                                $q->whereIn('vendor_user_id', $matchingVendorIds);
-                            }
-                            $q->whereHas('rfqVendorProfile', function ($q2) use ($state_location, $country_location) {
-                                if (!empty($state_location)) {
-                                    $q2->whereIn('state', explode(',', $state_location));
-                                }
-                                if (!empty($country_location)) {
-                                    $q2->whereIn('country', explode(',', $country_location));
-                                }
-                            });
+            ->select('id', 'rfq_id', 'buyer_id', 'buyer_user_id')
+            ->with([
+                'rfqVendors' => function ($q) use ($state_location, $country_location, $matchingVendorIds) {
+                    $q->select('id', 'rfq_id', 'vendor_user_id');
+                    if (!empty($matchingVendorIds)) {
+                        $q->whereIn('vendor_user_id', $matchingVendorIds);
+                    }
+                    $q->whereHas('rfqVendorProfile', function ($q2) use ($state_location, $country_location) {
+                        if (!empty($state_location)) {
+                            $q2->whereIn('state', explode(',', $state_location));
                         }
-                    ])
-                    ->first();
+                        if (!empty($country_location)) {
+                            $q2->whereIn('country', explode(',', $country_location));
+                        }
+                    });
+                }
+            ])
+            ->first();
 
         $filterVendorUserIds = [];
         if ($cis_filter && $cis_filter->rfqVendors) {
@@ -457,25 +511,26 @@ class Rfq extends Model
         return $filterVendorUserIds;
     }
 
-    public static function analyzeRFQDetails($cis, $filter_vendors) {
+    public static function analyzeRFQDetails($cis, $filter_vendors)
+    {
 
         $orders = [];
         $variant_order_qty = [];
-        foreach($cis->rfqOrders as $key => $order) {
-            foreach($order->order_variants as $k => $variant) {
+        foreach ($cis->rfqOrders as $key => $order) {
+            foreach ($order->order_variants as $k => $variant) {
                 $orders[$variant->rfq_product_variant_id][$order->vendor_id][] = $variant->order_quantity;
                 $variant_order_qty[$variant->rfq_product_variant_id] = ($variant_order_qty[$variant->rfq_product_variant_id] ?? 0) + $variant->order_quantity;
             }
         }
         $vendor_technical_approval = [];
-        foreach($cis->rfqTechnicalApproval as $key => $technical_approval) {
+        foreach ($cis->rfqTechnicalApproval as $key => $technical_approval) {
             $vendor_technical_approval[$technical_approval->vendor_id] = ['description' => $technical_approval->description, 'technical_approval' => $technical_approval->technical_approval];
         }
 
         $variants = [];
         $product_variant_count = [];
         $rfq_division = 0;
-               $rfq_category = 0;
+        $rfq_category = 0;
         foreach ($cis->rfqProducts as $key => $product) {
             foreach ($product->productVariants as $key => $variant) {
                 $variants[$variant->id] = [
@@ -495,7 +550,7 @@ class Rfq extends Model
                     'orders' => $orders[$variant->id] ?? []
                 ];
                 $product_variant_count[$product->product_id][$variant->id] = true;
-                if($rfq_division==0){
+                if ($rfq_division == 0) {
                     $rfq_division = $product->masterProduct->division_id;
                     $rfq_category = $product->masterProduct->category_id;
                 }
@@ -506,7 +561,7 @@ class Rfq extends Model
         $vendor_quotes = [];
         $buyer_quotes = [];
         $vendor_variant_map = [];
-        foreach($cis->rfqVendorQuotations as $key => $quote) {
+        foreach ($cis->rfqVendorQuotations as $key => $quote) {
             $variant_id = $quote->rfq_product_variant_id;
             $left_qty = $variants[$variant_id]['quantity'] - ($variant_order_qty[$variant_id] ?? 0);
 
@@ -536,10 +591,10 @@ class Rfq extends Model
 
             $vendor_quotes[$quote->vendor_id][$variant_id][] = $quote_data;
 
-            if($quote->buyer_price>0) {
+            if ($quote->buyer_price > 0) {
                 $buyer_quotes[$variant_id][] = [
-                    'id'=>$quote->id,
-                    'buyer_price'=> $quote->buyer_price,
+                    'id' => $quote->id,
+                    'buyer_price' => $quote->buyer_price,
                     'created_at' => $quote->created_at->format('Y-m-d H:i:s'),
                     'updated_at' => $quote->updated_at->format('Y-m-d H:i:s')
                 ];
@@ -564,12 +619,12 @@ class Rfq extends Model
         $vendor_delivery_period = [];
         $is_vendor_product = [];
         // vendor total amount
-        foreach($cis->rfqVendors as $key => $vendor) {
+        foreach ($cis->rfqVendors as $key => $vendor) {
             $vendor_id = $vendor->vendor_user_id;
-            if(isset($is_vendor_product[$vendor_id])) {
+            if (isset($is_vendor_product[$vendor_id])) {
                 $is_vendor_product[$vendor_id][$vendor->product_id] = true;
                 continue;
-            }else{
+            } else {
                 $is_vendor_product[$vendor_id] = [$vendor->product_id => true];
             }
 
@@ -592,7 +647,7 @@ class Rfq extends Model
                     $last_quote[$variantId] = $first;
                     $delivery_period = $first['vendor_delivery_period'];
 
-                    if(!empty($first['vendor_brand'])) {
+                    if (!empty($first['vendor_brand'])) {
                         $vendor_brand[] = $first['vendor_brand'];
                     }
                 } else {
@@ -607,10 +662,10 @@ class Rfq extends Model
                 }
 
                 $is_valid_filter_vendor = true;
-                if(!empty($filter_vendors) && !in_array($item['vendor_id'], $filter_vendors)) {
+                if (!empty($filter_vendors) && !in_array($item['vendor_id'], $filter_vendors)) {
                     $is_valid_filter_vendor = false;
                 }
-                if($is_valid_filter_vendor) {
+                if ($is_valid_filter_vendor) {
                     $lowest_price = $variants[$item['rfq_product_variant_id']]['lowest_price'];
                     if ($lowest_price === null || $item['price'] < $lowest_price) {
                         $variants[$item['rfq_product_variant_id']]['lowest_price'] = $item['price'];
@@ -619,28 +674,28 @@ class Rfq extends Model
             }
 
             $productNames = collect($vendor->vendorMainProduct)
-                                ->pluck('product.product_name')
-                                ->filter()
-                                ->take(3)
-                                ->implode(', ');
+                ->pluck('product.product_name')
+                ->filter()
+                ->take(3)
+                ->implode(', ');
 
             $vendors[$vendor_id] = [
-                'vendor_user_id'=> $vendor_id,
-                'legal_name'=> $vendor->rfqVendorProfile->legal_name,
-                'vendor_rfq_status'=> $vendor->vendor_status,
-                'vintage'=> (int) Carbon::parse($vendor->rfqVendorProfile->date_of_incorporation)->diffInYears(Carbon::now()),
-                'nature_of_business'=> $vendor->rfqVendorProfile->nature_of_business,
-                'client'=> $vendor->rfqVendorProfile->company_name1 . (!empty($vendor->rfqVendorProfile->company_name1) && !empty($vendor->rfqVendorProfile->company_name2) ? ', ' : '') . $vendor->rfqVendorProfile->company_name2,
-                'certifications'=> !empty($vendor->rfqVendorProfile->msme_certificate) ? $vendor->rfqVendorProfile->msme_certificate : $vendor->rfqVendorProfile->iso_registration,
-                'name'=> $vendor->rfqVendorDetails->name,
-                'country_code'=> $vendor->rfqVendorDetails->country_code,
-                'mobile'=> $vendor->rfqVendorDetails->mobile,
-                'vendor_product'=> $productNames,
-                'vendor_brand'=> !empty($vendor_brand) ? implode(', ', $vendor_brand) : '',
-                'latest_quote'=> $latest_quote,
-                'last_quote'=> $last_quote,
-                'vendorQuotes'=> $quotes,
-                'technical_approval'=> (!empty($vendor_technical_approval[$vendor_id]) && isset($vendor_technical_approval[$vendor_id])) ? $vendor_technical_approval[$vendor_id] : []
+                'vendor_user_id' => $vendor_id,
+                'legal_name' => $vendor->rfqVendorProfile->legal_name,
+                'vendor_rfq_status' => $vendor->vendor_status,
+                'vintage' => (int) Carbon::parse($vendor->rfqVendorProfile->date_of_incorporation)->diffInYears(Carbon::now()),
+                'nature_of_business' => $vendor->rfqVendorProfile->nature_of_business,
+                'client' => $vendor->rfqVendorProfile->company_name1 . (!empty($vendor->rfqVendorProfile->company_name1) && !empty($vendor->rfqVendorProfile->company_name2) ? ', ' : '') . $vendor->rfqVendorProfile->company_name2,
+                'certifications' => !empty($vendor->rfqVendorProfile->msme_certificate) ? $vendor->rfqVendorProfile->msme_certificate : $vendor->rfqVendorProfile->iso_registration,
+                'name' => $vendor->rfqVendorDetails->name,
+                'country_code' => $vendor->rfqVendorDetails->country_code,
+                'mobile' => $vendor->rfqVendorDetails->mobile,
+                'vendor_product' => $productNames,
+                'vendor_brand' => !empty($vendor_brand) ? implode(', ', $vendor_brand) : '',
+                'latest_quote' => $latest_quote,
+                'last_quote' => $last_quote,
+                'vendorQuotes' => $quotes,
+                'technical_approval' => (!empty($vendor_technical_approval[$vendor_id]) && isset($vendor_technical_approval[$vendor_id])) ? $vendor_technical_approval[$vendor_id] : []
             ];
             $vendor_total_amount[$vendor_id] = $total_amount;
             $vendor_delivery_period[$vendor_id] = $delivery_period;
@@ -663,7 +718,7 @@ class Rfq extends Model
         // Step 1: Match keys in both arrays
         $common_vendors = array_intersect_key($vendor_variant_count, $vendor_variant_quoted_count);
         $max_quoted_vendor = [];
-        if(!empty($common_vendors)) {
+        if (!empty($common_vendors)) {
             // Step 2: Get the max value from those common keys
             $max_quoted = max($common_vendors);
 
@@ -681,10 +736,10 @@ class Rfq extends Model
         $lowest_price_total = null;
         foreach ($vendor_total_amount as $vendor_id => $total_price) {
             $is_valid_filter_vendor = true;
-            if(!empty($filter_vendors) && !in_array($vendor_id, $filter_vendors)) {
+            if (!empty($filter_vendors) && !in_array($vendor_id, $filter_vendors)) {
                 $is_valid_filter_vendor = false;
             }
-            if($is_valid_filter_vendor) {
+            if ($is_valid_filter_vendor) {
                 if (($lowest_price_total === null || $total_price < $lowest_price_total) && $total_price > 0 && in_array($vendor_id, $max_quoted_vendor)) {
                     $lowest_price_total = $total_price;
                 }
@@ -713,7 +768,7 @@ class Rfq extends Model
             'is_auction' => $cis->rfq_auction ? 1 : 2,
             'lowest_price_total' => $lowest_price_total,
         ];
-        if(!empty($cis->rfq_auction)) {
+        if (!empty($cis->rfq_auction)) {
             $rfq['auction_date'] = $cis->rfq_auction->auction_date ? Carbon::parse($cis->rfq_auction->auction_date)->format('Y-m-d') : '';
             $rfq['auction_start_time'] = $cis->rfq_auction->auction_start_time ? Carbon::parse($cis->rfq_auction->auction_start_time)->format('H:i:s') : '';
             $rfq['auction_end_time'] = $cis->rfq_auction->auction_end_time ? Carbon::parse($cis->rfq_auction->auction_end_time)->format('H:i:s') : '';
@@ -737,7 +792,8 @@ class Rfq extends Model
         return $data;
     }
 
-    public static function sortRFQDetails($cis){
+    public static function sortRFQDetails($cis)
+    {
         $sort_key = request('sort_price'); // e.g. 1, 2, 3
 
         $vendors = collect($cis['vendors']);
@@ -839,75 +895,92 @@ class Rfq extends Model
     {
         return $this->hasMany(Order::class, 'rfq_id', 'rfq_id');
     }
-    public static function unapprovedOrder($rfq_id, $vendor_data) {
+    public static function unapprovedOrder($rfq_id, $vendor_data)
+    {
 
         $vendor_ids = $vendor_data['vendors'];
         $variants = $vendor_data['variants'];
         $vendor_variants = $vendor_data['vendor_variants'];
 
         $unapproved_order = self::where('rfq_id', $rfq_id)
-                    ->select('id', 'rfq_id', 'buyer_id', 'buyer_user_id', 'prn_no', 'buyer_branch', 'warranty_gurarantee', 'buyer_rfq_status', 'created_at', 'updated_at')
-                    ->with([
-                        'rfqBuyerProfile' => function ($q) {
-                            $q->select('user_id', 'country');
-                        },
-                        'buyer_branchs' => function ($q) {
-                            $q->select('branch_id', 'name');
-                        },
-                        'rfqVendorQuotations' => function ($q) use($vendor_ids, $variants) {
-                            $q->select('id', 'rfq_id', 'vendor_id', 'rfq_product_variant_id', 'price', 'mrp', 'discount', 'buyer_price',
-                                'vendor_brand', 'vendor_remarks', 'vendor_additional_remarks', 'vendor_price_basis', 'vendor_payment_terms',
-                                'vendor_delivery_period', 'vendor_currency', 'created_at')
-                                ->whereIn('id', function ($query) use ($vendor_ids, $variants) {
-                                    $query->selectRaw('MAX(id)')
-                                        ->from('rfq_vendor_quotations as quote')
-                                        ->where('quote.status', 1)
-                                        ->whereIn('quote.vendor_id', $vendor_ids)
-                                        ->whereIn('quote.rfq_product_variant_id', $variants)
-                                        ->groupBy('quote.vendor_id', 'quote.rfq_product_variant_id');
-                                });
-                        },
-                        'rfqVendors'=> function ($q) use($vendor_ids) {
-                            $q->select('id', 'rfq_id', 'vendor_user_id', 'product_id', 'vendor_status')->whereIn('vendor_user_id', $vendor_ids);
-                        },
-                        'rfqVendors.rfqVendorProfile'=> function ($q) {
-                            $q->select('id', 'user_id', 'legal_name', 'country');
-                        },
-                        'rfqProducts'=> function ($q) use ($variants) {
-                            $q->orderBy('product_order', 'asc');
-                            $q->whereHas('productVariants', function ($q2) use ($variants) {
-                                $q2->whereIn('id', $variants);
-                            });
-                        },
-                        'rfqProducts.productVariants'=> function ($q) use($rfq_id, $variants) {
-                            $q->where('rfq_id', $rfq_id)->whereIn('id', $variants)->orderBy('variant_order', 'asc');
-                        },
-                        'rfqProducts.masterProduct'=> function ($q) {
-                            $q->select('id', 'product_name', 'division_id', 'category_id');
-                        },
-                        'rfqProducts.productVendors'=> function ($q) use($vendor_ids) {
-                            $q->select('id', 'vendor_id', 'product_id', 'gst_id')->whereIn('vendor_id', $vendor_ids)->where('edit_status', '!=', 2);
-                        },
-                        'rfqOrders'=> function ($q) {
-                            $q->select('id', 'rfq_id', 'vendor_id', 'po_number')->whereIn('order_status', [1, 3]);
-                        },
-                        'rfqOrders.order_variants'=> function ($q) {
-                            $q->select('id', 'po_number', 'rfq_product_variant_id', 'order_quantity');
-                        }
-                    ])
-                    ->first();
+            ->select('id', 'rfq_id', 'buyer_id', 'buyer_user_id', 'prn_no', 'buyer_branch', 'warranty_gurarantee', 'buyer_rfq_status', 'created_at', 'updated_at')
+            ->with([
+                'rfqBuyerProfile' => function ($q) {
+                    $q->select('user_id', 'country');
+                },
+                'buyer_branchs' => function ($q) {
+                    $q->select('branch_id', 'name', 'address');
+                },
+                'rfqVendorQuotations' => function ($q) use ($vendor_ids, $variants) {
+                    $q->select(
+                        'id',
+                        'rfq_id',
+                        'vendor_id',
+                        'rfq_product_variant_id',
+                        'price',
+                        'mrp',
+                        'discount',
+                        'buyer_price',
+                        'vendor_brand',
+                        'vendor_remarks',
+                        'vendor_additional_remarks',
+                        'vendor_price_basis',
+                        'vendor_payment_terms',
+                        'vendor_delivery_period',
+                        'vendor_currency',
+                        'created_at'
+                    )
+                        ->whereIn('id', function ($query) use ($vendor_ids, $variants) {
+                            $query->selectRaw('MAX(id)')
+                                ->from('rfq_vendor_quotations as quote')
+                                ->where('quote.status', 1)
+                                ->whereIn('quote.vendor_id', $vendor_ids)
+                                ->whereIn('quote.rfq_product_variant_id', $variants)
+                                ->groupBy('quote.vendor_id', 'quote.rfq_product_variant_id');
+                        });
+                },
+                'rfqVendors' => function ($q) use ($vendor_ids) {
+                    $q->select('id', 'rfq_id', 'vendor_user_id', 'product_id', 'vendor_status')->whereIn('vendor_user_id', $vendor_ids);
+                },
+                'rfqVendors.rfqVendorProfile' => function ($q) {
+                    $q->select('id', 'user_id', 'legal_name', 'country', 'registered_address as address');
+                },
+                'rfqProducts' => function ($q) use ($variants) {
+                    $q->orderBy('product_order', 'asc');
+                    $q->whereHas('productVariants', function ($q2) use ($variants) {
+                        $q2->whereIn('id', $variants);
+                    });
+                },
+                'rfqProducts.productVariants' => function ($q) use ($rfq_id, $variants) {
+                    $q->where('rfq_id', $rfq_id)->whereIn('id', $variants)->orderBy('variant_order', 'asc');
+                },
+                'rfqProducts.masterProduct' => function ($q) {
+                    $q->select('id', 'product_name', 'division_id', 'category_id');
+                },
+                'rfqProducts.productVendors' => function ($q) use ($vendor_ids) {
+                    $q->select('id', 'vendor_id', 'product_id', 'gst_id')->whereIn('vendor_id', $vendor_ids)->where('edit_status', '!=', 2);
+                },
+                'rfqOrders' => function ($q) {
+                    $q->select('id', 'rfq_id', 'vendor_id', 'po_number')->whereIn('order_status', [1, 3]);
+                },
+                'rfqOrders.order_variants' => function ($q) {
+                    $q->select('id', 'po_number', 'rfq_product_variant_id', 'order_quantity');
+                }
+            ])
+            ->first();
         // query done
 
         $unapproved_order = self::analyzeUnapprovedOrder($unapproved_order, $vendor_variants);
         return $unapproved_order;
     }
 
-    public static function analyzeUnapprovedOrder($unapproved_order, $vendor_variants) {
+    public static function analyzeUnapprovedOrder($unapproved_order, $vendor_variants)
+    {
 
         // $orders = [];
         $variant_order_qty = [];
-        foreach($unapproved_order->rfqOrders as $key => $order) {
-            foreach($order->order_variants as $k => $variant) {
+        foreach ($unapproved_order->rfqOrders as $key => $order) {
+            foreach ($order->order_variants as $k => $variant) {
                 // $orders[$variant->rfq_product_variant_id][$order->vendor_id][] = $variant->order_quantity;
                 $variant_order_qty[$variant->rfq_product_variant_id] = ($variant_order_qty[$variant->rfq_product_variant_id] ?? 0) + $variant->order_quantity;
             }
@@ -944,7 +1017,7 @@ class Rfq extends Model
         $vendor_latest_quote = [];
         $is_qty_over = [];
         $all_qty_over = true;
-        foreach($unapproved_order->rfqVendorQuotations as $key => $quote) {
+        foreach ($unapproved_order->rfqVendorQuotations as $key => $quote) {
             $variant_id = $quote->rfq_product_variant_id;
             $left_qty = $variants[$variant_id]['quantity'] - ($variant_order_qty[$variant_id] ?? 0);
 
@@ -958,7 +1031,7 @@ class Rfq extends Model
                 'variant_quantity' => $variants[$variant_id]['quantity'],
                 'left_qty' => $left_qty,
             ];
-            if($left_qty <= 0) {
+            if ($left_qty <= 0) {
                 $is_qty_over[] = $variant_id;
                 if (($vendor_variants_key = array_search($variant_id, $vendor_variants[$quote->vendor_id])) !== false) {
                     unset($vendor_variants[$quote->vendor_id][$vendor_variants_key]);
@@ -988,34 +1061,34 @@ class Rfq extends Model
         }
         unset($variant_order_qty);
 
-        if(!empty($is_qty_over)) {
-            foreach($is_qty_over as $key => $variant_id) {
-                if(isset($variants[$variant_id])) {
+        if (!empty($is_qty_over)) {
+            foreach ($is_qty_over as $key => $variant_id) {
+                if (isset($variants[$variant_id])) {
                     unset($variants[$variant_id]);
                 }
             }
         }
         unset($is_qty_over);
 
-        if(count($variants)>0){
+        if (count($variants) > 0) {
             $all_qty_over = false;
         }
 
         $vendors = [];
-        foreach($unapproved_order->rfqVendors as $key => $vendor) {
+        foreach ($unapproved_order->rfqVendors as $key => $vendor) {
             $vendor_id = $vendor->vendor_user_id;
-
             $quotes = $vendor_quotes[$vendor_id] ?? [];
 
             $vendors[$vendor_id] = [
-                'vendor_user_id'=> $vendor_id,
-                'legal_name'=> $vendor->rfqVendorProfile->legal_name,
-                'country'=> $vendor->rfqVendorProfile->country,
-                'vendor_rfq_status'=> $vendor->vendor_status,
-                'vendorQuotes'=> $quotes,
-                'vendor_latest_quote'=> $vendor_latest_quote[$vendor_id],
-                'vendor_variants'=> $vendor_variants[$vendor_id],
-                'vendor_product_gsts'=> $vendor_product_gsts[$vendor_id],
+                'vendor_user_id' => $vendor_id,
+                'legal_name' => $vendor->rfqVendorProfile->legal_name,
+                'address' => $vendor->rfqVendorProfile->address,
+                'country' => $vendor->rfqVendorProfile->country,
+                'vendor_rfq_status' => $vendor->vendor_status,
+                'vendorQuotes' => $quotes,
+                'vendor_latest_quote' => $vendor_latest_quote[$vendor_id],
+                'vendor_variants' => $vendor_variants[$vendor_id],
+                'vendor_product_gsts' => $vendor_product_gsts[$vendor_id],
             ];
         }
         unset($vendor_quotes);
@@ -1029,6 +1102,7 @@ class Rfq extends Model
             'buyer_branch' => $unapproved_order->buyer_branch,
             'warranty_gurarantee' => $unapproved_order->warranty_gurarantee,
             'buyer_branch_name' => $unapproved_order->buyer_branchs->name,
+            'buyer_branch_address' => $unapproved_order->buyer_branchs->address,
             'buyer_country' => $unapproved_order->rfqBuyerProfile->country,
             'buyer_rfq_status' => $unapproved_order->buyer_rfq_status,
         ];
@@ -1042,5 +1116,4 @@ class Rfq extends Model
 
         return $data;
     }
-
 }

@@ -16,31 +16,36 @@ use Carbon\Carbon;
 use DB;
 use Auth;
 
+use App\Exports\CisExport;
+use Maatwebsite\Excel\Facades\Excel;
+
+
+
 class CISController extends Controller
 {
-    public function index($rfq_id)
+    public function index(Request $request, $rfq_id)
     {
 
         $parent_user_id = getParentUserId();
         $rfq_data = Rfq::where('record_type', 2)->where('rfq_id', $rfq_id)->where('buyer_id', $parent_user_id)->first();
-        if(empty($rfq_data)){
+        if (empty($rfq_data)) {
             return back()->with('error', 'RFQ not found.');
         }
-        if($rfq_data->buyer_rfq_status==1){
-            return back()->with('error', 'RFQ '.$rfq_id.' CIS has not received any vendor quotes.');
+        if ($rfq_data->buyer_rfq_status == 1) {
+            return back()->with('error', 'RFQ ' . $rfq_id . ' CIS has not received any vendor quotes.');
         }
 
         $user_branch_id_only = getBuyerUserBranchIdOnly();
-        if(!empty($user_branch_id_only) && !in_array($rfq_data->buyer_branch, $user_branch_id_only)){
+        if (!empty($user_branch_id_only) && !in_array($rfq_data->buyer_branch, $user_branch_id_only)) {
             return back()->with('error', 'No RFQ found');
         }
 
         $uom = getUOMList();
 
         $nature_of_business = DB::table("nature_of_business")
-                    ->select("id", "business_name")
-                    ->orderBy("id", "DESC")
-                    ->pluck("business_name", "id")->toArray();
+            ->select("id", "business_name")
+            ->orderBy("id", "DESC")
+            ->pluck("business_name", "id")->toArray();
 
 
         $cis = Rfq::rfqDetails($rfq_id);
@@ -148,12 +153,27 @@ class CISController extends Controller
 
 
         // log_peak_memory_usage();
+        $data = compact(
+            'uom',
+            'cis',
+            'rfq',
+            'nature_of_business',
+            'filter',
+            'is_date_filter',
+            'currencies',
+            'auction',
+            'editId',
+            'selectedVendorIds',
+            'prefill',
+            'prefillVariantPrices',
+            'current_status'
+        );
 
-        return view('buyer.rfq.cis.rfq-cis', compact(
-            'uom','cis','rfq','nature_of_business','filter','is_date_filter','currencies',
-            'auction','editId','selectedVendorIds','prefill','prefillVariantPrices','current_status'
-        ));
+        if ($request->input('export')) {
+            return Excel::download(new CisExport($data), "CIS-Sheet-{$rfq_id}-" . now()->format('d-m-Y') . ".xlsx");
+        }
 
+        return view('buyer.rfq.cis.rfq-cis', $data);
     }
 
 
@@ -161,15 +181,15 @@ class CISController extends Controller
     {
         $parent_user_id = getParentUserId();
         $rfq_data = Rfq::where('record_type', 2)->where('rfq_id', $rfq_id)->where('buyer_id', $parent_user_id)->first();
-        if(empty($rfq_data)){
+        if (empty($rfq_data)) {
             return back()->with('error', 'RFQ not found.');
         }
-        if($rfq_data->buyer_rfq_status==1){
-            return back()->with('error', 'RFQ '.$rfq_id.' CIS has not received any vendor quotes.');
+        if ($rfq_data->buyer_rfq_status == 1) {
+            return back()->with('error', 'RFQ ' . $rfq_id . ' CIS has not received any vendor quotes.');
         }
 
         $user_branch_id_only = getBuyerUserBranchIdOnly();
-        if(!empty($user_branch_id_only) && !in_array($rfq_data->buyer_branch, $user_branch_id_only)){
+        if (!empty($user_branch_id_only) && !in_array($rfq_data->buyer_branch, $user_branch_id_only)) {
             return back()->with('error', 'No RFQ found');
         }
 
@@ -190,15 +210,15 @@ class CISController extends Controller
         $uom = getUOMList();
 
         $nature_of_business = DB::table("nature_of_business")
-                    ->select("id", "business_name")
-                    ->orderBy("id", "DESC")
-                    ->pluck("business_name", "id")->toArray();
+            ->select("id", "business_name")
+            ->orderBy("id", "DESC")
+            ->pluck("business_name", "id")->toArray();
 
         $cis = Rfq::rfqDetails($rfq_id, $cis_vendors);
         $rfq = $cis['rfq'];
 
-        if($rfq['is_auction'] == 1 || in_array($rfq['buyer_rfq_status'], [1, 5, 8, 10])){
-            return back()->with('error', 'RFQ '.$rfq_id.' CIS counter offer unable to open.');
+        if ($rfq['is_auction'] == 1 || in_array($rfq['buyer_rfq_status'], [1, 5, 8, 10])) {
+            return back()->with('error', 'RFQ ' . $rfq_id . ' CIS counter offer unable to open.');
         }
 
         $filter['sort_price'] = request('sort_price');
@@ -222,7 +242,7 @@ class CISController extends Controller
 
         $currencies = DB::table('currencies')->where('status', '1')->get();
 
-        return view('buyer.rfq.cis.counter-offer', compact('uom','cis','rfq','nature_of_business','filter','is_date_filter','currencies', 'encoded'));
+        return view('buyer.rfq.cis.counter-offer', compact('uom', 'cis', 'rfq', 'nature_of_business', 'filter', 'is_date_filter', 'currencies', 'encoded'));
     }
     public function save_counter_offer(Request $request, $rfq_id)
     {
@@ -242,7 +262,7 @@ class CISController extends Controller
 
         $rfq = DB::table('rfqs')->where('rfq_id', $rfq_id)->where('buyer_id', $buyer_id)->first();
 
-        if(empty($rfq)){
+        if (empty($rfq)) {
             return response()->json(['status' => false, 'message' => 'Something went wrong, please refresh the page']);
         }
 
@@ -287,14 +307,14 @@ class CISController extends Controller
                 }
             }
             $updated_vendors = array_keys($updated_vendors);
-            if(!empty($updated_vendors)){
+            if (!empty($updated_vendors)) {
                 // Update vendor_status to 4 for this vendor in the relevant table
                 DB::table('rfq_vendors')
                     ->whereIn('vendor_user_id', $updated_vendors)
                     ->where('rfq_id', $rfq_id)
                     ->update(['vendor_status' => 4]);
 
-                if ($rfq->buyer_rfq_status!=9 && $rfq->buyer_rfq_status != 4) {
+                if ($rfq->buyer_rfq_status != 9 && $rfq->buyer_rfq_status != 4) {
                     DB::table('rfqs')
                         ->where('buyer_id', $buyer_id)
                         ->where('rfq_id', $rfq_id)
@@ -302,14 +322,14 @@ class CISController extends Controller
                 }
 
                 $rfq_vendors = RfqVendor::with(
-                                'rfqVendorProfile:id,user_id,legal_name',
-                                'rfqVendorDetails:id,name,email'
-                            )
-                            ->whereIn('vendor_user_id', $updated_vendors)
-                            ->where('rfq_id', $rfq_id)
-                            ->groupBy('vendor_user_id')
-                            ->select('vendor_user_id')
-                            ->get();
+                    'rfqVendorProfile:id,user_id,legal_name',
+                    'rfqVendorDetails:id,name,email'
+                )
+                    ->whereIn('vendor_user_id', $updated_vendors)
+                    ->where('rfq_id', $rfq_id)
+                    ->groupBy('vendor_user_id')
+                    ->select('vendor_user_id')
+                    ->get();
 
                 $vendor_details = [];
 
@@ -337,7 +357,7 @@ class CISController extends Controller
                 $notification_data = array();
                 $notification_data['rfq_no'] = $rfq_id;
                 $notification_data['message_type'] = 'Counter Offer Received';
-                $notification_data['notification_link'] = route("vendor.rfq.reply", ["rfq_id"=> $rfq_id]);//route will change after RFQ Details page created on vendor side
+                $notification_data['notification_link'] = route("vendor.rfq.reply", ["rfq_id" => $rfq_id]); //route will change after RFQ Details page created on vendor side
                 $notification_data['to_user_id'] = array_keys($updated_vendors);
                 $status = sendNotifications($notification_data);
             }
@@ -348,7 +368,7 @@ class CISController extends Controller
 
             return response()->json([
                 'status' => true,
-                'redirect_url' => route("buyer.rfq.counter-offer-success", ['rfq_id'=> $rfq_id]),
+                'redirect_url' => route("buyer.rfq.counter-offer-success", ['rfq_id' => $rfq_id]),
                 'message' => 'Price updated successfully'
             ]);
         } catch (\Exception $e) {
@@ -356,7 +376,7 @@ class CISController extends Controller
             // Handle the error
             return response()->json([
                 'status' => false,
-                'message' => 'Failed to update Price. '.$e->getMessage(),
+                'message' => 'Failed to update Price. ' . $e->getMessage(),
                 'complete_message' => $e
             ]);
         }
@@ -364,7 +384,7 @@ class CISController extends Controller
     public function counter_offer_success($rfq_id)
     {
         $session_rfq_id = getSessionWithExpiry('counter_offer_rfq_number');
-        if($rfq_id!=$session_rfq_id){
+        if ($rfq_id != $session_rfq_id) {
             session()->flash('error', "Page has expired.");
             return redirect()->route('buyer.dashboard');
         }
@@ -375,24 +395,24 @@ class CISController extends Controller
     {
         $company_id = getParentUserId();
         $rfq = Rfq::with([
-                        'rfqProducts',
-                        'rfqProducts.masterProduct:id,division_id,category_id,product_name',
-                        'rfqProducts.masterProduct.division:id,division_name',
-                        'rfqProducts.masterProduct.category:id,category_name',
-                        'rfqProducts.productVariants' => function ($q) use ($rfq_id) {
-                            $q->where('rfq_id', $rfq_id);
-                        },
-                        'rfqProducts.productVariants.vendorQuotations',
-                        'rfqVendors'=> function ($q) use ($vendor_id) {
-                            $q->selectRaw('MAX(vendor_user_id) as vendor_user_id, MAX(rfq_id) as rfq_id');
-                            $q->where('vendor_user_id', $vendor_id);
-                        },
-                    ])
-                    ->where('rfq_id', $rfq_id)
-                    ->where('buyer_id', $company_id)
-                    ->where('record_type', 2)
-                    ->first();
-        if(empty($rfq)){
+            'rfqProducts',
+            'rfqProducts.masterProduct:id,division_id,category_id,product_name',
+            'rfqProducts.masterProduct.division:id,division_name',
+            'rfqProducts.masterProduct.category:id,category_name',
+            'rfqProducts.productVariants' => function ($q) use ($rfq_id) {
+                $q->where('rfq_id', $rfq_id);
+            },
+            'rfqProducts.productVariants.vendorQuotations',
+            'rfqVendors' => function ($q) use ($vendor_id) {
+                $q->selectRaw('MAX(vendor_user_id) as vendor_user_id, MAX(rfq_id) as rfq_id');
+                $q->where('vendor_user_id', $vendor_id);
+            },
+        ])
+            ->where('rfq_id', $rfq_id)
+            ->where('buyer_id', $company_id)
+            ->where('record_type', 2)
+            ->first();
+        if (empty($rfq)) {
             session()->flash('error', "RFQ not found");
             return redirect()->to(route('buyer.dashboard'));
         }
@@ -401,39 +421,39 @@ class CISController extends Controller
 
         $rfq_vendor_quotation = RfqVendorQuotation::with('vendor')->where('rfq_id', $rfq_id)->where('vendor_id', $vendor_id)->latest()->first();
 
-        return view('buyer.rfq.cis.quotation-received', compact('rfq_id','vendor_id','rfq_vendor','rfq','rfq_vendor_quotation'));
+        return view('buyer.rfq.cis.quotation-received', compact('rfq_id', 'vendor_id', 'rfq_vendor', 'rfq', 'rfq_vendor_quotation'));
     }
 
     public function quotation_received_print($rfq_id, $vendor_id)
     {
         $company_id = getParentUserId();
         $rfq = Rfq::with([
-                        'rfqProducts',
-                        'rfqProducts.masterProduct:id,division_id,category_id,product_name',
-                        'rfqProducts.masterProduct.division:id,division_name',
-                        'rfqProducts.masterProduct.category:id,category_name',
-                        'rfqProducts.productVariants' => function ($q) use ($rfq_id) {
-                            $q->where('rfq_id', $rfq_id);
-                        },
-                        'rfqProducts.productVariants.vendorQuotations',
-                        'getLastRfqVendorQuotation',
-                        'rfqVendors'=> function ($q) use ($vendor_id) {
-                            $q->selectRaw('MAX(vendor_user_id) as vendor_user_id, MAX(rfq_id) as rfq_id');
-                            $q->where('vendor_user_id', $vendor_id);
-                        },
-                    ])
-                    ->where('rfq_id', $rfq_id)
-                    ->where('buyer_id', $company_id)
-                    ->where('record_type', 2)
-                    ->first();
-        if(empty($rfq)){
+            'rfqProducts',
+            'rfqProducts.masterProduct:id,division_id,category_id,product_name',
+            'rfqProducts.masterProduct.division:id,division_name',
+            'rfqProducts.masterProduct.category:id,category_name',
+            'rfqProducts.productVariants' => function ($q) use ($rfq_id) {
+                $q->where('rfq_id', $rfq_id);
+            },
+            'rfqProducts.productVariants.vendorQuotations',
+            'getLastRfqVendorQuotation',
+            'rfqVendors' => function ($q) use ($vendor_id) {
+                $q->selectRaw('MAX(vendor_user_id) as vendor_user_id, MAX(rfq_id) as rfq_id');
+                $q->where('vendor_user_id', $vendor_id);
+            },
+        ])
+            ->where('rfq_id', $rfq_id)
+            ->where('buyer_id', $company_id)
+            ->where('record_type', 2)
+            ->first();
+        if (empty($rfq)) {
             session()->flash('error', "RFQ not found");
             return redirect()->to(route('buyer.dashboard'));
         }
 
         $rfq_vendor = Vendor::where('user_id', $vendor_id)->first();
         $rfq_vendor_quotation = RfqVendorQuotation::with('vendor')->where('rfq_id', $rfq_id)->where('vendor_id', $vendor_id)->latest()->first();
-        return view('buyer.rfq.cis.received-quotation-pdf', compact('rfq_id','vendor_id','rfq_vendor','rfq','rfq_vendor_quotation'));
+        return view('buyer.rfq.cis.received-quotation-pdf', compact('rfq_id', 'vendor_id', 'rfq_vendor', 'rfq', 'rfq_vendor_quotation'));
     }
 
     public function last_cis_po(Request $request)
