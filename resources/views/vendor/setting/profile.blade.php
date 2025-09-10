@@ -327,7 +327,7 @@
                                         <div class="row gy-4 branch-row" data-row-id="{{ $k }}">
                                             <div class="form-group col-md-6">
                                                 <input type="hidden" name="edit_id_branch[]"
-                                                    value="{{ $branch->branch_id }}">
+                                                    value="{{ $branch->id }}">
                                                 <label for="branchName" class="mb-1">Branch Name <span
                                                         class="text-danger">*</span></label>
                                                 <input type="text" class="form-control required text-upper-case mng-input"
@@ -353,9 +353,9 @@
                                                 <label for="countryBranch" class="mb-1">Country <span
                                                         class="text-danger">*</span></label>
                                                 <select
-                                                    class="form-select branch-country disabled branch-country-{{ $branch->branch_id }} required mng-input"
+                                                    class="form-select branch-country disabled branch-country-{{ $branch->id }} required mng-input"
                                                     name="branch_country[]"
-                                                    onchange="getState('branch-country-{{ $branch->branch_id }}', 'branch-state-{{ $branch->branch_id }}', 'branch-city-{{ $branch->branch_id }}')">
+                                                    onchange="getState('branch-country-{{ $branch->id }}', 'branch-state-{{ $branch->id }}', 'branch-city-{{ $branch->id }}')">
                                                     @if (!empty($countries))
                                                         @foreach ($countries as $country_id => $country_name)
                                                             <option value="{{ $country_id }}"
@@ -370,8 +370,8 @@
                                                 <label for="stateBranch" class="mb-1">State <span
                                                         class="text-danger">*</span></label>
                                                 <select
-                                                    class="form-select branch-state branch-state-{{ $branch->branch_id }} required mng-input"
-                                                    {{-- onchange="getCity('branch-state-{{ $branch->branch_id }}', 'branch-city-{{ $branch->branch_id }}')" --}} name="branch_state[]">
+                                                    class="form-select branch-state branch-state-{{ $branch->id }} required mng-input"
+                                                    {{-- onchange="getCity('branch-state-{{ $branch->id }}', 'branch-city-{{ $branch->id }}')" --}} name="branch_state[]">
                                                     <option value="">Select State</option>
                                                     @php
                                                         $b_country = !empty($branch->country) ? $branch->country : 101;
@@ -382,7 +382,7 @@
 
                                             {{-- <div class="form-group col-md-6">
                                     <label for="cityBranch" class="mb-1">City <span class="text-danger">*</span></label>
-                                    <select class="form-select branch-city branch-city-{{ $branch->branch_id }} required" name="branch_city[]">
+                                    <select class="form-select branch-city branch-city-{{ $branch->id }} required" name="branch_city[]">
                                         <option value="">Select City</option>
                                                 {!! !empty($branch->state) ? getCityByStateId($branch->state, $branch->city??0) : '' !!}
                                     </select>
