@@ -223,64 +223,19 @@ class AuctionCISController extends Controller
             $prefill['auction_type']      = $auction->auction_type;
         }
 
-        // 11) LIVE AUCTION STATUS (robust parsing)
-        $rfqNo = $rfq_id;
-        if (is_array($rfq)) {
-            $rfqNo = $rfq['rfq_id'] ?? $rfq_id;
-        } elseif (is_object($rfq)) {
-            $rfqNo = $rfq->rfq_id ?? $rfq_id;
-        }
+        // 11) LIVE AUCTION STATUS
+        $current_status = null;
+        if ($auction) {
+            $current_status = $this->getAuctionStatus(
+                $auction->auction_date,
+                $auction->auction_start_time,
+                $auction->auction_end_time
+            );
 
-        $liveAuction = DB::table('rfq_auctions')
-            ->where('rfq_no', $rfqNo)
-            ->orderByDesc('id')
-            ->first();
-
-        $current_status = null; // 1=Active, 2=Scheduled, 3=Closed
-        if (!empty($liveAuction)) {
-            $tz  = 'Asia/Kolkata';
-            $now = Carbon::now($tz);
-
-            // Flexible parsers
-            $parseDate = function ($v) use ($tz) {
-                if (!$v) return null;
-                $formats = ['Y-m-d', 'd/m/Y', 'd-m-Y', 'm/d/Y'];
-                foreach ($formats as $fmt) {
-                    try { return Carbon::createFromFormat($fmt, trim($v), $tz)->startOfDay(); } catch (\Throwable $e) {}
-                }
-                try { return Carbon::parse($v, $tz)->startOfDay(); } catch (\Throwable $e) { return null; }
-            };
-            $parseTime = function ($v) use ($tz) {
-                if (!$v) return null;
-                $formats = ['H:i:s', 'H:i', 'h:i A', 'g:i A', 'h:iA', 'g:iA'];
-                foreach ($formats as $fmt) {
-                    try { return Carbon::createFromFormat($fmt, trim(strtoupper($v)), $tz); } catch (\Throwable $e) {}
-                }
-                try { return Carbon::parse($v, $tz); } catch (\Throwable $e) { return null; }
-            };
-
-            $d  = $parseDate($liveAuction->auction_date ?? null);
-            $t1 = $parseTime($liveAuction->auction_start_time ?? null);
-            $t2 = $parseTime($liveAuction->auction_end_time ?? null);
-
-            if ($d && $t1 && $t2) {
-                $start = $d->copy()->setTime($t1->hour, $t1->minute, $t1->second);
-                $end   = $d->copy()->setTime($t2->hour, $t2->minute, $t2->second);
-                // Cross-midnight window (e.g., 10 PM to 2 AM)
-                if ($end->lessThanOrEqualTo($start)) {
-                    $end->addDay();
-                }
-
-                if ($now->betweenIncluded($start, $end)) {
-                    $current_status = 1; // Active
-                } elseif ($now->lt($start)) {
-                    $current_status = 2; // Scheduled
-                } else {
-                    $current_status = 3; // Closed
-                }
-            } else {
-                // Conservative fallback
-                $current_status = 2; // Scheduled
+            // If auction has ended and prices aren't mapped yet, persist them
+            if ($auction->is_rfq_price_map !== '1' && $current_status === 3) {
+                $this->mapAuctionPricesToQuotation($auction);
+                $auction->is_rfq_price_map = '1';
             }
         }
 
@@ -298,9 +253,98 @@ class AuctionCISController extends Controller
             'selectedVendorIds',
             'prefill',
             'prefillVariantPrices',
-            'liveAuction',
             'current_status',
         ));
+    }
+
+    /**
+     * Map final auction prices into rfq_vendor_quotations and
+     * flag the auction so that it isn't processed again.
+     */
+    private function mapAuctionPricesToQuotation($auction): void
+    {
+        DB::transaction(function () use ($auction) {
+            $latest = DB::table('rfq_vendor_auction_price')
+                ->selectRaw('MAX(id) as id')
+                ->where('rfq_auction_id', $auction->id)
+                ->groupBy('vendor_id', 'rfq_product_veriant_id');
+
+            $rows = DB::table('rfq_vendor_auction_price as ap')
+                ->joinSub($latest, 't', 't.id', '=', 'ap.id')
+                ->select(
+                    'ap.rfq_no',
+                    'ap.vendor_id',
+                    'ap.rfq_product_veriant_id',
+                    'ap.vend_price',
+                    'ap.vend_specs',
+                    'ap.vend_price_basis',
+                    'ap.vend_payment_terms',
+                    'ap.vend_delivery_period',
+                    'ap.vend_price_validity',
+                    'ap.vend_dispatch_branch',
+                    'ap.vend_currency',
+                    'ap.vendor_user_id'
+                )
+                ->get();
+
+            foreach ($rows as $row) {
+                DB::table('rfq_vendor_quotations')->updateOrInsert(
+                    [
+                        'rfq_id' => $row->rfq_no,
+                        'vendor_id' => $row->vendor_id,
+                        'rfq_product_variant_id' => $row->rfq_product_veriant_id,
+                    ],
+                    [
+                        'price' => $row->vend_price,
+                        'mrp' => 0,
+                        'discount' => 0,
+                        'buyer_price' => 0,
+                        'specification' => $row->vend_specs,
+                        'vendor_remarks' => $row->vend_specs,
+                        'vendor_price_basis' => $row->vend_price_basis,
+                        'vendor_payment_terms' => $row->vend_payment_terms,
+                        'vendor_delivery_period' => $row->vend_delivery_period,
+                        'vendor_price_validity' => $row->vend_price_validity,
+                        'vendor_dispatch_branch' => $row->vend_dispatch_branch,
+                        'vendor_currency' => $row->vend_currency,
+                        'buyer_user_id' => $auction->buyer_user_id,
+                        'vendor_user_id' => $row->vendor_user_id,
+                        'status' => 1,
+                        'created_at' => Carbon::now(),
+                        'updated_at' => Carbon::now(),
+                    ]
+                );
+            }
+
+            DB::table('rfq_auctions')
+                ->where('id', $auction->id)
+                ->update([
+                    'is_rfq_price_map' => '1',
+                    'price_map_time' => Carbon::now(),
+                ]);
+        });
+    }
+
+    /**
+     * Determine auction status for given date and time range.
+     *
+     * @return int 1=>Live, 2=>Scheduled, 3=>Completed
+     */
+    private function getAuctionStatus($date, $startTime, $endTime): int
+    {
+        $start = Carbon::parse($date . ' ' . $startTime, 'Asia/Kolkata');
+        $end = Carbon::parse($date . ' ' . $endTime, 'Asia/Kolkata');
+        $now = Carbon::now('Asia/Kolkata');
+
+        if ($now->gt($end)) {
+            return 3; // Completed
+        }
+
+        if ($now->between($start, $end)) {
+            return 1; // Live
+        }
+
+        return 2; // Scheduled
     }
 
     private function cisFilter($rfq_id)
@@ -704,7 +748,11 @@ class AuctionCISController extends Controller
             $rfq['auction_end_time'] = $cis->rfq_auction->auction_end_time ? Carbon::parse($cis->rfq_auction->auction_end_time)->format('H:i:s') : '';
             $rfq['is_rfq_price_map'] = $cis->rfq_auction->is_rfq_price_map;
 
-            $rfq['auction_status'] = getAuctionStatus($rfq['auction_date'], $rfq['auction_start_time'], $rfq['auction_end_time']);
+            $rfq['auction_status'] = $this->getAuctionStatus(
+                $rfq['auction_date'],
+                $rfq['auction_start_time'],
+                $rfq['auction_end_time']
+            );
         }
 
         $data = [
