@@ -9,10 +9,15 @@ use App\Models\Division;
 use App\Models\Category;
 use App\Models\Rfq;
 use DB;
+use App\Traits\HasModulePermission;
 class OrderConfirmedController extends Controller
 {
+    use HasModulePermission;
+
     public function index(Request $request)
     {
+        $this->ensurePermission('ORDERS_CONFIRMED_LISTING', 'view', '1');
+
         $query = Order::with('order_variants','vendor','rfq')->where('buyer_id', getParentUserId())->where('order_status','!=','3');
         if ($request->filled('order_no')){
             $query->where('po_number', 'like', '%' . $request->order_no . '%');
@@ -96,6 +101,7 @@ class OrderConfirmedController extends Controller
     }
 
     public function view(Request $request,$id) {
+        $this->ensurePermission('ORDERS_CONFIRMED_LISTING', 'view', '1');
         $buyer_id = getParentUserId();
         $order = Order::with([
                     // 'rfq',
@@ -120,12 +126,14 @@ class OrderConfirmedController extends Controller
     }
 
     public function print(Request $request,$id) {
+        $this->ensurePermission('ORDERS_CONFIRMED_LISTING', 'view', '1');
         $order = Order::with(['vendor','vendor.user','buyer','buyer.users','rfq','rfq.buyer_branchs','order_variants.frq_variant','order_variants.frq_quotation_variant'])->where('id', $id)->first();
         // echo '<pre>';
         // print_r($order);die;
         return view('buyer.rfq.order_confirmed.pdf',compact('order'));
     }
     public function cancel(Request $request, $id) {
+        $this->ensurePermission('CANCEL_ORDER', 'edit', '1');
         $buyer_id = getParentUserId();
 
         $order = Order::with(['rfq'])->where('id', $id)->where('buyer_id', $buyer_id)->first();

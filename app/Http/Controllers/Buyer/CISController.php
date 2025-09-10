@@ -15,6 +15,7 @@ use App\Models\RfqVendorQuotation;
 use Carbon\Carbon;
 use DB;
 use Auth;
+use App\Traits\HasModulePermission;
 
 use App\Exports\CisExport;
 use Maatwebsite\Excel\Facades\Excel;
@@ -23,8 +24,11 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class CISController extends Controller
 {
+    use HasModulePermission;
+
     public function index(Request $request, $rfq_id)
     {
+        $this->ensurePermission('ACTIVE_RFQS_CIS', 'view', '1');
 
         $parent_user_id = getParentUserId();
         $rfq_data = Rfq::where('record_type', 2)->where('rfq_id', $rfq_id)->where('buyer_id', $parent_user_id)->first();
@@ -179,6 +183,7 @@ class CISController extends Controller
 
     public function counter_offer($rfq_id)
     {
+        $this->ensurePermission('COUNTER_OFFER_RFQ', 'view', '1');
         $parent_user_id = getParentUserId();
         $rfq_data = Rfq::where('record_type', 2)->where('rfq_id', $rfq_id)->where('buyer_id', $parent_user_id)->first();
         if (empty($rfq_data)) {
@@ -246,6 +251,7 @@ class CISController extends Controller
     }
     public function save_counter_offer(Request $request, $rfq_id)
     {
+        $this->ensurePermission('COUNTER_OFFER_RFQ', 'add', '1');
         if (
             isset($_POST['counter_offer'], $_POST['variant_vendors']) &&
             is_array($_POST['counter_offer']) &&
@@ -383,6 +389,7 @@ class CISController extends Controller
     }
     public function counter_offer_success($rfq_id)
     {
+        $this->ensurePermission('COUNTER_OFFER_RFQ', 'view', '1');
         $session_rfq_id = getSessionWithExpiry('counter_offer_rfq_number');
         if ($rfq_id != $session_rfq_id) {
             session()->flash('error', "Page has expired.");
@@ -393,6 +400,7 @@ class CISController extends Controller
     }
     public function quotation_received($rfq_id, $vendor_id)
     {
+        $this->ensurePermission('COUNTER_OFFER_RFQ', 'view', '1');
         $company_id = getParentUserId();
         $rfq = Rfq::with([
             'rfqProducts',
@@ -426,6 +434,7 @@ class CISController extends Controller
 
     public function quotation_received_print($rfq_id, $vendor_id)
     {
+        $this->ensurePermission('COUNTER_OFFER_RFQ', 'view', '1');
         $company_id = getParentUserId();
         $rfq = Rfq::with([
             'rfqProducts',
@@ -458,6 +467,7 @@ class CISController extends Controller
 
     public function last_cis_po(Request $request)
     {
+        $this->ensurePermission('ACTIVE_RFQS_CIS', 'view', '1');
         $rfq_id=$request->rfq_id;
         $cis_po=$request->cis_po;
         $product_id=$request->product_id;

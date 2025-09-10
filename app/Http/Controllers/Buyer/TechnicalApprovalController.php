@@ -13,11 +13,15 @@ use Carbon\Carbon;
 use DB;
 use Auth;
 use Validator;
+use App\Traits\HasModulePermission;
 
 class TechnicalApprovalController extends Controller
 {
+    use HasModulePermission;
+
     public function save(Request $request)
     {
+        $this->ensurePermission('TECHNICAL_APPROVAL', 'add', '1');
         // Validate required fields
         $validator = Validator::make($request->all(), [
             'vendor_id' => 'required|integer',

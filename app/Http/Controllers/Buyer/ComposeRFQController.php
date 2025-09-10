@@ -15,10 +15,14 @@ use DB;
 use Illuminate\Support\Facades\Session;
 // use App\Helpers\EmailHelper;
 use Carbon\Carbon;
+use App\Traits\HasModulePermission;
 
 class ComposeRFQController extends Controller
 {
+    use HasModulePermission;
+
     function composeRFQ(Request $request) {
+        $this->ensurePermission('GENERATE_NEW_RFQ', 'add', '1');
         $draft_id = $request->rfq_draft_id;
         $company_id = getParentUserId();
         
@@ -297,6 +301,7 @@ class ComposeRFQController extends Controller
     }
     
     function composeRFQSuccess(Request $request, $rfq_number) {
+        $this->ensurePermission('GENERATE_NEW_RFQ', 'view', '1');
         if($rfq_number!=getSessionWithExpiry('rfq_number')){
             session()->flash('error', "Page has expired.");
             return redirect()->route('buyer.dashboard');
@@ -315,6 +320,7 @@ class ComposeRFQController extends Controller
     }
 
     function updateRFQ(Request $request) {
+        $this->ensurePermission('EDIT_RFQ', 'edit', '1');
         $draft_id = $request->rfq_draft_id;
         $company_id = getParentUserId();
 

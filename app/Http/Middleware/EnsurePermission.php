@@ -9,11 +9,11 @@ use Illuminate\Support\Str;
 class EnsurePermission
 {
     /**
-     * Map route prefixes to module slugs.
+     * Map admin route prefixes to module slugs.
      *
      * @var array<string,string>
      */
-    protected array $moduleMap = [
+    protected array $adminModuleMap = [
         'divisions' => 'PRODUCT_DIRECTORY',
         'verified-products' => 'ALL_VERIFIED_PRODUCTS',
         'product-approvals' => 'PRODUCTS_FOR_APPROVAL',
@@ -33,6 +33,43 @@ class EnsurePermission
         'user-roles' => 'MANAGE_ROLE',
         'help_support' => 'HELP_AND_SUPPORT',
         'password' => 'CHANGE_PASSWORD',
+    ];
+
+    /**
+     * Map buyer route prefixes to module slugs.
+     *
+     * @var array<string,string>
+     */
+    protected array $buyerModuleMap = [
+        'rfq.active-rfq' => 'ACTIVE_RFQS_CIS',
+        'rfq.draft-rfq' => 'DRAFT_RFQ',
+        'rfq.scheduled-rfq' => 'SCHEDULED_RFQ',
+        'rfq.sent-rfq' => 'SENT_RFQ',
+        'rfq.compose' => 'GENERATE_NEW_RFQ',
+        'rfq.close' => 'CLOSE_RFQ',
+        'rfq.edit' => 'EDIT_RFQ',
+        'rfq.update' => 'EDIT_RFQ',
+        'rfq.counter-offer' => 'COUNTER_OFFER_RFQ',
+        'rfq.save-counter-offer' => 'COUNTER_OFFER_RFQ',
+        'rfq.quotation-received' => 'COUNTER_OFFER_RFQ',
+        'rfq.cis.technical-approval' => 'TECHNICAL_APPROVAL',
+        'rfq.cis-sheet' => 'ACTIVE_RFQS_CIS',
+        'rfq.cis.last-cis-po' => 'TECHNICAL_APPROVAL_WITH_PRICE',
+        'rfq.order-confirmed.cancel' => 'CANCEL_ORDER',
+        'rfq.order-confirmed' => 'ORDERS_CONFIRMED_LISTING',
+        'unapproved-orders' => 'UNAPPROVE_PO_LISTING',
+        'unapproved-orders.generatePO' => 'TO_GENERATE_UNAPPROVE_PO',
+        'unapproved-orders.approvePO' => 'TO_CONFIRM_ORDER',
+        'unapproved-orders.deletePO' => 'CANCEL_ORDER',
+        'search-vendor' => 'VENDORS_SEARCH',
+        'vendor.favourite' => 'FAVOURITE_VENDORS',
+        'vendor.blacklist' => 'BLACKLISTED_VENDORS',
+        'auction' => 'AUCTION',
+        'forward-auction' => 'AUCTION',
+        'profile' => 'MY_PROFILE',
+        'user-management.users' => 'MANAGE_USERS',
+        'role-permission.roles' => 'MANAGE_ROLE',
+        'setting.change-password' => 'CHANGE_PASSWORD',
     ];
 
     /**
@@ -61,12 +98,13 @@ class EnsurePermission
         $name = $route?->getName();
 
         if ($name) {
-            $moduleSlug = $this->resolveModuleSlug($name);
-            if ($moduleSlug) {
+            $moduleFor = null;
+            $moduleSlug = $this->resolveModuleSlug($name, $moduleFor);
+            if ($moduleSlug && $moduleFor) {
                 $action = $this->resolveAction($name);
                 $permissionType = $this->permissionMap[$action] ?? 'view';
 
-                if (!checkPermission($moduleSlug, $permissionType, '3')) {
+                if (!checkPermission($moduleSlug, $permissionType, $moduleFor)) {
                     abort(403, 'Unauthorized');
                 }
             }
@@ -78,13 +116,22 @@ class EnsurePermission
     /**
      * Resolve module slug based on route name.
      */
-    protected function resolveModuleSlug(string $routeName): ?string
+    protected function resolveModuleSlug(string $routeName, ?string &$moduleFor = null): ?string
     {
-        foreach ($this->moduleMap as $prefix => $slug) {
+        foreach ($this->adminModuleMap as $prefix => $slug) {
             if (Str::startsWith($routeName, 'admin.' . $prefix)) {
+                $moduleFor = '3';
                 return $slug;
             }
         }
+
+        foreach ($this->buyerModuleMap as $prefix => $slug) {
+            if (Str::startsWith($routeName, 'buyer.' . $prefix)) {
+                $moduleFor = '1';
+                return $slug;
+            }
+        }
+
         return null;
     }
 

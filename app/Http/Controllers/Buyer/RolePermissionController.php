@@ -10,8 +10,10 @@ use App\Models\UserRoleModulePermission;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use App\Traits\HasModulePermission;
 class RolePermissionController extends Controller
 {
+    use HasModulePermission;
      /**
      * Constructor to check user authorization.
      */
@@ -28,6 +30,7 @@ class RolePermissionController extends Controller
      */
     public function index()
     {
+        $this->ensurePermission('MANAGE_ROLE', 'view', '1');
         $results = UserRole::where('role_name_for', 1)->where('user_master_id', getParentUserId())->paginate(25);
         return view('buyer.role-permission.index', compact('results'));
     }

@@ -14,10 +14,12 @@ use DB;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Traits\HasModulePermission;
 
 
 class RFQUnapprovedOrderController extends Controller
 {
+    use HasModulePermission;
 
     public function poQuery($request, $company_id)
     {
@@ -68,6 +70,7 @@ class RFQUnapprovedOrderController extends Controller
 
     public function index(Request $request)
     {
+        $this->ensurePermission('UNAPPROVE_PO_LISTING', 'view', '1');
         $company_id = getParentUserId();
         if ($request->ajax()) {
 
@@ -133,6 +136,7 @@ class RFQUnapprovedOrderController extends Controller
 
     public function exportPOData(Request $request)
     {
+        $this->ensurePermission('TO_GENERATE_UNAPPROVE_PO', 'view', '1');
         $company_id = getParentUserId();
         /***:- clone the query  -:***/
         $query = clone $this->poQuery($request, $company_id);
@@ -143,6 +147,7 @@ class RFQUnapprovedOrderController extends Controller
 
     public function create($rfq_id)
     {
+        $this->ensurePermission('TO_GENERATE_UNAPPROVE_PO', 'view', '1');
         $parent_user_id = getParentUserId();
         $rfq_data = Rfq::where('record_type', 2)->where('rfq_id', $rfq_id)->where('buyer_id', $parent_user_id)->first();
         if (empty($rfq_data)) {
@@ -257,6 +262,7 @@ class RFQUnapprovedOrderController extends Controller
 
     public function downloadPOPdf(Request $request, $rfq_id)
     {
+        $this->ensurePermission('TO_GENERATE_UNAPPROVE_PO', 'view', '1');
         $vendors = $this->sanitizeTheRequest($request);
         $pdf = Pdf::loadView('buyer.unapproved-orders.download-po-pdf', [
             'vendors' => $vendors,
@@ -381,6 +387,7 @@ class RFQUnapprovedOrderController extends Controller
 
     public function generatePO(Request $request)
     {
+        $this->ensurePermission('TO_GENERATE_UNAPPROVE_PO', 'add', '1');
 
         /***:- validate the request  -:***/
         $request->validate([
@@ -484,6 +491,7 @@ class RFQUnapprovedOrderController extends Controller
 
     public function deletePO(Request $request)
     {
+        $this->ensurePermission('CANCEL_ORDER', 'delete', '1');
 
         DB::beginTransaction();
         try {
@@ -499,6 +507,7 @@ class RFQUnapprovedOrderController extends Controller
 
     public function approvePO(Request $request, $rfq_id)
     {
+        $this->ensurePermission('TO_CONFIRM_ORDER', 'edit', '1');
         $po = $request->p;
         $parent_user_id = getParentUserId();
 
