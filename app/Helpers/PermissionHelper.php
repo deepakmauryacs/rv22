@@ -4,7 +4,14 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 if (!function_exists('checkPermission')) {
-    function checkPermission(string $moduleName, string $permissionType, string $moduleFor): bool
+    /**
+     * Determine if the authenticated user has the given permission on a module.
+     *
+     * @param string $moduleName      Module slug (e.g. GENERATE_NEW_RFQ)
+     * @param string $permissionType  Type of permission: view|add|edit|delete
+     * @param string $moduleFor       1 => Buyer, 2 => Vendor, 3 => Super Admin
+     */
+    function checkPermission(string $moduleName, string $permissionType, string $moduleFor = '3'): bool
     {
         $user = Auth::user();
 

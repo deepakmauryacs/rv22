@@ -18,21 +18,42 @@
                     <div class="accordion-body">
                         <ul class="accordian-submenu">
                             {{-- <li><a href="javascript:void(0)">Generate New RFQ</a></li> --}}
-                            <li><a href="javascript:void(0)">Generate Bulk RFQ</a></li>
-                            <li><a href="{{ route('buyer.rfq.active-rfq') }}" class="{{ setActiveMenu('buyer.rfq.active-rfq') }}">Active RFQs / CIS</a></li>
-                            <li><a href="{{ route('buyer.auction.index') }}" class="{{ setActiveMenu('buyer.auction.index') }}">Auction</a></li>
-                            <li><a href="{{ route('buyer.rfq.draft-rfq') }}" class="{{ setActiveMenu('buyer.rfq.draft-rfq') }}">Draft RFQ</a></li>
-                            <li><a href="{{route('buyer.rfq.scheduled-rfq')}}" class="{{ setActiveMenu('buyer.rfq.scheduled-rfq') }}">Scheduled RFQ</a></li>
-                            <li><a href="{{ route('buyer.rfq.sent-rfq') }}" class="{{ setActiveMenu('buyer.rfq.sent-rfq') }}">Sent RFQ</a></li>
-                            <li><a href="javascript:void(0)">Counter Offer</a></li>
-                            <li><a href="{{ route('buyer.unapproved-orders.list') }}"> Unapproved Orders </a></li>
-                            <li><a href="{{route('buyer.rfq.order-confirmed')}}" class="{{ setActiveMenu('buyer.rfq.order-confirmed') }}"> Orders Confirmed </a></li>
-                            <li><a href="{{route('buyer.rfq.pi-invoice')}}" class="{{ setActiveMenu('buyer.rfq.pi-invoice') }}"> PI's / Invoices </a></li>
+                            @if(checkPermission('GENERATE_BULK_RFQ','view','1'))
+                                <li><a href="javascript:void(0)">Generate Bulk RFQ</a></li>
+                            @endif
+                            @if(checkPermission('ACTIVE_RFQS_CIS','view','1'))
+                                <li><a href="{{ route('buyer.rfq.active-rfq') }}" class="{{ setActiveMenu('buyer.rfq.active-rfq') }}">Active RFQs / CIS</a></li>
+                            @endif
+                            @if(checkPermission('AUCTION','view','1'))
+                                <li><a href="{{ route('buyer.auction.index') }}" class="{{ setActiveMenu('buyer.auction.index') }}">Auction</a></li>
+                            @endif
+                            @if(checkPermission('DRAFT_RFQ','view','1'))
+                                <li><a href="{{ route('buyer.rfq.draft-rfq') }}" class="{{ setActiveMenu('buyer.rfq.draft-rfq') }}">Draft RFQ</a></li>
+                            @endif
+                            @if(checkPermission('SCHEDULED_RFQ','view','1'))
+                                <li><a href="{{route('buyer.rfq.scheduled-rfq')}}" class="{{ setActiveMenu('buyer.rfq.scheduled-rfq') }}">Scheduled RFQ</a></li>
+                            @endif
+                            @if(checkPermission('SENT_RFQ','view','1'))
+                                <li><a href="{{ route('buyer.rfq.sent-rfq') }}" class="{{ setActiveMenu('buyer.rfq.sent-rfq') }}">Sent RFQ</a></li>
+                            @endif
+                            @if(checkPermission('COUNTER_OFFER_RFQ','view','1'))
+                                <li><a href="javascript:void(0)">Counter Offer</a></li>
+                            @endif
+                            @if(checkPermission('UNAPPROVE_PO_LISTING','view','1'))
+                                <li><a href="{{ route('buyer.unapproved-orders.list') }}"> Unapproved Orders </a></li>
+                            @endif
+                            @if(checkPermission('ORDERS_CONFIRMED_LISTING','view','1'))
+                                <li><a href="{{route('buyer.rfq.order-confirmed')}}" class="{{ setActiveMenu('buyer.rfq.order-confirmed') }}"> Orders Confirmed </a></li>
+                            @endif
+                            @if(checkPermission('TO_CONFIRM_ORDER','view','1'))
+                                <li><a href="{{route('buyer.rfq.pi-invoice')}}" class="{{ setActiveMenu('buyer.rfq.pi-invoice') }}"> PI's / Invoices </a></li>
+                            @endif
 
                         </ul>
                     </div>
                 </div>
             </div>
+             @if(checkPermission('AUCTION','view','1'))
              <div class="accordion-item">
                   <h2 class="accordion-header" id="headingForwardAuction">
                         @php
@@ -56,7 +77,14 @@
                       </div>
                   </div>
               </div>
+              @endif
 
+              @php
+                  $vendorModule = checkPermission('VENDORS_SEARCH','view','1') ||
+                                   checkPermission('FAVOURITE_VENDORS','view','1') ||
+                                   checkPermission('BLACKLISTED_VENDORS','view','1');
+              @endphp
+              @if($vendorModule)
               <div class="accordion-item">
                   <h2 class="accordion-header" id="headingVendors">
                         @php
@@ -74,14 +102,21 @@
                   <div id="collapseVendors" class="{{ $accordionClasses['collapse_class'] }}" aria-labelledby="headingVendors" data-bs-parent="#sidebarAccordion">
                       <div class="accordion-body">
                           <ul class="accordian-submenu">
-                              <li><a href="{{route('buyer.search-vendor.index')}}" class="{{ setActiveMenu('buyer.search-vendor.index') }}">Vendor Search</a></li>
+                              @if(checkPermission('VENDORS_SEARCH','view','1'))
+                                  <li><a href="{{route('buyer.search-vendor.index')}}" class="{{ setActiveMenu('buyer.search-vendor.index') }}">Vendor Search</a></li>
+                              @endif
                               <li><a href="{{route('buyer.add-vendor.create')}}" class="{{ setActiveMenu('buyer.add-vendor.create') }}">Add Your Vendor</a></li>
-                              <li><a href="{{route('buyer.vendor.favourite')}}" class="{{ setActiveMenu('buyer.vendor.favourite') }}">Favourites</a></li>
-                              <li><a href="{{route('buyer.vendor.blacklist')}}" class="{{ setActiveMenu('buyer.vendor.blacklist') }}">Blocked / Blacklisted</a></li>
+                              @if(checkPermission('FAVOURITE_VENDORS','view','1'))
+                                  <li><a href="{{route('buyer.vendor.favourite')}}" class="{{ setActiveMenu('buyer.vendor.favourite') }}">Favourites</a></li>
+                              @endif
+                              @if(checkPermission('BLACKLISTED_VENDORS','view','1'))
+                                  <li><a href="{{route('buyer.vendor.blacklist')}}" class="{{ setActiveMenu('buyer.vendor.blacklist') }}">Blocked / Blacklisted</a></li>
+                              @endif
                           </ul>
                       </div>
                   </div>
               </div>
+              @endif
 
             {{-- <div class="accordion-item">
                 <h2 class="accordion-header" id="headingThree">
@@ -117,6 +152,10 @@
             </div>
             @endif
 
+            @php
+                $settingModule = checkPermission('MY_PROFILE','view','1') || checkPermission('CHANGE_PASSWORD','view','1');
+            @endphp
+            @if($settingModule)
             <div class="accordion-item">
                 <h2 class="accordion-header" id="headingTwo">
                     @php
@@ -130,12 +169,21 @@
                 <div id="collapseTwo" class="{{ $accordionClasses['collapse_class'] }}" aria-labelledby="headingTwo">
                     <div class="accordion-body">
                         <ul class="accordian-submenu" aria-labelledby="headingTwo">
-                            <li><a href="{{ route("buyer.profile") }}" class="{{ setActiveMenu('buyer.profile') }}">My Profile</a></li>
-                            <li><a href="{{ route("buyer.setting.change-password") }}" class="{{ setActiveMenu('buyer.setting.change-password') }}">Change Password</a></li>
+                            @if(checkPermission('MY_PROFILE','view','1'))
+                                <li><a href="{{ route("buyer.profile") }}" class="{{ setActiveMenu('buyer.profile') }}">My Profile</a></li>
+                            @endif
+                            @if(checkPermission('CHANGE_PASSWORD','view','1'))
+                                <li><a href="{{ route("buyer.setting.change-password") }}" class="{{ setActiveMenu('buyer.setting.change-password') }}">Change Password</a></li>
+                            @endif
                         </ul>
                     </div>
                 </div>
             </div>
+            @endif
+            @php
+                $userMgmt = checkPermission('MANAGE_USERS','view','1') || checkPermission('MANAGE_ROLE','view','1');
+            @endphp
+            @if($userMgmt)
             <div class="accordion-item">
                 <h2 class="accordion-header" id="headingSix">
                     @php
@@ -150,12 +198,17 @@
                 <div id="collapseSix" class="{{ $accordionClasses['collapse_class'] }}" aria-labelledby="headingSix">
                     <div class="accordion-body">
                         <ul class="accordian-submenu" aria-labelledby="headingSix">
-                            <li><a href="{{ route("buyer.user-management.users") }}" class="{{ setActiveMenu('buyer.user-management.users') }}">Manage Users</a></li>
-                            <li><a href="{{ route("buyer.role-permission.roles") }}" class="{{ setActiveMenu('buyer.role-permission.roles') }}">Manage Role</a></li>
+                            @if(checkPermission('MANAGE_USERS','view','1'))
+                                <li><a href="{{ route("buyer.user-management.users") }}" class="{{ setActiveMenu('buyer.user-management.users') }}">Manage Users</a></li>
+                            @endif
+                            @if(checkPermission('MANAGE_ROLE','view','1'))
+                                <li><a href="{{ route("buyer.role-permission.roles") }}" class="{{ setActiveMenu('buyer.role-permission.roles') }}">Manage Role</a></li>
+                            @endif
                         </ul>
                     </div>
                 </div>
             </div>
+            @endif
             <div class="accordion-item">
                 <h2 class="accordion-header" id="headingFour">
                     <button class="accordion-button" type="button" data-bs-toggle="collapse"

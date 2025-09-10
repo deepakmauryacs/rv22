@@ -13,13 +13,18 @@ use Illuminate\Support\Facades\Auth;
 use DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use App\Traits\HasModulePermission;
 
 
 class RFQComposeController extends Controller
 {
+    use HasModulePermission;
+
     public $rfq_attachment_dir = 'rfq-attachment';
 
     function index($draft_id) {
+        $this->ensurePermission('GENERATE_NEW_RFQ', 'view', '1');
+
         $company_id = getParentUserId();
 
         $draft_rfq = Rfq::where('rfq_id', $draft_id)->where('buyer_id', $company_id)->whereIn('record_type', [1, 3])->first();
@@ -50,6 +55,7 @@ class RFQComposeController extends Controller
     }
 
     function getDraftProduct(Request $request) {
+        $this->ensurePermission('GENERATE_NEW_RFQ', 'view', '1');
         $draft_id = $request->draft_id;
         if(empty($draft_id)){
             return response()->json([
@@ -217,6 +223,7 @@ class RFQComposeController extends Controller
     }
 
     function updateProduct(Request $request) {
+        $this->ensurePermission('EDIT_RFQ', 'edit', '1');
 
         $draft_id = $request->rfq_draft_id;
         $company_id = getParentUserId();
@@ -366,6 +373,7 @@ class RFQComposeController extends Controller
 
     }
     function updateDraftRFQ(Request $request) {
+        $this->ensurePermission('EDIT_RFQ', 'edit', '1');
 
         $draft_id = $request->rfq_draft_id;
         $company_id = getParentUserId();
@@ -570,6 +578,7 @@ class RFQComposeController extends Controller
 
     }
     function deleteProduct(Request $request) {
+        $this->ensurePermission('EDIT_RFQ', 'delete', '1');
 
         $draft_id = $request->rfq_draft_id;
         $company_id = getParentUserId();
@@ -705,6 +714,7 @@ class RFQComposeController extends Controller
         ];
     }
     function deleteProductVariant(Request $request) {
+        $this->ensurePermission('EDIT_RFQ', 'delete', '1');
 
         $draft_id = $request->rfq_draft_id;
         $company_id = getParentUserId();
@@ -763,6 +773,7 @@ class RFQComposeController extends Controller
 
     }
     function deleteDraftRFQ(Request $request) {
+        $this->ensurePermission('DRAFT_RFQ', 'delete', '1');
 
         $draft_id = $request->rfq_draft_id;
         $company_id = getParentUserId();
@@ -821,6 +832,7 @@ class RFQComposeController extends Controller
 
     }
     function deleteEditedRFQ(Request $request) {
+        $this->ensurePermission('EDIT_RFQ', 'delete', '1');
         $draft_id = $request->rfq_draft_id;
         $company_id = getParentUserId();
         $is_draft_exists = $this->isDraftExists($draft_id, $company_id);
@@ -879,6 +891,7 @@ class RFQComposeController extends Controller
 
     public function searchVendors(Request $request)
     {
+        $this->ensurePermission('GENERATE_NEW_RFQ', 'view', '1');
         $q = trim($request->post('q'));
         $rfq_id = trim($request->post('rfq_id'));
         $states = $request->post('states');
@@ -984,6 +997,7 @@ class RFQComposeController extends Controller
 
     function addVendorToRFQ(Request $request)
     {
+        $this->ensurePermission('GENERATE_NEW_RFQ', 'edit', '1');
         $rfq_id = $request->post('rfq_id');
         $vendor_array = $request->post('vendor_array');
         $first_product_id = $request->post('first_product_id');

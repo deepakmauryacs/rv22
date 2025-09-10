@@ -52,7 +52,7 @@ use App\Http\Controllers\Buyer\AuctionCISController;
 
 Route::name('buyer.')->group(function () {
 
-    Route::middleware(['auth', 'validate_account', 'usertype:1'])->group(function () {
+    Route::middleware(['auth', 'validate_account', 'usertype:1', 'permission'])->group(function () {
 
         // common routes
         Route::post('/get-state-by-country-id', [CommonController::class, 'getStateByCountryId'])->name('get-state-by-country-id');

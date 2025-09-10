@@ -11,11 +11,16 @@ use App\Models\Rfq;
 use App\Models\RfqProduct;
 use Carbon\Carbon;
 use DB;
+use App\Traits\HasModulePermission;
 
 class ActiveRFQController extends Controller
 {
+    use HasModulePermission;
+
     public function index(Request $request)
     {
+        $this->ensurePermission('ACTIVE_RFQS_CIS', 'view', '1');
+
         $user_branch_id_only = getBuyerUserBranchIdOnly();
 
         // DB::enableQueryLog();
@@ -127,6 +132,7 @@ class ActiveRFQController extends Controller
 
     public function rfq_details(Request $request, $rfq_id)
     {
+        $this->ensurePermission('ACTIVE_RFQS_CIS', 'view', '1');
         $company_id = getParentUserId();
         $buyer_branch = DB::table('branch_details')
             ->select('id', 'branch_id', 'name')
@@ -169,6 +175,7 @@ class ActiveRFQController extends Controller
     }
     public function sent_rfq(Request $request)
     {
+        $this->ensurePermission('SENT_RFQ', 'view', '1');
         $user_branch_id_only = getBuyerUserBranchIdOnly();
         // DB::enableQueryLog();
         $query = Rfq::select('rfqs.*')
@@ -273,6 +280,7 @@ class ActiveRFQController extends Controller
 
     public function closeRFQ(Request $request)
     {
+        $this->ensurePermission('CLOSE_RFQ', 'edit', '1');
         $rfq_id = $request->rfq_id;
         if(empty($rfq_id)){
             return response()->json(['status' => false, 'message' => 'Something went wrong, Please try again later!']);
@@ -363,6 +371,7 @@ class ActiveRFQController extends Controller
 
     public function editRFQ(Request $request)
     {
+        $this->ensurePermission('EDIT_RFQ', 'edit', '1');
         $rfq_id = $request->rfq_id;
         if(empty($rfq_id)){
             return response()->json(['status' => false, 'message' => 'Something went wrong, Please try again later!']);

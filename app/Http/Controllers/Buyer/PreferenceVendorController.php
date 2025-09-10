@@ -5,11 +5,15 @@ namespace App\Http\Controllers\Buyer;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\BuyerPreference;
+use App\Traits\HasModulePermission;
 class PreferenceVendorController extends Controller
 {
-    //favourite 
+    use HasModulePermission;
+
+    //favourite
     public function favourite(Request $request)
-    {   
+    {
+        $this->ensurePermission('FAVOURITE_VENDORS', 'view', '1');
         $query = BuyerPreference::with([
             'user.vendor' => function ($q) {
                 // $q->select('id', 'legal_name'); // Make sure to include 'id'
@@ -36,6 +40,7 @@ class PreferenceVendorController extends Controller
     }
     public function blacklist(Request $request)
     {
+        $this->ensurePermission('BLACKLISTED_VENDORS', 'view', '1');
         $query = BuyerPreference::with([
             'user.vendor' => function ($q) {
                 // $q->select('id', 'legal_name'); // Make sure to include 'id'
@@ -62,6 +67,7 @@ class PreferenceVendorController extends Controller
     }
     public function deleted(Request $request,$id)
     {
+        $this->ensurePermission('BLACKLISTED_VENDORS', 'delete', '1');
         BuyerPreference::where('buyer_user_id', getParentUserId())->where('id', $id)->delete();
         return response()->json(['status' => true,'message' => 'Deleted Successfully']);
     }

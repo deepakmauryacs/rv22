@@ -6,15 +6,20 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Vendor;
 use App\Models\BuyerPreference;
+use App\Traits\HasModulePermission;
 class VendorSearchController extends Controller
 {
+    use HasModulePermission;
+
     public function index()
     {
+        $this->ensurePermission('VENDORS_SEARCH', 'view', '1');
         return view('buyer.search-vendor.index');
     }
 
     public function search(Request $request)
     {
+        $this->ensurePermission('VENDORS_SEARCH', 'view', '1');
         $search = $request->search;
         $vendors=Vendor::with(['vendor_products.product'=>function($q){
             $q->select('id','product_name');
@@ -59,6 +64,7 @@ class VendorSearchController extends Controller
 
     public function favouriteBlockVendor(Request $request)
     {
+        $this->ensurePermission('VENDORS_SEARCH', 'edit', '1');
         $vendorId = $request->vendor_id;
         $types = $request->types;
         $html='';

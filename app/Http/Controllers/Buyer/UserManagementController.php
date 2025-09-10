@@ -13,10 +13,14 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\UserRoleMapping;
 use DB;
+use App\Traits\HasModulePermission;
 class UserManagementController extends Controller
 {
+    use HasModulePermission;
+
     public function index(Request $request)
     {
+        $this->ensurePermission('MANAGE_USERS', 'view', '1');
         // Initialize the query with eager loading of 'role'
         $query = User::with('role')
                     ->where('user_type',1)
