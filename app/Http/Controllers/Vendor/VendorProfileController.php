@@ -230,7 +230,8 @@ class VendorProfileController extends Controller
                 foreach ($request->branch_name as $key => $value) {
                     $is_new_branch = true;
                     if($request->edit_id_branch[$key]!=0){
-                        $isExists = BranchDetail::where('branch_id', $request->edit_id_branch[$key])
+                        $isExists = BranchDetail::withoutGlobalScopes()
+                                        ->where('id', $request->edit_id_branch[$key])
                                         ->where('user_type', 2)
                                         ->where('record_type', 1)
                                         ->where('user_id', $company_id)
@@ -262,7 +263,8 @@ class VendorProfileController extends Controller
                         $new_branch->branch_id = $new_branch->id;
                         $new_branch->save();
                     }else{
-                        BranchDetail::where('branch_id', $request->edit_id_branch[$key])
+                        BranchDetail::withoutGlobalScopes()
+                                ->where('id', $request->edit_id_branch[$key])
                                 ->where('user_type', 2)
                                 ->where('record_type', 1)
                                 ->where('user_id', $company_id)
@@ -287,7 +289,8 @@ class VendorProfileController extends Controller
             }
 
             $parentUser = getParentDetails();
-            $isRegdBranch = BranchDetail::where('user_type', 2)
+            $isRegdBranch = BranchDetail::withoutGlobalScopes()
+                            ->where('user_type', 2)
                             ->where('record_type', 1)
                             ->where('is_regd_address', 1)
                             ->where('user_id', $company_id)
@@ -316,7 +319,8 @@ class VendorProfileController extends Controller
                 $regd_branch->branch_id = $regd_branch->id;
                 $regd_branch->save();
             }else{
-                BranchDetail::where('user_type', 2)
+                BranchDetail::withoutGlobalScopes()
+                        ->where('user_type', 2)
                         ->where('record_type', 1)
                         ->where('is_regd_address', 1)
                         ->where('user_id', $company_id)
