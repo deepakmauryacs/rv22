@@ -589,7 +589,7 @@
                             </div>
 
                             <div class="col-12 text-start text-sm-end mb-3">
-                                <button type="submit" class="ra-btn ra-btn-primary font-size-12" id="submit-vendor-profile">
+                                <button type="submit" class="ra-btn ra-btn-primary font-size-12" id="submit-vendor-profile" disabled>
                                     <span class="bi bi-floppy font-size-11"></span>
                                     <span class="font-size-11">Save and Submit</span>
                                 </button>
@@ -609,14 +609,17 @@
          var disabed=true;
         $(document).ready(function() {
             $('.mng-input').prop('disabled', true);
+            $('#submit-vendor-profile').prop('disabled', true);
         })
         function disableEnabled() {
             if(disabed){
                 $('.mng-input').prop('disabled', false);
+                $('#submit-vendor-profile').prop('disabled', false);
                 disabed=false;
                 $('#editEnableDesable').html('<button type="button" onclick="disableEnabled();" class="ra-btn ra-btn-outline-danger font-size-12"><span class="font-size-11">Cancel</span></button>');
             }else{
                 $('.mng-input').prop('disabled', true);
+                $('#submit-vendor-profile').prop('disabled', true);
                 disabed=true;
                 $('#editEnableDesable').html('<button type="button" onclick="disableEnabled();" class="ra-btn ra-btn-outline-primary-light font-size-12"><span class="font-size-11">Edit</span></button>')
             }
