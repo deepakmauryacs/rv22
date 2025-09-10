@@ -288,32 +288,28 @@ class AuctionCISController extends Controller
                 ->get();
 
             foreach ($rows as $row) {
-                DB::table('rfq_vendor_quotations')->updateOrInsert(
-                    [
-                        'rfq_id' => $row->rfq_no,
-                        'vendor_id' => $row->vendor_id,
-                        'rfq_product_variant_id' => $row->rfq_product_veriant_id,
-                    ],
-                    [
-                        'price' => $row->vend_price,
-                        'mrp' => 0,
-                        'discount' => 0,
-                        'buyer_price' => 0,
-                        'specification' => $row->vend_specs,
-                        'vendor_remarks' => $row->vend_specs,
-                        'vendor_price_basis' => $row->vend_price_basis,
-                        'vendor_payment_terms' => $row->vend_payment_terms,
-                        'vendor_delivery_period' => $row->vend_delivery_period,
-                        'vendor_price_validity' => $row->vend_price_validity,
-                        'vendor_dispatch_branch' => $row->vend_dispatch_branch,
-                        'vendor_currency' => $row->vend_currency,
-                        'buyer_user_id' => $auction->buyer_user_id,
-                        'vendor_user_id' => $row->vendor_user_id,
-                        'status' => 1,
-                        'created_at' => Carbon::now(),
-                        'updated_at' => Carbon::now(),
-                    ]
-                );
+                DB::table('rfq_vendor_quotations')->insert([
+                    'rfq_id' => $row->rfq_no,
+                    'vendor_id' => $row->vendor_id,
+                    'rfq_product_variant_id' => $row->rfq_product_veriant_id,
+                    'price' => $row->vend_price,
+                    'mrp' => 0,
+                    'discount' => 0,
+                    'buyer_price' => 0,
+                    'specification' => $row->vend_specs,
+                    'vendor_remarks' => $row->vend_specs,
+                    'vendor_price_basis' => $row->vend_price_basis,
+                    'vendor_payment_terms' => $row->vend_payment_terms,
+                    'vendor_delivery_period' => $row->vend_delivery_period,
+                    'vendor_price_validity' => $row->vend_price_validity,
+                    'vendor_dispatch_branch' => $row->vend_dispatch_branch,
+                    'vendor_currency' => $row->vend_currency,
+                    'buyer_user_id' => $auction->buyer_user_id,
+                    'vendor_user_id' => $row->vendor_user_id,
+                    'status' => 1,
+                    'created_at' => Carbon::now(),
+                    'updated_at' => Carbon::now(),
+                ]);
             }
 
             DB::table('rfq_auctions')
