@@ -51,9 +51,11 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <!-- Section Company Details -->
-                    <div class="company-details">
-                        <div class="row gy-4">
+                    <form id="vendor-profile-form" action="{{ route('vendor.save-vendor-profile') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <!-- Section Company Details -->
+                        <div class="company-details">
+                            <div class="row gy-4">
                             <div class="form-group col-md-6">
                                 <label for="companyName" class="mb-1">
                                     Company Name / Legal Name <span class="text-danger">*</span>
@@ -586,7 +588,7 @@
                             </div>
 
                             <div class="col-12 text-start text-sm-end mb-3">
-                                <button type="button" class="ra-btn ra-btn-primary font-size-12">
+                                <button type="submit" class="ra-btn ra-btn-primary font-size-12" id="submit-vendor-profile">
                                     <span class="bi bi-floppy font-size-11"></span>
                                     <span class="font-size-11">Save and Submit</span>
                                 </button>
@@ -594,8 +596,9 @@
 
                         </div>
                     </div>
-                </div>
+                </form>
             </div>
+        </div>
         </section>
     </section>
 @endsection
