@@ -221,7 +221,8 @@
                                         </label>
 
                                         <div class="simple-file-upload">
-                                            <input type="file" onchange="validateFile(this, 'JPG/JPEG/PDF')"
+                                            <input type="hidden" name="gstin_document_old" value="{{ $vendor->gstin_document }}">
+                                            <input type="file" onchange="validateFile(this, 'JPG/JPEG/PDF/PNG')"
                                                 class="{{ $vendor->gstin_document == '' || $vendor->gstin_document == null ? 'required-file' : '' }} real-file-input mng-input"
                                                 name="gstin_document" style="display: none;">
                                             <div class="file-display-box form-control text-start font-size-12 text-dark"
