@@ -419,14 +419,22 @@ class LiveAuctionRfqController extends Controller
     // Validate each variant's bid against auction rules
     // Save prices and maybe extend auction tail if needed
     {
+        // Guard: AJAX-only
+        if (!$request->ajax()) {
+            abort(404);
+        }
+
         // 1) Validate + basics
-        $v          = $this->validateSubmitRequest($request);
-        $vendorId   = getParentUserId();
-        $rfqId      = $v['rfq_id'];
+        $v        = $this->validateSubmitRequest($request);
+        $vendorId = getParentUserId();
+        if (!$vendorId) {
+            return response()->json(['status' => false, 'message' => 'Unauthorized'], 401);
+        }
+        $rfqId    = $v['rfq_id'];
 
         $this->ensureVendorAllowed($rfqId, $vendorId);
 
-        $auction    = $this->getCurrentAuction($rfqId);
+        $auction  = $this->getCurrentAuction($rfqId);
         $this->ensureAuctionActive($auction);
         $this->ensureCurrencyRule($rfqId, $vendorId, $v['vendor_currency'] ?? null);
 
@@ -439,14 +447,18 @@ class LiveAuctionRfqController extends Controller
         $myPrevRows  = $this->fetchMyPrevPrices($rfqId, $auction->id, $vendorId, $variantIds);
 
         // 4) Validate per-variant (server mirrors client)
-        $minDecPct   = (float)($auction->min_bid_decrement ?? 0);
-        $errors      = $this->validateVariantBids($prices, $startPrices, $l1ByVariant, $myPrevRows, $minDecPct);
+        $minDecPct = (float)($auction->min_bid_decrement ?? 0);
+        if ($minDecPct <= 0) {
+            $minDecPct = 1.0; // default 1%
+        }
+        $errors = $this->validateVariantBids($prices, $startPrices, $l1ByVariant, $myPrevRows, $minDecPct, $vendorId);
 
         if (!empty($errors)) {
             return response()->json([
-                'status'  => false,
-                'message' => 'Validation failed.',
-                'errors'  => ['variants' => $errors],
+                'status'         => false,
+                'message'        => 'Validation failed.',
+                'errors'         => ['variants' => $errors],
+                'inserted_count' => 0,
             ], 422);
         }
 
@@ -454,7 +466,7 @@ class LiveAuctionRfqController extends Controller
         try {
             DB::beginTransaction();
 
-            $this->upsertVendorPrices(
+            $inserted = $this->upsertVendorPrices(
                 $rfqId,
                 $auction->id,
                 $vendorId,
@@ -468,14 +480,16 @@ class LiveAuctionRfqController extends Controller
             DB::commit();
 
             return response()->json([
-                'status'  => true,
-                'message' => 'Prices submitted successfully.',
+                'status'         => true,
+                'message'        => 'Prices submitted successfully.',
+                'inserted_count' => $inserted,
             ], 200);
         } catch (\Throwable $e) {
             DB::rollBack();
             return response()->json([
-                'status'  => false,
-                'message' => 'Unable to submit prices right now.',
+                'status'         => false,
+                'message'        => 'Unable to submit prices right now.',
+                'inserted_count' => 0,
             ], 500);
         }
     }
@@ -498,7 +512,26 @@ class LiveAuctionRfqController extends Controller
             'vendor_currency'        => ['nullable', 'string'],
             'action'                 => ['nullable', 'string'],
         ];
-        return $request->validate($rules);
+        $v = $request->validate($rules);
+
+        // XSS cleaning / sanitization
+        foreach (['vendor_price_basis', 'vendor_payment_terms', 'vendor_currency', 'action'] as $field) {
+            if (isset($v[$field])) {
+                $v[$field] = strip_tags($v[$field]);
+            }
+        }
+        if (isset($v['vendor_spec']) && is_array($v['vendor_spec'])) {
+            foreach ($v['vendor_spec'] as $k => $spec) {
+                $spec = strip_tags($spec);
+                $spec = str_replace(['<', '>', '"', "'", '`', '~'], '', $spec);
+                $v['vendor_spec'][$k] = $spec;
+            }
+        }
+
+        // Default price validity to 0 if empty
+        $v['vendor_price_validity'] = $v['vendor_price_validity'] ?? 0;
+
+        return $v;
     }
 
     private function ensureVendorAllowed(string $rfqId, int $vendorId): void
@@ -537,6 +570,14 @@ class LiveAuctionRfqController extends Controller
     private function ensureAuctionActive(object $auction): void
     // Ensure the auction is currently active (within time window)
     {
+        if ((string)($auction->is_forcestop ?? '2') === '1') {
+            abort(response()->json([
+                'status'          => false,
+                'message'         => 'Auction has been force stopped.',
+                'hasAuctionEnded' => true,
+            ], 400));
+        }
+
         $tz       = 'Asia/Kolkata';
         $now      = Carbon::now($tz);
         $today    = $now->toDateString();
@@ -582,7 +623,7 @@ class LiveAuctionRfqController extends Controller
     }
 
     private function fetchL1ByVariant(string $rfqId, int $auctionId, array $variantIds): array
-    // Fetch the L1 (lowest) price for each variant in this auction
+    // Fetch the L1 (lowest) price and vendor for each variant in this auction
     {
         $latestPerVendor = DB::table('rfq_vendor_auction_price')
             ->selectRaw('MAX(id) as max_id, rfq_product_veriant_id, vendor_id')
@@ -593,14 +634,22 @@ class LiveAuctionRfqController extends Controller
 
         $rows = DB::table('rfq_vendor_auction_price as ap')
             ->joinSub($latestPerVendor, 't', 't.max_id', '=', 'ap.id')
-            ->select('ap.rfq_product_veriant_id as variant_id', 'ap.vend_price')
+            ->select('ap.rfq_product_veriant_id as variant_id', 'ap.vend_price', 'ap.vendor_id')
             ->get()
             ->groupBy('variant_id');
 
         $out = [];
         foreach ($variantIds as $vid) {
             $bucket = $rows->get($vid);
-            $out[$vid] = $bucket ? (float)$bucket->min('vend_price') : null;
+            if ($bucket && $bucket->count() > 0) {
+                $l1Row = $bucket->sortBy('vend_price')->first();
+                $out[$vid] = [
+                    'price'     => (float)$l1Row->vend_price,
+                    'vendor_id' => (int)$l1Row->vendor_id,
+                ];
+            } else {
+                $out[$vid] = ['price' => null, 'vendor_id' => null];
+            }
         }
         return $out;
     }
@@ -629,7 +678,8 @@ class LiveAuctionRfqController extends Controller
         \Illuminate\Support\Collection $startPrices,
         array $l1ByVariant,
         \Illuminate\Support\Collection $myPrevRows,
-        float $minDecPct
+        float $minDecPct,
+        int $vendorId
     ): array {
         $eq2 = fn($a, $b) => round((float)$a, 2) === round((float)$b, 2);
 
@@ -642,7 +692,9 @@ class LiveAuctionRfqController extends Controller
             }
 
             $startPrice = (float)($startPrices[$variantId] ?? 0.0);
-            $l1Price    = $l1ByVariant[$variantId] ?? null;
+            $l1Info     = $l1ByVariant[$variantId] ?? ['price' => null, 'vendor_id' => null];
+            $l1Price    = $l1Info['price'];
+            $l1Vendor   = $l1Info['vendor_id'];
 
             // Equal to my last price? allow; skip min-decrement
             $myPrev   = $myPrevRows->get($variantId);
@@ -654,6 +706,12 @@ class LiveAuctionRfqController extends Controller
                 $errors[$variantId] = $l1Price
                     ? "Entered price cannot exceed the L1 price of {$l1Price}."
                     : "Entered price cannot exceed the Start Price of {$startPrice}.";
+                continue;
+            }
+
+            // Duplicate L1 from another vendor
+            if ($l1Price && $eq2($vendPrice, $l1Price) && $vendorId !== $l1Vendor) {
+                $errors[$variantId] = "This price {$vendPrice} has already been submitted by another vendor. You will need to submit a lower rate.";
                 continue;
             }
 
@@ -677,7 +735,8 @@ class LiveAuctionRfqController extends Controller
         array $prices,
         array $specs,
         array $validatedForm
-    ): void {
+    ): int {
+        $inserted = 0;
         foreach ($prices as $variantId => $vendPriceRaw) {
             $vendPrice = (float)$vendPriceRaw;
             if ($vendPrice <= 0) continue;
@@ -704,7 +763,7 @@ class LiveAuctionRfqController extends Controller
                 'vend_price_basis'       => $validatedForm['vendor_price_basis'],
                 'vend_payment_terms'     => $validatedForm['vendor_payment_terms'],
                 'vend_delivery_period'   => $validatedForm['vendor_delivery_period'],
-                'vend_price_validity'    => $validatedForm['vendor_price_validity'] ?? null,
+                'vend_price_validity'    => $validatedForm['vendor_price_validity'] ?? 0,
                 'vend_dispatch_branch'   => $validatedForm['vendor_dispatch_branch'],
                 'vend_currency'          => $validatedForm['vendor_currency'] ?? null,
                 'vendor_user_id'         => auth()->id(),
@@ -717,7 +776,9 @@ class LiveAuctionRfqController extends Controller
                 $data['created_at'] = now();
                 DB::table('rfq_vendor_auction_price')->insert($data);
             }
+            $inserted++;
         }
+        return $inserted;
     }
 
     private function isCurrencyDisabledForVendor(string $rfqId, int $vendorId): bool
