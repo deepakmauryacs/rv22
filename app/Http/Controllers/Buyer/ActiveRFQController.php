@@ -421,4 +421,47 @@ class ActiveRFQController extends Controller
             ]);
         }
     }
+
+    public function reuseRFQ(Request $request)
+    {
+        $rfq_id = $request->rfq_id;
+        if(empty($rfq_id)){
+            return response()->json(['status' => false, 'message' => 'Something went wrong, Please try again later!']);
+        }
+        $buyer_id = getParentUserId();
+        $rfq = Rfq::where('rfq_id', $rfq_id)->where('buyer_id', $buyer_id)->where('record_type', 2)
+                                ->whereIn('buyer_rfq_status', [5, 8, 10])->first();
+        if(empty($rfq)){
+            return response()->json(['status' => false, 'message' => 'RFQ not found, Please try again later!']);
+        }
+
+        $rfq_data = Rfq::with(['rfqProducts', 'rfqProductVariants', 'rfqVendors'])
+                        ->where('rfq_id', $rfq->rfq_id)
+                        ->where('buyer_id', $buyer_id)
+                        ->where('record_type', 2)
+                        ->whereIn('buyer_rfq_status', [5, 8, 10])
+                        ->first()->toArray();
+        DB::beginTransaction();
+
+        try {
+
+            $rfq_id = makeDuplicateRFQData($rfq_data, 1, 're-use');
+
+            DB::commit();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'RFQ Re-Use Successfully',
+                'redirect_url' => route('buyer.rfq.compose-draft-rfq', $rfq_id)
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            // Handle the error
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to Re-Use RFQ, Please try again later! '.$e->getMessage(),
+                'complete_message' => $e
+            ]);
+        }
+    }
 }

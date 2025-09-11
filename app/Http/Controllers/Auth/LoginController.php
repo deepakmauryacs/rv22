@@ -72,17 +72,17 @@ class LoginController extends Controller
             ]);
         }
 
-        $login_info = LoginAttempt::checkLoginAttempts($request->email, $request->ip());
-        if ($login_info) {
-            if ($login_info->lockout_time && strtotime($login_info->lockout_time) > time()) {
-                $lockout_time_remaining = strtotime($login_info->lockout_time) - time();
-                $msg= "Account is locked. Try again in ".round($lockout_time_remaining/60)." minutes.";
-                return response()->json([
-                    'status' => false,
-                    'message' => $msg
-                ]);
-            }
-        }
+        // $login_info = LoginAttempt::checkLoginAttempts($request->email, $request->ip());
+        // if ($login_info) {
+        //     if ($login_info->lockout_time && strtotime($login_info->lockout_time) > time()) {
+        //         $lockout_time_remaining = strtotime($login_info->lockout_time) - time();
+        //         $msg= "Account is locked. Try again in ".round($lockout_time_remaining/60)." minutes.";
+        //         return response()->json([
+        //             'status' => false,
+        //             'message' => $msg
+        //         ]);
+        //     }
+        // }
         if (User::attemptLogin($user, $decryptedpassword)) {
             Auth::login($user, $request->filled('remember'));
 

@@ -1,4 +1,4 @@
-@extends('buyer.layouts.app', ['title'=>'CIS Sheet'])
+@extends('buyer.layouts.app', ['title'=>'Auction CIS Sheet'])
 
 @section('css')
     <link rel="stylesheet" href="{{ asset('public/assets/library/datetimepicker/jquery.datetimepicker.css') }}" />
@@ -74,10 +74,10 @@
                                 <li>RFQ No. : {{ $rfq['rfq_id'] }}</li>
                                 <li>PRN Number : {{ $rfq['prn_no'] }}</li>
                                 <li>Branch/Unit Details : {{ $rfq['buyer_branch_name'] }}</li>
-                                <li>Last Date to Response: {{ $rfq['last_response_date'] ? date('d/m/Y', strtotime($rfq['last_response_date'])) : '' }}</li>
+                                {{-- <li>Last Date to Response: {{ $rfq['last_response_date'] ? date('d/m/Y', strtotime($rfq['last_response_date'])) : '' }}</li>
                                 @if(!empty($rfq['edit_by']))
                                 <li>Last Edited Date: {{ $rfq['updated_at'] ? date('d/m/Y', strtotime($rfq['updated_at'])) : '' }}</li>
-                                @endif
+                                @endif --}}
                             </ul>
                         </div>
                         <div class="cis-info-right">
@@ -378,11 +378,11 @@
                                                                     }
                                                                     $final_quote_history_string = implode(', ', $quote_history);
                                                                 @endphp
-                                                                <div>
+                                                                {{-- <div>
                                                                     <span role="button" type="button" class="p-0" data-bs-toggle="tooltip" data-bs-placement="top" title="{{$final_quote_history_string}}">
                                                                         <span class="bi bi-info-circle-fill text-dark font-size-11" aria-hidden="true"></span>
                                                                     </span>
-                                                                </div>
+                                                                </div> --}}
 
                                                                 <div class="vendor-variant-price">
                                                                     {{IND_money_format($vendor_last_quote['price'])}}

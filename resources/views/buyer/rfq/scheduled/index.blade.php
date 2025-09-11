@@ -182,6 +182,45 @@
             $(".rfq-filter-button").find("select").val("0");
         });
 
+
+        $(document).on('click', '.edit-rfq', function () {
+            if (confirm('Are you sure you want to edit this RFQ?')) {
+                let _this = this;
+                $(_this).addClass('disabled');
+                let rfq_id = $(_this).data('rfq-id');
+
+                if(rfq_id == undefined || rfq_id == '') {
+                    toastr.error("Something went wrong. Please try again.");
+                    return false;
+                }
+
+                $.ajax({
+                    url: "{{route('buyer.rfq.edit')}}",
+                    type: 'POST',
+                    data: {
+                        rfq_id: rfq_id,
+                        _token: "{{ csrf_token() }}"
+                    },
+                    dataType: 'JSON',
+                    beforeSend: function () {
+                        
+                    },
+                    success: function(response) {
+                        if(!response.status) {
+                            $(_this).removeClass('disabled');
+                            toastr.error(response.message);
+                        } else if(response.status) {
+                            // toastr.success(response.message);
+                            setTimeout(
+                                function(){ 
+                                    window.location.href = response.redirect_url;
+                                }, 1000);
+                        }
+                    }
+                });
+            }
+        });
+
     });
 
     function deleteScheduledRFQ(rfq_id){

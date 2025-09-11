@@ -198,6 +198,49 @@
         }
     </script>
     @yield('scripts')
+    <script>
+            setInterval(check_user_message, 15*60000); //poll every 60 second
+            check_user_message();
+            // Listen for the visibility change event to detect when the tab becomes active
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) {
+                    // The tab just became active, so fetch notifications immediately
+                    check_user_message();
+                }
+            });
+            function check_user_message()
+            {
+                // Check if the document (tab) is currently visible
+                if (document.hidden) {
+                    return; // If the tab is not active, skip the AJAX call
+                }
+                $.ajax({
+                    url: "{{ route('admin.check_notification') }}",
+                    type: 'POST',
+                    dataType  : 'JSON',
+                    data: {
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function (response) {
+                        $('.notification-number').text(response.count);
+                        $('#Allnotification_messages').html(response.html);
+                    }
+                });
+            }
+            function readNotification(notification) {
+                $.ajax({
+                    url: "{{ route('update-notification-status') }}",
+                    type: 'POST',
+                    dataType  : 'JSON',
+                    data: {
+                        notification,
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function (response) {
+                    }
+                });
+            }
+    </script>
 </body>
 
 </html>

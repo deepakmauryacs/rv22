@@ -23,19 +23,19 @@ $normal_product_data = common_rfq_data($rfq->rfq_id);
 * @return string
 */
 function IND_amount_format($amount) {
-$amount = (string)$amount;
-$main_amount = explode('.', $amount);
-$amount = $main_amount[0];
-$lastThree = substr($amount, -3);
-$otherNumbers = substr($amount, 0, -3);
+    $amount = (string)$amount;
+    $main_amount = explode('.', $amount);
+    $amount = $main_amount[0];
+    $lastThree = substr($amount, -3);
+    $otherNumbers = substr($amount, 0, -3);
 
-if ($otherNumbers != '') {
-$lastThree = ',' . $lastThree;
-}
+    if ($otherNumbers != '') {
+    $lastThree = ',' . $lastThree;
+    }
 
-$res = preg_replace('/\B(?=(\d{2})+(?!\d))/', ",", $otherNumbers) . $lastThree;
+    $res = preg_replace('/\B(?=(\d{2})+(?!\d))/', ",", $otherNumbers) . $lastThree;
 
-return count($main_amount) > 1 ? $res . '.' . $main_amount[1] : $res . '.00';
+    return count($main_amount) > 1 ? $res . '.' . $main_amount[1] : $res . '.00';
 }
 @endphp
 
@@ -120,11 +120,11 @@ return count($main_amount) > 1 ? $res . '.' . $main_amount[1] : $res . '.00';
                         <p>
                             <span class="text-danger">
                                 (Product is not in your profile.
-                                <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#addProductModal"
-                                    data-product-name="{{ $product->product_name }}">
+                                <a href="javascript:void(0);" class="add-this-product" data-product-id="{{ $product->product_id }}" data-product-name="{{ $product->product_name }}">
                                     Click Here
                                 </a>
                                 to add this product so that you can Quote.)
+                                {{-- data-bs-toggle="modal" data-bs-target="#addProductModal" --}}
                             </span>
                         </p>
                         @endif
@@ -564,16 +564,70 @@ return count($main_amount) > 1 ? $res . '.' . $main_amount[1] : $res . '.00';
 
 <!-- Modal: Add Product -->
 <div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header bg-graident">
                 <h5 class="modal-title text-white" id="addProductModalLabel">Add Product</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="addProductForm">
+                <form id="add-product-to-vendor-profile" method="POST" action="javascript:void(0);">
                     @csrf
-                    <div class="mb-3">
+                    
+                    <table class="table table-striped table-responsive">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="text-center">Product Name</th>
+                                <th scope="col" class="text-center" width="250px">Product Description <span class="text-danger">*</span></th>
+                                <th scope="col" class="text-center">Dealer Type <span class="text-danger">*</span></th>
+                                @if($is_international_vendor=="1")
+                                <th scope="col" class="text-center">GST/Sales Tax Rate <span class="text-danger">*</span></th>
+                                @endif
+                                <th scope="col" class="text-center">HSN Code <span class="text-danger">*</span></th>
+                            </tr>
+                        </thead>
+                        <tbody class="">
+                            <tr class="">
+                                <td data-th="Product Name">
+                                    <p id="new-product-name" class="mt-2"></p>
+                                    <input type="hidden" name="product_id" id="product-id" value="">
+                                    <input type="hidden" name="rfq_id" id="rfq-id" value="<?php echo $rfq->rfq_id; ?>">
+                                </td>
+                                <td data-th="Product Description">
+                                    <input type="text" name="product_description" class="form-control" id="product-description" value="" maxlength="500">
+                                </td>
+                                <td data-th="Dealer Type">
+                                    <select class="form-control" name="dealer_type">
+                                        <option value="">Select Dealer Type</option>
+                                        @foreach ($dealertypes as $dealer)
+                                            <option value="<?php echo $dealer->id ?>"><?php echo $dealer->dealer_type ?></option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                @if($is_international_vendor=="1")
+                                <td data-th="GST Rate">
+                                    <select class="form-control" name="tax_class">
+                                        <option value="">Select</option>
+                                        @foreach ($taxes as $taxs)
+                                            <option value="<?php echo $taxs->id ?>"> <?php echo $taxs->tax ?> % </option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                @endif
+                                <td data-th="HSN Code">
+                                    <input type="text" name="hsn_code" class="form-control" minlength="2" maxlength="8" oninput="this.value = this.value.replace(/[^0-9]/g,'');" onpaste="this.value = this.value.replace(/[^0-9]/g,'');">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="5" class="text-center">
+                                    <button type="submit" class="ra-btn ra-btn-primary font-size-12" id="add-product-to-vendor-profile">Submit</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+
+                    {{-- <div class="mb-3">
                         <label class="form-label">Product Name</label>
                         <input type="text" id="modal_product_name" name="product_name" class="form-control" readonly>
                     </div>
@@ -597,7 +651,7 @@ return count($main_amount) > 1 ? $res . '.' . $main_amount[1] : $res . '.00';
                         <label class="form-label">HSN Code *</label>
                         <input type="text" name="hsn_code" class="form-control" required>
                     </div>
-                    <button type="submit" class="btn btn-primary">Submit</button>
+                    <button type="submit" class="btn btn-primary">Submit</button> --}}
                 </form>
             </div>
         </div>
@@ -676,11 +730,11 @@ return count($main_amount) > 1 ? $res . '.' . $main_amount[1] : $res . '.00';
 
 <script>
     // Fill product name when clicking "Click Here"
-document.addEventListener('click', function (e) {
-    if (e.target.matches('[data-product-name]')) {
-        document.getElementById('modal_product_name').value = e.target.dataset.productName;
-    }
-});
+// document.addEventListener('click', function (e) {
+//     if (e.target.matches('[data-product-name]')) {
+//         document.getElementById('modal_product_name').value = e.target.dataset.productName;
+//     }
+// });
 
 // Price input logic
 $(document).on("blur", ".price-change", function () {
@@ -882,6 +936,83 @@ document.addEventListener('DOMContentLoaded', function () {
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(function (el) {
         return new bootstrap.Tooltip(el, { html: true });
+    });
+});
+
+$(document).on("click", ".add-this-product", function(){
+    let product_id = $(this).data("product-id");
+    let product_name = $(this).data("product-name");
+    $("#new-product-name").html(product_name);
+    $("#product-id").val(product_id);
+    $("#product-description").val(product_name);
+    $("#addProductModal").modal("show");
+});
+$("#add-product-to-vendor-profile").submit(function(){
+    // console.log("Validating...");
+    let productId = $('[name="product_id"]').val();
+    let rfqId = $('[name="rfq_id"]').val();
+    let productDescription = ($('[name="product_description"]').val()).trim();
+    let dealerType = $('[name="dealer_type"]').val();
+    @if($is_international_vendor=="1")
+    let taxClass = $('[name="tax_class"]').val();
+    @endif
+    let hsnCode = $('[name="hsn_code"]').val();
+    // validate
+    if(productId=='' || rfqId==''){
+        alert("Something went wrong...");
+        return false;
+    }
+    let is_error = false, error_msg = '';
+    if(productDescription==''){
+        is_error = true;
+    }
+    if(dealerType==''){
+        is_error = true;
+    }
+    @if($is_international_vendor=="1")
+    if(taxClass==''){
+        is_error = true;
+    }
+    @endif
+    if(hsnCode==''){
+        is_error = true;
+    }else if(hsnCode.length<2 || hsnCode.length>8){
+        is_error = true;
+        error_msg = "Invalid HSN Code, ";
+    }
+    if(is_error){
+        alert(error_msg+" Manadatory field is required.");
+        return false;
+    }
+    // submit by ajax
+    // console.log("Submitting...");
+
+    $("#add-product-to-vendor-profile").addClass("disabled");
+
+    let formData = new FormData(this);
+    $.ajax({
+        type: "POST",
+        url: '{{ route("vendor.rfq.add-product-to-vendor-profile") }}',
+        dataType: 'json',
+        data: formData,
+        contentType: false,
+        cache: false,
+        processData: false,
+        success: function (response) {
+            if (response.status == false) {
+                $("#add-product-to-vendor-profile").removeClass("disabled");
+                toastr.error(response.message);
+            } else {
+                toastr.success(response.message);
+                setTimeout(function(){
+                   window.location.reload();
+                }, 300);
+            }
+        },
+        error: function () {
+            $("#add-product-to-vendor-profile").removeClass("disabled");
+            toastr.error('Something Went Wrong..');
+        }
     });
 });
 </script>

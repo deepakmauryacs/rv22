@@ -1055,7 +1055,7 @@ if (!function_exists('common_rfq_auction_data')) {
         }
 
         return \App\Models\RfqVendorAuctionPrice::select(
-               
+
                 'vend_price_basis as vendor_price_basis',
                 'vend_payment_terms as vendor_payment_terms',
                 'vend_delivery_period as vendor_delivery_period',
@@ -1071,9 +1071,6 @@ if (!function_exists('common_rfq_auction_data')) {
             ->first();
     }
 }
-
-
-
 
 if (!function_exists('get_currency_symbol')) {
     function get_currency_symbol($currency)
@@ -1113,7 +1110,7 @@ if (!function_exists('log_peak_memory_usage')) {
 
 if (!function_exists('setActiveMenu')) {
     function setActiveMenu(string|array $patterns, string $class_name = 'active-item'): string {
-        
+
         if (is_array($patterns)) {
             foreach ($patterns as $pattern) {
                 if (request()->routeIs($pattern)) {
@@ -1156,7 +1153,7 @@ if (!function_exists('makeDuplicateRFQData')) {
 
         $buyer_id = getParentUserId();
         $current_user_id = Auth::user()->id;
-        
+
         $edited_rfq_id = $type == 'edit' ? $rfqArray['rfq_id'] : NULL;
 
         // Insert RFQ as before (need the newRfqId for children)
@@ -1232,4 +1229,32 @@ if (!function_exists('makeDuplicateRFQData')) {
         return $new_draft_id;
     }
 
+}
+if (!function_exists('encrypt_decrypt_urlsafe')) {
+function encrypt_decrypt_urlsafe($action, $string) {
+    $output = false;
+
+    // Use your own secret key and IV
+    $secret_key = 'your_secret_key_123';
+    $secret_iv = 'your_secret_iv_123';
+
+    $encrypt_method = "AES-256-CBC";
+    $key = hash('sha256', $secret_key);
+    $iv = substr(hash('sha256', $secret_iv), 0, 16);
+
+    if ($action === 'encrypt') {
+        $encrypted = openssl_encrypt($string, $encrypt_method, $key, 0, $iv);
+        $base64 = base64_encode($encrypted);
+        // Make it URL-safe
+        $output = rtrim(strtr($base64, '+/', '-_'), '=');
+    } else if ($action === 'decrypt') {
+        // Reverse the URL-safe transformation
+        $base64 = strtr($string, '-_', '+/');
+        $base64 = str_pad($base64, strlen($base64) % 4 === 0 ? strlen($base64) : strlen($base64) + 4 - strlen($base64) % 4, '=', STR_PAD_RIGHT);
+        $decoded = base64_decode($base64);
+        $output = openssl_decrypt($decoded, $encrypt_method, $key, 0, $iv);
+    }
+
+    return $output;
+}
 }

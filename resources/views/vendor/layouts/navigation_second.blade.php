@@ -43,8 +43,7 @@
         <li>
           <div class="notify-section">
             <button type="button" class="ra-btn ra-btn-link font-size-24 custom-tooltip" aria-label="Notification"
-              data-toggle="dropdown" aria-expanded="false" data-tooltip="Notification" onclick="setNotify(event)"
-              id="notifyButton">
+              data-toggle="dropdown" aria-expanded="false" data-tooltip="Notification" id="notifyButton">
               <span class="bi bi-bell" aria-hidden="true"></span>
               <span class="notification-number">7</span>
             </button>

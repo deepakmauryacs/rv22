@@ -691,13 +691,16 @@
                 contentType: false,
                 dataType: 'json',
                 beforeSend: function() {
-                    $("#submit-vendor-profile").html('<i class="bi spinner-border"></i> Submitting...')
+                    $("#submit-vendor-profile").html(' Submitting...')
                         .attr("disabled", "disabled");
                 },
                 success: function(response) {
                     if (response.status) {
                         toastr.success(response.message);
-                        window.location.href = response.redirectUrl;
+                        setTimeout(function() {
+                            window.location.href = response.redirectUrl;
+                        }, 1000); // 1000 ms = 1 second
+
                     } else {
                         if (response.errors) {
                             let errorMessage = '';

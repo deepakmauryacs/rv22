@@ -1,4 +1,4 @@
-<?php 
+<?php
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use App\Helpers\EmailHelper;
 use Illuminate\Support\Facades\Cache;
 use App\Models\User;
+use App\Models\Notification;
 class HomeController extends Controller
 {
     public function index(Request $request)
@@ -38,5 +39,16 @@ class HomeController extends Controller
             return response()->json(['message' => 'OTP verified successfully.']);
         }
         return response()->json(['message' => 'Invalid or expired OTP.'], 400);
+    }
+
+    public function updateNotificationStatus(Request $request)
+    {
+        $notification=encrypt_decrypt_urlsafe('decrypt', $request->notification);
+        if(!empty($notification)){
+            Notification::where('id', $notification)->update(['status' => 1]);
+            return response()->json(['message' => 'Notification status updated successfully.']);
+        }else{
+            return response()->json(['message' => 'Notification not found.'], 400);
+        }
     }
 }

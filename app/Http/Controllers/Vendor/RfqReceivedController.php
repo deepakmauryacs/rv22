@@ -131,8 +131,15 @@ class RfqReceivedController extends Controller
         $branches = $this->getVendorBranches($vendor_id);
         $vendor_currency = $this->getVendorCurrencies();
 
+        $dealertypes = DB::table('dealer_types')
+            ->where('status', '1')
+            ->get();
+        $taxes = DB::table('taxes')
+            ->where('status', '1')
+            ->get();
+
         return view('vendor.rfq-received.rfq_details', compact(
-            'rfq', 'products', 'variants', 'branches', 'vendor_currency'
+            'rfq', 'products', 'variants', 'branches', 'vendor_currency', 'dealertypes', 'taxes'
         ));
     }
     // Fetches RFQ details with buyer info for display
@@ -339,21 +346,21 @@ class RfqReceivedController extends Controller
             ]);
         }
 
-    // Ids / actors
-    $vendor_id       = getParentUserId();   // Vendor org id (for quotations table)
-    $vendor_user_id  = auth()->id();        // Vendor user id (for rfq_vendors)
-    $buyer_user_id   = $request->input('buyer_user_id');
+        // Ids / actors
+        $vendor_id       = getParentUserId();   // Vendor org id (for quotations table)
+        $vendor_user_id  = auth()->id();        // Vendor user id (for rfq_vendors)
+        $buyer_user_id   = $request->input('buyer_user_id');
 
-    // Intent: 'save' (draft) or 'submit' (final)
-    $action = $request->input('action');            // 'save' or 'submit'
-    $status = ($action === 'save') ? '2' : '1';     // 2 = draft, 1 = submitted
+        // Intent: 'save' (draft) or 'submit' (final)
+        $action = $request->input('action');            // 'save' or 'submit'
+        $status = ($action === 'save') ? '2' : '1';     // 2 = draft, 1 = submitted
 
-    // Arrays from form (indexed by variantId)
-    $prices      = $request->input('price', []);
-    $mrps        = $request->input('mrp', []);
-    $discounts   = $request->input('disc', []);
-    $specs       = $request->input('vendor_spec', []);
-    $sellerbrand = $request->input('sellerbrand', []);
+        // Arrays from form (indexed by variantId)
+        $prices      = $request->input('price', []);
+        $mrps        = $request->input('mrp', []);
+        $discounts   = $request->input('disc', []);
+        $specs       = $request->input('vendor_spec', []);
+        $sellerbrand = $request->input('sellerbrand', []);
 
         DB::beginTransaction();
         try {
@@ -575,14 +582,137 @@ class RfqReceivedController extends Controller
             ->where('rfq_id', $rfqId)
             ->update([
                 'buyer_rfq_status'      => $buyerStatus,
-                'buyer_rfq_read_status' => 1,
-                'updated_at'            => now(),
+                'buyer_rfq_read_status' => 1
             ]);
 
         return (bool)$affectedBuyer;
     }
 
+    public function addProductToVendorProfile(Request $request)
+    {   
+        $is_international_vendor = is_national();
+        $validator = Validator::make($request->all(), [
+            'product_id' => 'required',
+            'rfq_id' => 'required',
+            'product_description' => 'required',
+            'dealer_type' => 'required',
+            'hsn_code' => 'required|digits_between:2,8',
+            'tax_class' => ($is_international_vendor == '1' ? 'required' : 'nullable'),
+        ]);
 
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => $validator->errors()->first(),
+            ]);
+        }
+
+        $existingProduct = DB::table('products')->where('id', $request->product_id)->first();
+        if (empty($existingProduct)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'No product found.',
+            ]);
+        }
+
+        $rfq_data = DB::table('rfqs')->select('buyer_rfq_status')->where("rfq_id", $request->rfq_id)->first();
+        if(empty($rfq_data)){
+            return response()->json([
+                'status' => false,
+                'message' => 'Something went wrong with RFQ, please refresh the page.',
+            ]);
+        }
+        if(in_array($rfq_data->buyer_rfq_status, [5, 8, 10])){
+            return response()->json([
+                'status' => false,
+                'message' => 'Something went wrong with RFQ, please refresh the page.',
+            ]);
+        }
+
+        $is_rfq_product = DB::table('rfq_products')->where("rfq_id", $request->rfq_id)->exists();
+        if(empty($is_rfq_product)){
+            return response()->json([
+                'status' => false,
+                'message' => 'Something went wrong with RFQ, please refresh the page.',
+            ]);
+        }
+
+        $company_id = getParentUserId();
+
+        $is_rfq_vendor = DB::table('rfq_vendors')->where("rfq_id", $request->rfq_id)->where("product_id", $request->product_id)->where("vendor_user_id", $company_id)->exists();
+        if(!empty($is_rfq_vendor)){
+            return response()->json([
+                'status' => false,
+                'message' => 'Vendor already have this product into RFQ, please refresh the page.',
+            ]);
+        }
+
+        $is_vendor_product = DB::table('vendor_products')->where("product_id", $request->product_id)->where("vendor_id", $company_id)->first();
+        
+        try {
+            DB::beginTransaction();
+
+            $this->saveVendorProduct($is_vendor_product, $is_international_vendor, $request, $company_id);
+            $this->saveRFQProduct($request, $company_id);
+            
+            DB::commit();
+
+            return response()->json([
+                'status' => 1,
+                'message' => 'Product added to vendor profile and RFQ successfully.',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => 0,
+                'message' => 'Error adding product: ' . $e->getMessage(),
+            ]);
+        }
+    }
+    private function saveVendorProduct($is_vendor_product, $is_international_vendor, $request, $company_id){
+        $taxClass = 1;
+        if($is_international_vendor=="1"){
+            $taxClass = $request->tax_class;
+        }
+
+        $data = [
+            'description' => $request->product_description,
+            'dealer_type_id' => $request->dealer_type,
+            'gst_id' => $taxClass,
+            'hsn_code' => $request->hsn_code,
+            'vendor_status' => 1,
+            'edit_status' => 0,
+            'approval_status' => 1,
+            'added_from' => 3,
+        ];
+
+        $conditions = [
+            'product_id' => $request->product_id,
+            'vendor_id' => $company_id,
+        ];
+
+        if (!empty($is_vendor_product)) {
+            // Update existing record
+            DB::table('vendor_products')
+                ->where($conditions)
+                ->update($data);
+        } else {
+            // Insert new record
+            $insertData = array_merge($conditions, $data);
+            $insertData['added_by_user_id'] = auth()->user()->id;
+            DB::table('vendor_products')->insert($insertData);
+        }
+    }
+
+    private function saveRFQProduct($request, $company_id){
+        $rfq_vendor = DB::table('rfq_vendors')->select('vendor_status')->where("rfq_id", $request->rfq_id)->where("vendor_user_id", $company_id)->first();
+        DB::table('rfq_vendors')->insert([
+            'rfq_id'         => $request->rfq_id,
+            'product_id'     => $request->product_id,
+            'vendor_user_id' => $company_id,
+            'vendor_status' => $rfq_vendor->vendor_status
+        ]);
+    }
 
 }
 

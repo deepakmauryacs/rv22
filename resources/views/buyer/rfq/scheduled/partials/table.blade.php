@@ -69,7 +69,7 @@
                 </td>
                 <td>
                     <div class="rfq-table-btn-group">
-                        <a href="{{ route('buyer.rfq.compose-draft-rfq', $result->rfq_id) }}" class="ra-btn small-btn ra-btn-outline-primary-light">Edit</a>
+                        <a href="javascript:void(0)" class="ra-btn small-btn ra-btn-outline-primary-light edit-rfq" data-rfq-id="{{ $result->rfq_id }}">Edit</a>
                         <button class="ra-btn small-btn ra-btn-outline-danger" onclick="deleteScheduledRFQ('{{$result->rfq_id}}')">Delete</button>
                     </div>
                 </td>

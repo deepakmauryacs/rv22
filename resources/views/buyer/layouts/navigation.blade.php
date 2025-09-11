@@ -1,3 +1,14 @@
+@php
+use Illuminate\Support\Facades\DB;
+
+if(!empty(Auth::user()->parent_id)){
+    $profile_user = DB::table('users')->where('id', Auth::user()->parent_id)->first();
+}else{
+    $profile_user = Auth::user();
+}
+@endphp
+
+
 <header class="Project_top_header">
     <div class="container-fluid">
         <div class="cust_container">
@@ -46,7 +57,8 @@
                     </div>
                 </div>
                 <div class="col-lg-8 col-md-12 col-sm-12 col-12 bottom-header-center">
-                    @if(Auth::user()->is_profile_verified==1)
+                    
+                    @if($profile_user->is_profile_verified==1)
                     <div class="category_division" id="search-by-division">
                         <div onclick="setSearch(event)" class="d-flex justify-content-between align-items-center">
                             <span>Search By Division </span>
@@ -67,7 +79,7 @@
                     @endif
                 </div>
                 <div class="col-lg-2 col-md-6 col-sm-6 col-6 bottom-header-end">
-                    @if(Auth::user()->is_profile_verified==1)
+                    @if($profile_user->is_profile_verified==1)
                     <ul>
                         <li class="notify-section">
                             <a href="javascript:void(0)" class="btn-link" onclick="setNotify(event)" id="notifyButton"

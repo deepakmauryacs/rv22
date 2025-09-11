@@ -90,301 +90,6 @@
 
                 <div class="table-responsive p-2" id="table-container">
                     @include('buyer.rfq.sent-rfq.partials.table', ['results' => $results])
-                    <!-- <table class="product-listing-table w-100">
-                        <thead>
-                            <tr>
-                                <th>RFQ No.</th>
-                                <th>RFQ Date</th>
-                                <th>Product Name</th>
-                                <th>PRN Number</th>
-                                <th>Branch/Unit</th>
-                                <th>Username</th>
-                                <th>RFQ Status</th>
-                                <th>RFQ Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>RATB-25-00049</td>
-                                <td>21/04/2025</td>
-                                <td>
-                                    <div class="d-flex">
-                                        <span class="rfq-product-name text-truncate">
-                                        KILN AIR INJECTOR TUBEKILN AIR INJECTOR TUBEKILN AIR INJECTOR TUBE
-                                        </span>
-                                        <button class="btn btn-link text-black border-0 p-0 font-size-12 bi bi-info-circle-fill ms-1"
-                                            data-bs-toggle="tooltip" data-bs-placement="top"
-                                            title="KILN AIR INJECTOR TUBEKILN AIR INJECTOR TUBEKILN AIR INJECTOR TUBE"></button>
-                                    </div>
-                                </td>
-                                <td></td>
-                                <td> Buyer Branch 1</td>
-                                <td> BUYER TESTER</td>
-                                <td>
-                                    <span class="rfq-status Auction-Completed">Closed</span>
-                                </td>
-                                <td>
-                                    <div class="rfq-table-btn-group">
-                                        <button class="ra-btn small-btn ra-btn-primary">CIS</button>
-                                        <button class="ra-btn small-btn ra-btn-outline-primary-light">Re-Use</button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr class="list-unread">
-                                <td>TTEE-25-00134</td>
-                                <td>21/04/2025</td>
-                                <td>
-                                    <div class="d-flex">
-                                        <span class="rfq-product-name text-truncate">
-                                        AMIT TESTING PRODUCTS
-                                        </span>
-                                    </div>
-                                </td>
-                                <td></td>
-                                <td>Branch 2</td>
-                                <td>User 2</td>
-                                <td>
-                                    <span class="rfq-status rfq-generate">Active</span>
-                                </td>
-                                <td>
-                                    <div class="rfq-table-btn-group">
-                                        <button class="ra-btn small-btn ra-btn-primary">CIS</button>
-                                        <button class="ra-btn small-btn ra-btn-outline-primary-light">Edit</button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>TTEE-25-00134</td>
-                                <td>21/04/2025</td>
-                                <td>
-                                    <div class="d-flex">
-                                        <span class="rfq-product-name text-truncate">
-                                        KILN AIR INJECTOR TUBE
-                                        </span>
-                                    </div>
-                                </td>
-                                <td>60</td>
-                                <td>Branch 3</td>
-                                <td>User 3</td>
-                                <td>
-                                    <span class="rfq-status rfq-generate">Active</span>
-                                </td>
-                                <td>
-                                    <div class="rfq-table-btn-group">
-                                        <button class="ra-btn small-btn ra-btn-primary disabled">CIS</button>
-                                        <button class="ra-btn small-btn ra-btn-outline-primary-light">Edit</button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>TTEE-25-00134</td>
-                                <td>21/04/2025</td>
-                                <td>
-                                    <div class="d-flex">
-                                        <span class="rfq-product-name text-truncate">
-                                        WATER TESTING KIT
-                                        </span>
-                                    </div>
-                                </td>
-                                <td></td>
-                                <td>Branch 4</td>
-                                <td>User 4</td>
-                                <td>
-                                    <span class="rfq-status rfq-generate">Active</span>
-                                </td>
-                                <td>
-                                    <div class="rfq-table-btn-group">
-                                        <button class="ra-btn small-btn ra-btn-primary">CIS</button>
-                                        <button class="ra-btn small-btn ra-btn-outline-primary-light">Edit</button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>TTEE-25-00134</td>
-                                <td>21/04/2025</td>
-                                <td>
-                                    <div class="d-flex">
-                                        <span class="rfq-product-name text-truncate">
-                                        AMIT TESTING
-                                        </span>
-                                    </div>
-                                </td>
-                                <td>64</td>
-                                <td>Branch 5</td>
-                                <td>User 5</td>
-                                <td>
-                                    <span class="rfq-status Partial-order">Order Confirmed</span>
-                                </td>
-                                <td>
-                                    <div class="rfq-table-btn-group">
-                                        <button class="ra-btn small-btn ra-btn-primary">CIS</button>
-                                        <button class="ra-btn small-btn ra-btn-outline-primary-light">Re-Use</button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>TTEE-25-00134</td>
-                                <td>21/04/2025</td>
-                                <td>
-                                    <div class="d-flex">
-                                        <span class="rfq-product-name text-truncate">
-                                        KILN AIR INJECTOR TUBEKILN AIR
-                                        </span>
-                                    </div>
-                                </td>
-                                <td>21,22</td>
-                                <td>Branch 6</td>
-                                <td>User 6</td>
-                                <td>
-                                    <span class="rfq-status Partial-order">Partial Order</span>
-                                </td>
-                                <td>
-                                    <div class="rfq-table-btn-group">
-                                        <button class="ra-btn small-btn ra-btn-primary">CIS</button>
-                                        <button class="ra-btn small-btn ra-btn-outline-primary-light disabled">Edit</button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>RATB-25-00049</td>
-                                <td>21/04/2025</td>
-                                <td>
-                                    <div class="d-flex">
-                                        <span class="rfq-product-name text-truncate">
-                                        KILN AIR INJECTOR TUBEKILN AIR INJECTOR TUBEKILN AIR INJECTOR TUBE
-                                        </span>
-                                    </div>
-                                </td>
-                                <td></td>
-                                <td> Buyer Branch 1</td>
-                                <td> BUYER TESTER</td>
-                                <td>
-                                    <span class="rfq-status Auction-Completed">Closed</span>
-                                </td>
-                                <td>
-                                    <div class="rfq-table-btn-group">
-                                        <button class="ra-btn small-btn ra-btn-primary">CIS</button>
-                                        <button class="ra-btn small-btn ra-btn-outline-primary-light">Re-Use</button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr class="list-unread">
-                                <td>TTEE-25-00134</td>
-                                <td>21/04/2025</td>
-                                <td>
-                                    <div class="d-flex">
-                                        <span class="rfq-product-name text-truncate">
-                                        AMIT TESTING PRODUCTS
-                                        </span>
-                                    </div>
-                                </td>
-                                <td></td>
-                                <td>Branch 2</td>
-                                <td>User 2</td>
-                                <td>
-                                    <span class="rfq-status rfq-generate">Active</span>
-                                </td>
-                                <td>
-                                    <div class="rfq-table-btn-group">
-                                        <button class="ra-btn small-btn ra-btn-primary">CIS</button>
-                                        <button class="ra-btn small-btn ra-btn-outline-primary-light">Edit</button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>TTEE-25-00134</td>
-                                <td>21/04/2025</td>
-                                <td>
-                                    <div class="d-flex">
-                                        <span class="rfq-product-name text-truncate">
-                                        KILN AIR INJECTOR TUBE
-                                        </span>
-                                    </div>
-                                </td>
-                                <td>60</td>
-                                <td>Branch 3</td>
-                                <td>User 3</td>
-                                <td>
-                                    <span class="rfq-status rfq-generate">Active</span>
-                                </td>
-                                <td>
-                                    <div class="rfq-table-btn-group">
-                                        <button class="ra-btn small-btn ra-btn-primary disabled">CIS</button>
-                                        <button class="ra-btn small-btn ra-btn-outline-primary-light">Edit</button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>TTEE-25-00134</td>
-                                <td>21/04/2025</td>
-                                <td>
-                                    <div class="d-flex">
-                                        <span class="rfq-product-name text-truncate">
-                                        WATER TESTING KIT
-                                        </span>
-                                    </div>
-                                </td>
-                                <td></td>
-                                <td>Branch 4</td>
-                                <td>User 4</td>
-                                <td>
-                                    <span class="rfq-status rfq-generate">Active</span>
-                                </td>
-                                <td>
-                                    <div class="rfq-table-btn-group">
-                                        <button class="ra-btn small-btn ra-btn-primary">CIS</button>
-                                        <button class="ra-btn small-btn ra-btn-outline-primary-light">Edit</button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>TTEE-25-00134</td>
-                                <td>21/04/2025</td>
-                                <td>
-                                    <div class="d-flex">
-                                        <span class="rfq-product-name text-truncate">
-                                        AMIT TESTING
-                                        </span>
-                                    </div>
-                                </td>
-                                <td>64</td>
-                                <td>Branch 5</td>
-                                <td>User 5</td>
-                                <td>
-                                    <span class="rfq-status Partial-order">Order Confirmed</span>
-                                </td>
-                                <td>
-                                    <div class="rfq-table-btn-group">
-                                        <button class="ra-btn small-btn ra-btn-primary">CIS</button>
-                                        <button class="ra-btn small-btn ra-btn-outline-primary-light">Re-Use</button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>TTEE-25-00134</td>
-                                <td>21/04/2025</td>
-                                <td>
-                                    <div class="d-flex">
-                                        <span class="rfq-product-name text-truncate">
-                                        KILN AIR INJECTOR TUBEKILN AIR
-                                        </span>
-                                    </div>
-                                </td>
-                                <td>21,22</td>
-                                <td>Branch 6</td>
-                                <td>User 6</td>
-                                <td>
-                                    <span class="rfq-status Partial-order">Partial Order</span>
-                                </td>
-                                <td>
-                                    <div class="rfq-table-btn-group">
-                                        <button class="ra-btn small-btn ra-btn-primary">CIS</button>
-                                        <button class="ra-btn small-btn ra-btn-outline-primary-light disabled">Edit</button>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table> -->
                 </div>
             </div>
         </div>
@@ -437,6 +142,43 @@
             $(".rfq-filter-button").find("select").val("0");
         });
 
+        $(document).on('click', '.reuse-rfq', function () {
+
+            let _this = this;
+            $(_this).addClass('disabled');
+            let rfq_id = $(_this).data('rfq-id');
+
+            if(rfq_id == undefined || rfq_id == '') {
+                toastr.error("Something went wrong. Please try again.");
+                return false;
+            }
+
+            $.ajax({
+                url: "{{route('buyer.rfq.reuse')}}",
+                type: 'POST',
+                data: {
+                    rfq_id: rfq_id,
+                    _token: "{{ csrf_token() }}"
+                },
+                dataType: 'JSON',
+                beforeSend: function () {
+
+                },
+                success: function(response) {
+                    if(!response.status) {
+                        $(_this).removeClass('disabled');
+                        toastr.error(response.message);
+                    } else if(response.status) {
+                        // toastr.success(response.message);
+                        setTimeout(
+                            function(){
+                                window.location.href = response.redirect_url;
+                            }, 1000);
+                    }
+                }
+            });
+
+        });
     });
 </script>
 @endsection

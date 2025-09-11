@@ -80,7 +80,7 @@
                         <button class="ra-btn small-btn ra-btn-outline-primary-light">Edit</button>
                         @endif
                         @if(in_array($result->buyer_rfq_status, [5,8,10]))
-                        <button class="ra-btn small-btn ra-btn-outline-primary-light">Re-Use</button>
+                        <button data-rfq-id="{{ $result->rfq_id }}" class="ra-btn small-btn ra-btn-outline-primary-light reuse-rfq">Re-Use</button>
                         @endif
                     </div>
                 </td>

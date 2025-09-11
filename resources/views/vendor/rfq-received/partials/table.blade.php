@@ -29,7 +29,7 @@
                         '4'=>'<span class="badge badge-secondary text-start">Counter Offer Received</span>',
                         '5'=>'<span class="badge badge-primary text-start">Order Confirmed</span>',
                         '6'=>'<span class="badge badge-pink text-start">Counter Offer Sent</span>',
-                        '7'=>'<span class="badge badge-pink text-start">Quotation Received</span>',
+                        '7'=>'<span class="badge badge-pink text-start">Quotation Sent</span>',
                         '8'=>'<span class="badge badge-danger text-start">Closed</span>',
                         '9'=>'<span class="badge badge-primary text-start">Order Confirmed</span>',
                         '10'=>'<span class="badge badge-primary text-start">Order Confirmed</span>'

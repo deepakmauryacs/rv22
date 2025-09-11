@@ -177,6 +177,8 @@ class CISController extends Controller
             return Excel::download(new CisExport($data), "CIS-Sheet-{$rfq_id}-" . now()->format('d-m-Y') . ".xlsx");
         }
 
+        DB::table('rfqs')->where("rfq_id", $rfq_id)->update(['buyer_rfq_read_status' => 2]);
+
         return view('buyer.rfq.cis.rfq-cis', $data);
     }
 
