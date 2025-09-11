@@ -196,7 +196,7 @@ $(document).ready(function() {
         const checkbox = $(this);
 
         $.ajax({
-            url: "{{ url('admin/verified-products') }}/" + id + "/status",
+            url: "{{ url('super-admin/verified-products') }}/" + id + "/status",
             type: "PUT",
             data: {
                 _token: "{{ csrf_token() }}",
@@ -217,7 +217,7 @@ $(document).ready(function() {
         const id = $(this).data('id');
 
         $.ajax({
-            url: "{{ url('admin/verified-products') }}/" + id,
+            url: "{{ url('super-admin/verified-products') }}/" + id,
             type: "DELETE",
             data: {
                 _token: "{{ csrf_token() }}"
