@@ -199,7 +199,19 @@ class AuctionCISController extends Controller
                 ->toArray();
         }
 
-        // 9) Variant start prices keyed by rfq_variant_id (for header/table prefill)
+        // 9) Round-off and auction total price per vendor
+        $auction_roundoff_price = [];
+        $vend_auction_total_price = [];
+        foreach (($cis['vendor_total_amount'] ?? []) as $vendorId => $total) {
+            $rounded = ceil((float) $total);
+            $roundOff = round($rounded - (float) $total, 2);
+            if ($roundOff != 0) {
+                $auction_roundoff_price[$vendorId] = $roundOff;
+            }
+            $vend_auction_total_price[$vendorId] = $rounded;
+        }
+
+        // 10) Variant start prices keyed by rfq_variant_id (for header/table prefill)
         $prefillVariantPrices = [];
         if ($editId) {
             $prefillVariantPrices = DB::table('rfq_auction_variants')
@@ -208,7 +220,7 @@ class AuctionCISController extends Controller
                 ->toArray();
         }
 
-        // 10) Header prefill (date/time/currency/decrement/type)
+        // 11) Header prefill (date/time/currency/decrement/type)
         $prefill = [];
         if ($auction) {
             try {
@@ -223,7 +235,7 @@ class AuctionCISController extends Controller
             $prefill['auction_type']      = $auction->auction_type;
         }
 
-        // 11) LIVE AUCTION STATUS
+        // 12) LIVE AUCTION STATUS
         $current_status = null;
         if ($auction) {
             $current_status = $this->getAuctionStatus(
@@ -241,7 +253,7 @@ class AuctionCISController extends Controller
 
         $liveAuction = $auction;
 
-        // 12) Render
+        // 13) Render
         return view('buyer.auction.cis.rfq-cis', compact(
             'uom',
             'cis',
@@ -257,6 +269,8 @@ class AuctionCISController extends Controller
             'prefill',
             'prefillVariantPrices',
             'current_status',
+            'auction_roundoff_price',
+            'vend_auction_total_price',
         ));
     }
 

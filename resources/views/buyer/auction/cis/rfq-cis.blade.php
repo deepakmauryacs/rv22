@@ -206,6 +206,16 @@
                                                 <td class="align-middle p-1" colspan="4"></td>
                                                 {{-- <td class="align-middle p-1"></td> --}}
                                             </tr>
+                                            @if(!empty($auction_roundoff_price))
+                                            <tr>
+                                                <td class="align-middle p-1 bg-pink" scope="row">Round Off</td>
+                                                <td class="align-middle p-1" colspan="4"></td>
+                                            </tr>
+                                            <tr>
+                                                <td class="align-middle p-1 bg-pink" scope="row">Auction Price</td>
+                                                <td class="align-middle p-1" colspan="4"></td>
+                                            </tr>
+                                            @endif
                                             <tr>
                                                 <td class="align-middle p-1" scope="row">Price Basis</td>
                                                 <td class="align-middle p-1" colspan="4">{{ $rfq['buyer_price_basis'] }}</td>
@@ -413,11 +423,41 @@
                                                     @endphp
                                                 <td class="product-price p-1 align-middle text-center {{ !empty($cis['vendor_total_amount'][$vendor_id]) && $cis['vendor_total_amount'][$vendor_id] == $rfq['lowest_price_total'] && (!isset($current_status) || $current_status != 1) ? 'bg-gold' : '' }} ">
                                                     <b>
-                                                    {{!empty($vendor['latest_quote']) && !empty($vendor['latest_quote']['vendor_currency']) ? $vendor['latest_quote']['vendor_currency'] : '₹'}} {{$cis['vendor_total_amount'][$vendor_id] ? IND_money_format($cis['vendor_total_amount'][$vendor_id]) : 0}}
+                                                {{!empty($vendor['latest_quote']) && !empty($vendor['latest_quote']['vendor_currency']) ? $vendor['latest_quote']['vendor_currency'] : '₹'}} {{$cis['vendor_total_amount'][$vendor_id] ? IND_money_format($cis['vendor_total_amount'][$vendor_id]) : 0}}
                                                     </b>
                                                 </td>
                                                 @endforeach
                                             </tr>
+                                            @if(!empty($auction_roundoff_price))
+                                            <tr>
+                                                @foreach($cis['vendors'] as $vendor_id => $vendor)
+                                                    @php
+                                                        if(!empty($cis['filter_vendors']) && !in_array($vendor_id, $cis['filter_vendors'])) {
+                                                            continue;
+                                                        }
+                                                        $total_price = $auction_roundoff_price[$vendor_id] ?? 0;
+                                                        $currency = !empty($vendor['latest_quote']) && !empty($vendor['latest_quote']['vendor_currency']) ? $vendor['latest_quote']['vendor_currency'] : '₹';
+                                                    @endphp
+                                                    <td class="product-price p-1 align-middle text-center">
+                                                        {{ $currency }} {{ $total_price }}
+                                                    </td>
+                                                @endforeach
+                                            </tr>
+                                            <tr>
+                                                @foreach($cis['vendors'] as $vendor_id => $vendor)
+                                                    @php
+                                                        if(!empty($cis['filter_vendors']) && !in_array($vendor_id, $cis['filter_vendors'])) {
+                                                            continue;
+                                                        }
+                                                        $total_price = $vend_auction_total_price[$vendor_id] ?? 0;
+                                                        $currency = !empty($vendor['latest_quote']) && !empty($vendor['latest_quote']['vendor_currency']) ? $vendor['latest_quote']['vendor_currency'] : '₹';
+                                                    @endphp
+                                                    <td class="product-price p-1 align-middle text-center">
+                                                        {{ $currency }} {{ IND_money_format($total_price) }}
+                                                    </td>
+                                                @endforeach
+                                            </tr>
+                                            @endif
                                             <tr>
                                                 @foreach($cis['vendors'] as $vendor_id => $vendor)
                                                     @php
