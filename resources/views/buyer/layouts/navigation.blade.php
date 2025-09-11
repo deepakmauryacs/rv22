@@ -9,6 +9,19 @@ if(!empty(Auth::user()->parent_id)){
 @endphp
 
 
+<style>
+    #voice-search-btn.listening .bi-mic-fill {
+        color: #ea4335;
+        animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.3); }
+        100% { transform: scale(1); }
+    }
+</style>
+
 <header class="Project_top_header">
     <div class="container-fluid">
         <div class="cust_container">
@@ -70,7 +83,7 @@ if(!empty(Auth::user()->parent_id)){
                         <form class="d-flex searchBar">
                             <span class="bi bi-search me-2"></span>
                             <input type="search" class="" id="product-search" placeholder="Search Product">
-                            <button class="btn p-0" type="button" data-bs-toggle="tooltip" data-bs-placement="bottom" aria-label="Start Voice Search" data-bs-original-title="Start Voice Search">
+                            <button class="btn p-0" id="voice-search-btn" type="button" data-bs-toggle="tooltip" data-bs-placement="bottom" aria-label="Start Voice Search" data-bs-original-title="Start Voice Search">
                                 <span class="bi bi-mic-fill font-size-18"></span>
                             </button>
                         </form>

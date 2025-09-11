@@ -153,4 +153,43 @@
             }
         });
     }
+
+    // Voice search functionality
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+
+        const voiceBtn = $('#voice-search-btn');
+        const searchInput = $('#product-search');
+        const defaultPlaceholder = searchInput.attr('placeholder');
+
+        recognition.onresult = function (event) {
+            const transcript = event.results[0][0].transcript;
+            searchInput.val(transcript).trigger('input');
+        };
+
+        recognition.onerror = function (event) {
+            console.error('Speech recognition error', event);
+        };
+
+        recognition.onstart = function () {
+            voiceBtn.addClass('listening');
+            searchInput.attr('placeholder', 'Listening...');
+        };
+
+        recognition.onend = function () {
+            voiceBtn.removeClass('listening');
+            searchInput.attr('placeholder', defaultPlaceholder);
+        };
+
+        voiceBtn.on('click', function () {
+            recognition.start();
+        });
+    } else {
+        $('#voice-search-btn').on('click', function () {
+            alert('Voice search is not supported in this browser.');
+        });
+    }
 </script>
