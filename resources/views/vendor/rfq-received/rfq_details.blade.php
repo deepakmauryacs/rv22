@@ -362,16 +362,19 @@ function IND_amount_format($amount) {
                                     </div>
                                     <span class="form-floating-label"
                                         for="uploadFile_{{ $productVariants[0]->id }}">Upload File</span>
-                                    <div class="simple-file-upload">
+                                    <div class="simple-file-upload d-flex align-items-center">
                                         <input type="file" id="uploadFile_{{ $productVariants[0]->id }}"
                                             name="vendor_attachment[{{ $productVariants[0]->id }}]"
                                             class="real-file-input vendor-attachment" style="display: none;"
                                             accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" {{ $product->is_product
                                         == 'no' ? 'disabled' : '' }}>
-                                        <div class="file-display-box form-control text-start font-size-12 text-dark"
+                                        <div class="file-display-box form-control text-start font-size-12 text-dark flex-grow-1"
                                             role="button" data-bs-toggle="tooltip" data-bs-placement="top">
                                             Attach file
                                         </div>
+                                        <span class="text-danger ms-2 remove-attachment" style="display:none; cursor:pointer;">
+                                            <i class="bi bi-x-circle"></i>
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -937,19 +940,46 @@ $(document).on('change', '.vendor-attachment', function () {
         'image/png'
     ];
 
+    const $wrapper = $(this).closest('.simple-file-upload');
+    const $displayBox = $wrapper.find('.file-display-box');
+    const $removeIcon = $wrapper.find('.remove-attachment');
+
     if (fileInput.files.length > 0) {
         const file = fileInput.files[0];
         if (file.size > maxSize) {
             alert('File size exceeds 1MB limit');
             fileInput.value = '';
+            $displayBox.text('Attach file');
+            $removeIcon.hide();
             return;
         }
         if (!allowedTypes.includes(file.type)) {
             alert('Only PDF, DOC, Excel, and Image files are allowed');
             fileInput.value = '';
+            $displayBox.text('Attach file');
+            $removeIcon.hide();
             return;
         }
-        $(this).siblings('.file-display-box').text(file.name);
+        $displayBox.text(file.name);
+        $removeIcon.show();
+    } else {
+        $displayBox.text('Attach file');
+        $removeIcon.hide();
+    }
+});
+
+$(document).on('click', '.remove-attachment', function (e) {
+    e.stopPropagation();
+    const $wrapper = $(this).closest('.simple-file-upload');
+    $wrapper.find('.vendor-attachment').val('');
+    $wrapper.find('.file-display-box').text('Attach file');
+    $(this).hide();
+});
+
+$(document).on('click', '.file-display-box', function () {
+    const $fileInput = $(this).siblings('.vendor-attachment');
+    if (!$fileInput.val()) {
+        $fileInput.trigger('click');
     }
 });
 
