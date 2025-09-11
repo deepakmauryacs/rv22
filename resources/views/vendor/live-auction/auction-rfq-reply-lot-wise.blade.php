@@ -255,6 +255,7 @@ function IND_amount_format($amount) {
                                         <input type="hidden" name="total_bid_price" id="total_bid_price" value="{{ number_format($total_bid_price, 2) }}">
                                         <input type="hidden" name="start_price" id="start_price" value="{{ number_format($total_bid_price, 2) }}">
                                     </div>
+                                    @if($current_status == 1)
                                     <div class="col-md">
                                         <label class="mb-2"><strong>L1 Price</strong>(<span class="currency-symbol"></span>)</label>
                                         <div id="l1Price">-</div>
@@ -263,6 +264,7 @@ function IND_amount_format($amount) {
                                         <label class="mb-2"><strong>Rank</strong></label>
                                         <div id="yourRank">-</div>
                                     </div>
+                                    @endif
                                     <div class="col-md">
                                         <label class="mb-2"><strong>Min Bid Decrement (%)</strong></label>
                                         <div id="minBidDecrement">2</div>
@@ -838,6 +840,8 @@ function submitRfqCounterData(_this, action) {
 </script>
 
 <script>
+@if($current_status == 1)
+<script>
 // Auto-fetch L1 price and rank every 2 minutes
 $(function(){
     const rfqId = $("input[name='rfq_id']").val();
@@ -884,6 +888,7 @@ $(function(){
     $(document).on('visibilitychange', function(){ if(!document.hidden) fetchMetrics(); });
 });
 </script>
+@endif
 
 <!-- ====== LIVE + COUNTDOWN TIMER ====== -->
 <script>

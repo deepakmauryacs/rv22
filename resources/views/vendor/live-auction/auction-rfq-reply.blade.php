@@ -172,8 +172,10 @@ function IND_amount_format($amount) {
                                     <th class="text-center">Quantity/UOM</th>
                                     <th class="text-center">Start Price (<span class="currency-symbol"></span>)</th>
                                     <th class="text-center">Min Bid <br>Decrement ( % )</th>
+                                    @if($current_status == 1)
                                     <th class="text-center">L1</th>
                                     <th class="text-center">Rank</th>
+                                    @endif
                                     <th class="text-center">Last Price</th>
                                     <th class="text-center" width="100"><b>Price (<span class="currency-symbol"></span>)</b></th>
                                     <th class="text-center" width="100">Total (<span class="currency-symbol"></span>)</th>
@@ -209,6 +211,7 @@ function IND_amount_format($amount) {
                                     <td class="text-center"> {{ $variant->auction_start_price !== null ? number_format($variant->auction_start_price, 2) : '-' }}</td>
                                     <td class="text-center">{{ $min_bid_decrement }}</td>
 
+                                    @if($current_status == 1)
                                     <td class="text-center l1 price_l1"
                                         data-lowest-price="{{ $variant->l1_price !== null ? number_format($variant->l1_price, 2, '.', '') : '' }}">
                                         {{ $variant->l1_price !== null ? number_format($variant->l1_price, 2) : '-' }}
@@ -217,6 +220,7 @@ function IND_amount_format($amount) {
                                     <td class="text-center rank" data-variant-id="{{ $variant->id }}">
                                         {{ $variant->vendor_rank ?? '' }}
                                     </td>
+                                    @endif
 
                                     <td class="text-center">
                                         {{ $variant->latest_vend_price !== null ? number_format($variant->latest_vend_price, 2) : '-' }}
@@ -889,11 +893,10 @@ $(document).on('keydown', '.variant-price', function(e){
 </script>
 
 <script>
+@if($current_status == 1)
+<script>
 // ====== Live rank/L1 polling ======
 $(function () {
-    const CURRENT_STATUS = Number(@json($current_status ?? 0)); // 1=Active, 2=Scheduled, 3=Closed
-    if (CURRENT_STATUS !== 1) return;
-
     const rfqId   = @json($rfq->rfq_id);
     const POLL_MS = 120000; // 2 minutes
 
@@ -974,4 +977,5 @@ $(function () {
     });
 });
 </script>
+@endif
 @endsection
