@@ -98,6 +98,18 @@ class CISController extends Controller
             }
         }
 
+        // Round-off and auction total price per vendor
+        $auction_roundoff_price = [];
+        $vend_auction_total_price = [];
+        foreach (($cis['vendor_total_amount'] ?? []) as $vendorId => $total) {
+            $rounded = ceil((float) $total);
+            $roundOff = round($rounded - (float) $total, 2);
+            if ($roundOff != 0) {
+                $auction_roundoff_price[$vendorId] = $roundOff;
+            }
+            $vend_auction_total_price[$vendorId] = $rounded;
+        }
+
         // Variant start prices keyed by rfq_variant_id
         $prefillVariantPrices = [];
         if ($editId) {
@@ -168,6 +180,8 @@ class CISController extends Controller
             'auction',
             'editId',
             'selectedVendorIds',
+            'auction_roundoff_price',
+            'vend_auction_total_price',
             'prefill',
             'prefillVariantPrices',
             'current_status'
