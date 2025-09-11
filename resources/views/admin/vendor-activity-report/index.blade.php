@@ -63,8 +63,8 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="bi bi-journal-text"></i></span>
                                             <div class="form-floating">
-                                                <input type="text" name="registered_address" class="form-control fillter-form-control" value="{{ request('registered_address') }}" placeholder="Registered Address">
-                                                <label>Registered Address</label>
+                                                <input type="text" name="registered_address" class="form-control fillter-form-control" value="{{ request('registered_address') }}" placeholder="Register Address">
+                                                <label>Register Address</label>
                                             </div>
                                         </div>
                                     </div>
@@ -176,7 +176,7 @@ $(document).ready(function () {
         totalUrl: "{{ route('admin.vendor-activity-report.exportTotal') }}",
         batchUrl: "{{ route('admin.vendor-activity-report.exportBatch') }}",
         token: "{{ csrf_token() }}",
-        exportName: "Vendor-Activity-Report",
+        exportName: "Vendor-Activity-Reportt",
         expButton: '#export-btn',
         exportProgress: '#export-progress',
         progressText: '#progress-text',
@@ -187,7 +187,7 @@ $(document).ready(function () {
                 vendor_name: $('[name="vendor_name"]').val(),
                 registered_address: $('[name="registered_address"]').val(),
                 from_date: $('[name="from_date"]').val(),
-                to_date: $('[name="to_date"]').val()
+                to_date: $('[name="to_date"]').val(),
             };
         }
     });

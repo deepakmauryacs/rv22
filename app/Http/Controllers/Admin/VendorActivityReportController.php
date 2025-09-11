@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Vendor;
+use App\Models\User;
+use App\Models\Rfq;
 use App\Models\RfqVendor;
 use App\Models\RfqVendorQuotation;
 use App\Models\Order;
@@ -15,9 +17,18 @@ use App\Traits\HasModulePermission;
 class VendorActivityReportController extends Controller
 {
     use HasModulePermission;
-
-    protected function baseQuery(Request $request)
+    /**
+     * Display the vendor activity report with filters and statistics.
+     */
+    public function index(Request $request)
     {
+        $this->ensurePermission('VENDOR_ACTIVITY_REPORTS');
+
+        $perPage = $request->input('per_page', 25); // Pagination size
+
+        /**
+         * STEP 1: Prepare base Vendor query with eager loading for user, city, and state
+         */
         $vendorsQuery = Vendor::with([
                 'user:id,name,email,mobile,last_login',
                 'vendor_city:id,city_name',
@@ -32,10 +43,12 @@ class VendorActivityReportController extends Controller
                 'registered_address as address',
                 'city',
                 'state',
-            ])
-            ->where('t_n_c', 1)
+            ])->where('t_n_c',1)
             ->orderByDesc('created_at');
 
+        /**
+         * STEP 2: Apply filters
+         */
         if ($request->filled('vendor_name')) {
             $vendorsQuery->where('legal_name', 'like', '%' . $request->vendor_name . '%');
         }
@@ -52,18 +65,10 @@ class VendorActivityReportController extends Controller
             $vendorsQuery->whereDate('created_at', '<=', $request->to_date);
         }
 
-        return $vendorsQuery;
-    }
-    /**
-     * Display the vendor activity report with filters and statistics.
-     */
-    public function index(Request $request)
-    {
-        $this->ensurePermission('VENDOR_ACTIVITY_REPORTS');
-
-        $perPage = $request->input('per_page', 25); // Pagination size
-
-        $vendors = $this->baseQuery($request)->paginate($perPage)->withQueryString();
+        /**
+         * STEP 3: Paginate the result
+         */
+        $vendors = $vendorsQuery->paginate($perPage)->withQueryString();
 
         // Extract vendor and user IDs for batch queries
         $vendorIds = $vendors->pluck('id')->all();
@@ -177,22 +182,91 @@ class VendorActivityReportController extends Controller
 
     public function exportTotal(Request $request)
     {
-        $total = $this->baseQuery($request)->count();
+        $vendorsQuery = Vendor::with([
+                'user:id,name,email,mobile,last_login',
+                'vendor_city:id,city_name',
+                'vendor_state:id,name',
+            ])
+            ->select([
+                'id',
+                'user_id',
+                'legal_name',
+                'created_at',
+                'gstin as gst_no',
+                'registered_address as address',
+                'city',
+                'state',
+            ])->where('t_n_c',1)
+            ->orderByDesc('created_at');
+
+        if ($request->filled('vendor_name')) {
+            $vendorsQuery->where('legal_name', 'like', '%' . $request->vendor_name . '%');
+        }
+
+        if ($request->filled('registered_address')) {
+            $vendorsQuery->where('registered_address', 'like', '%' . $request->registered_address . '%');
+        }
+
+        if ($request->filled('from_date')) {
+            $vendorsQuery->whereDate('created_at', '>=', $request->from_date);
+        }
+
+        if ($request->filled('to_date')) {
+            $vendorsQuery->whereDate('created_at', '<=', $request->to_date);
+        }
+
+        $total = $vendorsQuery->count();
         return response()->json(['total' => $total]);
     }
 
     public function exportBatch(Request $request)
     {
-        $offset = intval($request->input('start'));
-        $limit = intval($request->input('limit'));
+        $offset = intval($request->input('start', 0));
+        $limit = intval($request->input('limit', 1000));
 
-        $vendors = $this->baseQuery($request)
-            ->skip($offset)
-            ->take($limit)
-            ->get();
+        // Step 1: Prepare base query
+        $vendorsQuery = Vendor::with([
+                'user:id,name,email,mobile,last_login',
+                'vendor_city:id,city_name',
+                'vendor_state:id,name',
+            ])
+            ->select([
+                'id',
+                'user_id',
+                'legal_name',
+                'created_at',
+                'gstin as gst_no',
+                'registered_address as address',
+                'city',
+                'state',
+            ])
+            ->where('t_n_c', 1)
+            ->orderByDesc('created_at');
 
-        $userIds = $vendors->pluck('user_id')->all();
+        // Step 2: Apply filters
+        if ($request->filled('vendor_name')) {
+            $vendorsQuery->where('legal_name', 'like', '%' . $request->vendor_name . '%');
+        }
 
+        if ($request->filled('registered_address')) {
+            $vendorsQuery->where('registered_address', 'like', '%' . $request->registered_address . '%');
+        }
+
+        if ($request->filled('from_date')) {
+            $vendorsQuery->whereDate('created_at', '>=', $request->from_date);
+        }
+
+        if ($request->filled('to_date')) {
+            $vendorsQuery->whereDate('created_at', '<=', $request->to_date);
+        }
+
+        // Step 3: Paginate and fetch the data
+        $vendors = $vendorsQuery->skip($offset)->take($limit)->get();
+
+        $vendorIds = $vendors->pluck('id')->all();
+        $userIds   = $vendors->pluck('user_id')->all();
+
+        // Step 4: Summary data fetch
         $rfqReceived = RfqVendor::whereIn('vendor_user_id', $userIds)
             ->selectRaw('vendor_user_id, COUNT(*) as count')
             ->groupBy('vendor_user_id')
@@ -203,7 +277,7 @@ class VendorActivityReportController extends Controller
             ->join('rfq_vendors as v', 'q.vendor_id', '=', 'v.vendor_user_id')
             ->join('rfq_product_variants as pv', function ($join) {
                 $join->on('q.rfq_product_variant_id', '=', 'pv.id')
-                     ->on('v.rfq_id', '=', 'pv.rfq_id');
+                    ->on('v.rfq_id', '=', 'pv.rfq_id');
             })
             ->whereIn('q.vendor_id', $userIds)
             ->select('q.vendor_id', DB::raw('COUNT(q.id) as count'))
@@ -219,12 +293,11 @@ class VendorActivityReportController extends Controller
             ->mapWithKeys(function ($item) {
                 return [
                     $item->vendor_id => [
-                        'count' => $item->count,
+                        'count'       => $item->count,
                         'total_value' => $item->total_value,
-                    ],
+                    ]
                 ];
-            })
-            ->toArray();
+            })->toArray();
 
         $verifiedProducts = VendorProduct::whereIn('vendor_id', $userIds)
             ->where('vendor_status', 1)
@@ -242,41 +315,67 @@ class VendorActivityReportController extends Controller
                 return [
                     $item->user_id => (!empty($item->last_login) && $item->last_login !== '0000-00-00 00:00:00')
                         ? date('d/m/Y', strtotime($item->last_login))
-                        : '-',
+                        : '-'
                 ];
-            })
-            ->toArray();
+            })->toArray();
 
+        // Step 5: Map data
+        $summary = $vendors->map(function ($vendor) use (
+            $rfqReceived, $quotationGiven, $confirmedOrders, $verifiedProducts, $lastLogins
+        ) {
+            $user    = $vendor->user;
+            $userId  = $vendor->user_id;
+            $orders  = $confirmedOrders[$userId] ?? ['count' => 0, 'total_value' => 0];
+
+            return [
+                'user_id'                   => $userId,
+                'vendor_name'               => $vendor->legal_name,
+                'primary_contact'           => $user?->name ?? '-',
+                'phone_no'                  => $user?->mobile ?? '-',
+                'email'                     => $user?->email ?? '-',
+                'gst_no'                    => $vendor->gst_no,
+                'registered_address'        => $vendor->address,
+                'state'                     => $vendor->vendor_state?->name ?? '',
+                'city'                      => $vendor->vendor_city?->city_name ?? '',
+                'created'                   => optional($vendor->created_at)->format('d-m-Y') ?? '-',
+                'total_rfq_received'        => $rfqReceived[$userId] ?? 0,
+                'total_quotation'           => $quotationGiven[$userId] ?? 0,
+                'total_confirmed_orders'    => $orders['count'],
+                'value_of_confirmed_orders' => $orders['total_value'],
+                'no_of_verified_product'    => $verifiedProducts[$userId] ?? 0,
+                'last_login_date'           => $lastLogins[$userId] ?? '-',
+            ];
+        });
+
+        // Step 6: Format result for export
         $result = [];
-        foreach ($vendors as $vendor) {
-            $user = $vendor->user;
-            $userId = $vendor->user_id;
-            $orders = $confirmedOrders[$userId] ?? ['count' => 0, 'total_value' => 0];
-
+        foreach ($summary as $vendor) {
             $addressParts = array_filter([
-                $vendor->address,
-                $vendor->vendor_city?->city_name,
-                $vendor->vendor_state?->name,
+                $vendor['registered_address'],
+                $vendor['state'] ? "<b>{$vendor['state']}</b>" : null,
+                $vendor['city'] ? "<b>{$vendor['city']}</b>" : null,
             ]);
             $fullAddress = implode(', ', $addressParts);
 
             $result[] = [
-                $vendor->legal_name,
-                $user?->name ?? '-',
-                $user?->mobile ?? '-',
-                $user?->email ?? '-',
-                $vendor->gst_no,
+                $vendor['vendor_name'],
+                $vendor['primary_contact'],
+                $vendor['phone_no'],
+                $vendor['email'],
+                $vendor['gst_no'],
                 $fullAddress,
-                getTotalUserAccountsByUserId($userId) . '/' . getNoOfUsersByUserId($userId),
-                $rfqReceived[$userId] ?? 0,
-                $quotationGiven[$userId] ?? 0,
-                $orders['count'],
-                number_format($orders['total_value'], 2),
-                $verifiedProducts[$userId] ?? 0,
-                $lastLogins[$userId] ?? '-',
+                getTotalUserAccountsByUserId($vendor['user_id']) . '/' . getNoOfUsersByUserId($vendor['user_id']),
+                $vendor['total_rfq_received'],
+                $vendor['total_quotation'],
+                $vendor['total_confirmed_orders'],
+                number_format($vendor['value_of_confirmed_orders'], 2),
+                $vendor['no_of_verified_product'],
+                $vendor['last_login_date']
             ];
         }
 
         return response()->json(['data' => $result]);
     }
+
+
 }

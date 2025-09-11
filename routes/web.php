@@ -398,10 +398,10 @@ Route::group(['prefix' => 'super-admin'], function () {
         });
 
         Route::prefix('vendor-activity-report')->name('admin.')->group(function () {
-            Route::get('/', [VendorActivityReportController::class, 'index'])
-                ->name('vendor-activity-report.index');
-            Route::get('/export/total', [VendorActivityReportController::class, 'exportTotal'])->name('vendor-activity-report.exportTotal');
-            Route::get('/export/batch', [VendorActivityReportController::class, 'exportBatch'])->name('vendor-activity-report.exportBatch');
+            Route::get('/', [VendorActivityReportController::class, 'index'])->name('vendor-activity-report.index');
+            Route::get('/exportTotal', [VendorActivityReportController::class, 'exportTotal'])->name('vendor-activity-report.exportTotal');
+            Route::get('/exportBatch', [VendorActivityReportController::class, 'exportBatch'])->name('vendor-activity-report.exportBatch');
+
         });
 
     });
