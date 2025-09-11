@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 use App\Http\Controllers\MessageController;
 
@@ -18,10 +18,11 @@ use App\Http\Controllers\Vendor\ProductGalleryController;
 use App\Http\Controllers\Vendor\NotificationController;
 Route::name('vendor.')->group(function() {
     Route::middleware(['auth', 'validate_account', 'usertype:2'])->group(function () {
-        
+
         // common routes
         Route::post('/get-state-by-country-id', [CommonController::class, 'getStateByCountryId'])->name('get-state-by-country-id');
         Route::post('/get-city-by-state-id', [CommonController::class, 'getCityByStateId'])->name('get-city-by-state-id');
+        Route::post('/check_notification', [CommonController::class, 'notification'])->name('check_notification');
 
         Route::prefix('profile')->group(function() {
             Route::get('/', [VendorProfileController::class, 'index'])->name('profile');
@@ -47,7 +48,7 @@ Route::name('vendor.')->group(function() {
                 Route::put('/update/{id}', [HelpSupportController::class, 'update'])->name('help_support.update');
                 Route::post('/view', [HelpSupportController::class, 'view'])->name('help_support.view');
                 Route::post('/list', [HelpSupportController::class, 'list'])->name('help_support.list');
-            }); 
+            });
 
             Route::prefix('orders-confirmed')->group(function() {
                 Route::get('/rfq-order', [OrderController::class, 'rfqOrder'])->name('rfq_order.index');
@@ -59,32 +60,35 @@ Route::name('vendor.')->group(function() {
                 Route::get('/direct-order/print/{id}', [OrderController::class, 'directOrderPrint'])->name('direct_order.print');
 
                 Route::post('upload/pi-attachment', [OrderController::class, 'uploadPiAttachment'])->name('upload.pi.attachment');
-            }); 
+            });
             Route::prefix('rfq')->group(function() {
                 Route::get('/rfq-received', [RfqReceivedController::class, 'index'])->name('rfq.received.index');
 
                 Route::get('{rfq_id}/reply', [RfqReceivedController::class, 'showRfqReplyForm'])->name('rfq.reply');
 
                 Route::post('/submit', [RfqReceivedController::class, 'submitRfq'])->name('rfq.submit');
+                Route::get('/success/{rfq_id}', [RfqReceivedController::class, 'success'])->name('rfq.success');
+
+                Route::post('/add-product-to-vendor-profile', [RfqReceivedController::class, 'addProductToVendorProfile'])->name('rfq.add-product-to-vendor-profile');
 
 
                 Route::get('/live-auction', [LiveAuctionRfqController::class, 'index'])->name('rfq.live-auction.index');
-               
+
             });
 
             Route::get('/live-auction/{rfqId}/offer', [LiveAuctionRfqController::class, 'rfqAuctionOffer'])
                     ->where('rfqId', '[A-Za-z0-9\-\_]+')
                     ->name('live-auction.offer');
-            
+
             Route::post('/live-auction/rfq/submit', [LiveAuctionRfqController::class, 'submitAuctionPrice'])->name('live-auction.rfq.submit');
 
-     
+
             Route::post('/live-auction/metrics',[LiveAuctionRfqController::class, 'liveMetrics'])->name('live-auction.rfq.metrics');
             Route::post('/live-auction/total-metrics',[LiveAuctionRfqSinglePriceController::class, 'liveMetricsTotal'])->name('live-auction.rfq.total-metrics');
 
             Route::post('/live-auction-singal-price/rfq/submit', [LiveAuctionRfqSinglePriceController::class, 'saveLotRfq'])->name('live-auction-singal-price.rfq.submit');
 
-            
+
 
             Route::prefix('notification')->group(function() {
                 Route::get('/', [NotificationController::class, 'index'])->name('notification.index');
@@ -106,7 +110,7 @@ Route::name('vendor.')->group(function() {
 
                 Route::get('manage-products/approved', [VendorProductController::class, 'approvedList'])->name('manage-products.approved');
                 Route::get('manage-products/pending', [VendorProductController::class, 'pendingList'])->name('manage-products.pending');
-              
+
 
                 // Update Status (AJAX)
                 Route::post('product-approvals/{id}/status', [VendorProductController::class, 'updateStatus'])->name('product-approvals.status');
@@ -117,7 +121,7 @@ Route::name('vendor.')->group(function() {
                 Route::get('get-categories-by-division/{division_id}', [VendorProductController::class, 'getCategoriesByDivision'])->name('getCategoriesByDivision');
 
                 Route::get('product-autocomplete', [VendorProductController::class, 'autocomplete'])->name('product.autocomplete');
-                
+
                 Route::get('add-fast-track-product', [FastTrackProductController::class, 'index'])->name('products.fast_track_product');
 
                 Route::post('products/new_search_product_for_supplier', [FastTrackProductController::class, 'newSearchProductForSupplier'])->name('products.new_search_product_for_supplier');
@@ -131,7 +135,7 @@ Route::name('vendor.')->group(function() {
                Route::any('add-multiple/products/autocomplete', [MultipleProductController::class, 'autocomplete'])->name('addmultiple.products.autocomplete');
 
                Route::post('add-multiple/products/store', [MultipleProductController::class, 'storeMultipleProducts'])->name('addmultiple.products.store');
- 
+
                 // Product Gallery Routes
                 Route::get('products/{product}/gallery', [ProductGalleryController::class, 'create'])
                     ->name('products.gallery');
@@ -146,7 +150,7 @@ Route::name('vendor.')->group(function() {
 
             });
 
- 
+
             Route::prefix('forward-auction')->group(function() {
                 Route::get('/list', [\App\Http\Controllers\Vendor\ForwardAuctionController::class, 'index'])->name('forward-auction.index');
                 Route::get('reply/{auction}', [\App\Http\Controllers\Vendor\ForwardAuctionController::class, 'auctionReply'])->name('forward-auction.view');

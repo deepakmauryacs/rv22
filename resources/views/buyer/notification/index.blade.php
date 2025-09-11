@@ -6,7 +6,7 @@
 @section('content')
     <div class="bg-white">
         <!---Sidebar-->
-        @include('buyer.layouts.sidebar-default')
+        @include('buyer.layouts.sidebar')
     </div>
     <main class="main flex-grow-1">
             <div class="container-fluid">
@@ -26,12 +26,12 @@
                     </div>
                     <div class="card-body">
                         <form id="searchForm" action="{{ route('buyer.notification.index') }}" method="GET">
-                    
+
                         </form>
                         <div class="notification-list-all" id="table-container">
-                           
+
                             @include('buyer.notification.partials.table', ['notifications' => $notifications])
-                             
+
 
                             <!-- <div class="ra-pagination pt-3 pt-sm-0">
                                 <div class="row gy-3 align-items-center justify-content-between">
@@ -83,7 +83,7 @@
             </div>
         </main>
 
- 
+
 
 @endsection
 

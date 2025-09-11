@@ -110,6 +110,11 @@
                         <div class="table-responsive table-product px-2">
                             <table class="table table-product-list min-width-1100">
                                 <thead>
+                                    @php
+                                        $showAttachment = $product->productVariants->contains(function ($v) {
+                                            return !empty($v->attachment);
+                                        });
+                                    @endphp
                                     <tr>
                                         <th scope="col" class="text-nowrap text-dark">
                                             #
@@ -123,6 +128,9 @@
                                         <th scope="col" class="text-nowrap text-dark">
                                             Quantity/UOM
                                         </th>
+                                        @if ($showAttachment)
+                                        <th>Attachment</th>
+                                        @endif
                                         <th scope="col" class="text-nowrap text-dark">
                                             Price(₹)
                                         </th>
@@ -162,6 +170,19 @@
                                             <span class="text-muted text-nowrap">{{$variant->quantity}}
                                                 {{getUOMName($variant->uom)}}</span>
                                         </td>
+                                        @if ($showAttachment)
+                                        <td class="text-center">
+                                            @if (!empty($variant->attachment))
+                                            <a href="{{ asset('public/uploads/rfq-attachment/' . $variant->attachment) }}" target="_blank">
+                                                {!!
+                                                    strlen($variant->attachment) > 10
+                                                        ? substr($variant->attachment, 0, 10)
+                                                        : $variant->attachment
+                                                !!}
+                                            </a>
+                                            @endif
+                                        </td>
+                                        @endif
                                         <td class="text-center">
                                             <span
                                                 class="text-muted text-nowrap">{{$variant->latestVendorQuotation($vendor_id)?->price}}</span>

@@ -221,6 +221,13 @@ class AuctionController extends Controller
             'userdata'          => Auth::check() ? ['users_id' => Auth::id()] : null,
         ];
 
+        $parent_user_id = getParentUserId();
+
+        $is_order_exist = DB::table('orders')->where('rfq_id', $input['rfq_no'])->whereIn('order_status', [1, 3])->where('buyer_id', $parent_user_id)->exists();
+        if($is_order_exist) {
+            return response()->json(['status' => 'error', 'messages' => 'RFQ order already processed.'], 422);
+        }
+
         // 3) Vendors & product validation using your existing helpers
         $vendorDetails   = $this->getVendorDetails($input['auction_vend']);
         $missingProducts = $this->validateVendorProducts($input['auction_vend'], $input['prod_names'], $vendorDetails);
@@ -256,8 +263,8 @@ class AuctionController extends Controller
             // vendors table needs auction_id now
             $this->updateAuctionVendors($auctionId, $input['rfq_no'], $input['auction_vend']);
 
-            // Optionally send notifications
-            // $this->sendAuctionNotifications($input, $vendorDetails, $auctionStart, $auctionEnd);
+            // send notifications
+            $this->sendAuctionNotificationsAndMail($input['rfq_no'], $vendorDetails, $auctionStart->format('d/m/Y'), $auctionStart->format('h:i A') );
 
             return response()->json([
                 'status'  => 'success',
@@ -267,6 +274,50 @@ class AuctionController extends Controller
         }
 
         return response()->json(['status' => 'error', 'message' => 'Error processing auction.'], 500);
+    }
+
+
+    // ===== Helpers =====
+
+    private function sendAuctionNotificationsAndMail($rfq_no, $vendorDetails, $auctionDate, $auctionTime)
+    {
+        // $vendorUserIds = array_map(function($item) {
+        //     return $item->user_id;
+        // }, $vendorDetails);
+
+        $vendorUserIds = $vendorDetails->pluck('user_id')->toArray();
+
+        $notification_data = array();
+        $notification_data['rfq_no'] = $rfq_no;
+        $notification_data['message_type'] = "RFQ Auction";
+        $notification_data['auction_date'] = $auctionDate;
+        $notification_data['auction_time'] = $auctionTime;
+        $notification_data['notification_link'] = route('vendor.live-auction.offer', $rfq_no);
+        $notification_data['to_user_id'] = $vendorUserIds;
+        sendNotifications($notification_data);
+
+        // send email to vendors
+        $subject = "Auction has been Scheduled for RFQ No.: " . $rfq_no;
+
+        $mail_data = vendorEmailTemplet('user-success-action');
+        $admin_msg = $mail_data->mail_message;
+
+        $admin_msg = str_replace('$action_date', $auctionDate, $admin_msg);
+        $admin_msg = str_replace('$from_time', date("H:i:s", strtotime($auctionTime)), $admin_msg);
+        $admin_msg = str_replace('$to_time', date("H:i:s", strtotime($auctionTime . " +30 minutes")), $admin_msg);
+        $admin_msg = str_replace('$rfqdate', date('d M Y'), $admin_msg);
+        $admin_msg = str_replace('$rfq_date_formate', date('d/m/Y'), $admin_msg);
+        $admin_msg = str_replace('$rfq_number', $rfq_no, $admin_msg);
+        $admin_msg = str_replace('$buyer_name', session('legal_name'), $admin_msg);
+        $admin_msg = str_replace('$website_url', route("login"), $admin_msg);
+
+        $mail_arr = array();
+        foreach ($vendorDetails as $key => $value) {
+            $new_admin_msg = $admin_msg;
+            $new_admin_msg = str_replace('$vendor_name', $value->legal_name, $new_admin_msg);
+            $mail_arr[] = array('subject' => $subject, 'body' => $new_admin_msg, 'to' => $value->email);
+        }
+        sendMultipleDBEmails($mail_arr);
     }
 
 
@@ -506,69 +557,69 @@ class AuctionController extends Controller
         ];
     }
 
-    private function sendAuctionNotifications(array $input, $vendorDetails, DateTime $start, DateTime $end): void
-    {
-        $buyerId = function_exists('getBuyerParentIdBySession') ? getBuyerParentIdBySession() : null;
-        $rfqNo   = $input['rfq_no'];
+    // private function sendAuctionNotifications(array $input, $vendorDetails, DateTime $start, DateTime $end): void
+    // {
+    //     $buyerId = function_exists('getBuyerParentIdBySession') ? getBuyerParentIdBySession() : null;
+    //     $rfqNo   = $input['rfq_no'];
 
-        $buyerCompanyName = DB::table('buyer_details')->where('user_id', $buyerId)->value('legal_name');
+    //     $buyerCompanyName = DB::table('buyer_details')->where('user_id', $buyerId)->value('legal_name');
 
-        $notificationData = [
-            'rfq_no'             => $rfqNo,
-            'buyer_company_name' => $buyerCompanyName,
-            'auction_date'       => $start->format('d/m/Y'),
-            'auction_time'       => $start->format('H:i:s'),
-            'message_type'       => 'rfq_auction',
-            'vendors_user_id'    => collect($vendorDetails)->pluck('user_id')->all(),
-        ];
+    //     $notificationData = [
+    //         'rfq_no'             => $rfqNo,
+    //         'buyer_company_name' => $buyerCompanyName,
+    //         'auction_date'       => $start->format('d/m/Y'),
+    //         'auction_time'       => $start->format('H:i:s'),
+    //         'message_type'       => 'rfq_auction',
+    //         'vendors_user_id'    => collect($vendorDetails)->pluck('user_id')->all(),
+    //     ];
 
-        if (function_exists('send_bulk_notification_to_vendor_for_rfq')) {
-            send_bulk_notification_to_vendor_for_rfq($notificationData);
-        }
+    //     if (function_exists('send_bulk_notification_to_vendor_for_rfq')) {
+    //         send_bulk_notification_to_vendor_for_rfq($notificationData);
+    //     }
 
-        $mailData  = function_exists('getSystemEmail') ? getSystemEmail('user-success-action') : [];
-        $template  = $mailData[0]->content ?? '';
-        if (function_exists('str_replace_vendor_email_data')) {
-            $template = str_replace_vendor_email_data($template);
-        }
+    //     $mailData  = function_exists('getSystemEmail') ? getSystemEmail('user-success-action') : [];
+    //     $template  = $mailData[0]->content ?? '';
+    //     if (function_exists('str_replace_vendor_email_data')) {
+    //         $template = str_replace_vendor_email_data($template);
+    //     }
 
-        $adminMsg  = str_replace([
-            '$action_date','$from_time','$to_time','$rfqdate','$rfq_date_formate','$rfq_number','$buyer_name','$website_url'
-        ], [
-            $start->format('d/m/Y'), $start->format('H:i:s'), $end->format('H:i:s'),
-            date('d M Y'), date('d/m/Y'), $rfqNo, $buyerCompanyName, url('/')
-        ], $template);
+    //     $adminMsg  = str_replace([
+    //         '$action_date','$from_time','$to_time','$rfqdate','$rfq_date_formate','$rfq_number','$buyer_name','$website_url'
+    //     ], [
+    //         $start->format('d/m/Y'), $start->format('H:i:s'), $end->format('H:i:s'),
+    //         date('d M Y'), date('d/m/Y'), $rfqNo, $buyerCompanyName, url('/')
+    //     ], $template);
 
-        $subject = "Auction has been Scheduled for RFQ No.: ".$rfqNo;
-        $mails   = [];
+    //     $subject = "Auction has been Scheduled for RFQ No.: ".$rfqNo;
+    //     $mails   = [];
 
-        foreach ($vendorDetails as $vendor) {
-            $msg     = str_replace('$vendor_name', $vendor->legal_name, $adminMsg);
-            $mails[] = ['subject' => $subject, 'body' => $msg, 'to' => $vendor->email];
-        }
+    //     foreach ($vendorDetails as $vendor) {
+    //         $msg     = str_replace('$vendor_name', $vendor->legal_name, $adminMsg);
+    //         $mails[] = ['subject' => $subject, 'body' => $msg, 'to' => $vendor->email];
+    //     }
 
-        $this->sendEmailForActionDB($mails);
-    }
+    //     $this->sendEmailForActionDB($mails);
+    // }
 
-    private function sendEmailForActionDB(array $mailArr): void
-    {
-        $buyerId = Auth::id();
-        $rows = [];
-        foreach ($mailArr as $value) {
-            if (function_exists('isValidEmail') && isValidEmail($value['to'])) {
-                $rows[] = [
-                    'user_id'    => $buyerId,
-                    'email'      => $value['to'],
-                    'subject'    => $value['subject'],
-                    'mail_data'  => $value['body'],
-                    'created_at' => now(),
-                ];
-            }
-        }
-        if (!empty($rows)) {
-            DB::table('tbl_mail_data')->insert($rows);
-        }
-    }
+    // private function sendEmailForActionDB(array $mailArr): void
+    // {
+    //     $buyerId = Auth::id();
+    //     $rows = [];
+    //     foreach ($mailArr as $value) {
+    //         if (function_exists('isValidEmail') && isValidEmail($value['to'])) {
+    //             $rows[] = [
+    //                 'user_id'    => $buyerId,
+    //                 'email'      => $value['to'],
+    //                 'subject'    => $value['subject'],
+    //                 'mail_data'  => $value['body'],
+    //                 'created_at' => now(),
+    //             ];
+    //         }
+    //     }
+    //     if (!empty($rows)) {
+    //         DB::table('tbl_mail_data')->insert($rows);
+    //     }
+    // }
 
 
     # -------------------------------------------------------------------------

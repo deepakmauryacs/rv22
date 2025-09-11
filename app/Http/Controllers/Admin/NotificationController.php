@@ -22,6 +22,7 @@ class NotificationController extends Controller
     public function index(Request $request) {
         $this->ensurePermission('INTERNAL');
 
+        Notification::where('user_id',getParentUserId())->update(['status' => 1]);
         $query = Notification::with(['users', 'senders']);
 
         if ($request->filled('user')) {
@@ -40,6 +41,7 @@ class NotificationController extends Controller
             $query->where('status', $request->input('status'));
         }
 
+        $query->where('user_id',getParentUserId());
         $perPage = $request->input('per_page', 25); // default to 25 if not present
         $notifications = $query->paginate($perPage)->appends($request->all());
 

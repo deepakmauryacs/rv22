@@ -47,43 +47,71 @@ class RolePermissionController extends Controller
             ->get()
             ->map(function($module) {
                 // Define restricted slugs for different permission types
-            $restrictedSlugsForAdd = [
-                'EDIT_RFQ', 'ACTIVE_RFQS_CIS', 'TECHNICAL_APPROVAL_WITH_PRICE',
-                'COUNTER_OFFER_RFQ', 'SENT_RFQ','ORDERS_CONFIRMED_LISTING','UNAPPROVE_PO_LISTING','VENDORS_SEARCH','REPORTS - TOTAL RFQ CREATED','REPORTS - ORDER CONFIRMATION SUMMARY','   REPORTS - PRODUCT ORDERED DETAILS','REPORTS - VENDOR WISE ACTIVITY','MY PROFILE','CHANGE PASSWORD'
-            ];
-            
-            $restrictedSlugsForEdit = [
-                 'EDIT_RFQ',
-                'ACTIVE_RFGSCIS', 'TECHNICAL_APPROVAL', 'TECHNICAL_APPROVAL_WITH_PRICE',
-                 'COUNTER_OFFER_RFQ', 'TO_GENERATE_UNAPPROVE_PO',
-                'TO_CONFIRM_ORDER', 'CANCEL_ORDER', 'CLOSE_RFQ', 'UNAPPROVE_PO_LISTING', 'VENDORS_SEARCH',
-                'FAVOURITE_VENDORS', 'BLACKLISTED_VENDORS', 'REPORTS_TOTAL_RFQ_CREATED',
-                'REPORTS_ORDER_CONFIRMATION_SUMMARY', 'REPORTS_PRODUCT_ORDERED_DETAILS',
-                'REPORTS_VENDOR_WISE_ACTIVITY'
-            ];
-            
-            $restrictedSlugsForDelete = [
-                'GENERATE_NEW_RFQ', 'GENERATE_BULK_RFQ', 'EDIT_RFQ',
-                'ACTIVE_RFGSCIS', 'TECHNICAL_APPROVAL', 'TECHNICAL_APPROVAL_WITH_PRICE',
-                'COUNTER_OFFER_RFQ', 'TO_GENERATE_UNAPPROVE_PO',
-                'TO_CONFIRM_ORDER', 'CANCEL_ORDER', 'CLOSE_RFQ','SENT_RFQ', 'UNAPPROVE_PO_LISTING', 'VENDORS_SEARCH',
-                'FAVOURITE_VENDORS', 'BLACKLISTED_VENDORS', 'REPORTS_TOTAL_RFQ_CREATED',
-                'REPORTS_ORDER_CONFIRMATION_SUMMARY', 'REPORTS_PRODUCT_ORDERED_DETAILS',
-                'REPORTS_VENDOR_WISE_ACTIVITY', 'MY_PROFILE', 'MANAGE_USERS',
-                'CHANGE_PASSWORD'
-            ];
-            
-            $restrictedSlugsForView = [
-                'GENERATE_NEW_RFQ', 'GENERATE_BULK_RFQ', 'EDIT_RFQ',
-                'ACTIVE_RFGSCIS', 'TECHNICAL_APPROVAL', 'AUCTION',
-                'COUNTER_OFFER_RFQ', 'TO_GENERATE_UNAPPROVE_PO', 'TO_CONFIRM_ORDER',
-                'CANCEL_ORDER', 'CLOSE_RFQ', 'DRAFT_RFQ', 'SCHEDULED_RFQ',
-                'ORDERS_CONFIRMED_LISTING', 'VENDORS_SEARCH', 'FAVOURITE_VENDORS',
-                'BLACKLISTED_VENDORS', 'REPORTS_TOTAL_RFQ_CREATED',
-                'REPORTS_ORDER_CONFIRMATION_SUMMARY', 'REPORTS_PRODUCT_ORDERED_DETAILS',
-                'REPORTS_VENDOR_WISE_ACTIVITY', 'MY_PROFILE', 'MANAGE_USERS',
-                'MANAGE_ROLE'
-            ];
+            $restrictedSlugsForAdd = ['EDIT_RFQ',
+                                        'ACTIVE_RFQS_CIS',
+                                        'TECHNICAL_APPROVAL_WITH_PRICE',
+                                        'COUNTER_OFFER_RFQ',
+                                        'SENT_RFQ',
+                                        'ORDERS_CONFIRMED_LISTING',
+                                        'UNAPPROVE_PO_LISTING',
+                                        'VENDORS_SEARCH',
+                                        'REPORTS_TOTAL_RFQ_CREATED',
+                                        'REPORTS_ORDER_CONFIRMATION_SUMMARY',
+                                        'REPORTS_PRODUCT_ORDERED_DETAILS',
+                                        'REPORTS_VENDOR_WISE_ACTIVITY',
+                                        'MY_PROFILE',
+                                        'CHANGE_PASSWORD'];
+
+            $restrictedSlugsForEdit = ['GENERATE_NEW_RFQ',
+                                    'GENERATE_BULK_RFQ',
+                                    'TECHNICAL_APPROVAL',
+                                    'TECHNICAL_APPROVAL_WITH_PRICE',
+                                    'COUNTER_OFFER_RFQ',
+                                    'TO_GENERATE_UNAPPROVE_PO',
+                                    'TO_CONFIRM_ORDER',
+                                    'CANCEL_ORDER',
+                                    'CLOSE_RFQ',
+                                    'ORDERS_CONFIRMED_LISTING',
+                                    'UNAPPROVE_PO_LISTING',
+                                    'VENDORS_SEARCH',
+                                    'FAVOURITE_VENDORS',
+                                    'BLACKLISTED_VENDORS',
+                                    'REPORTS_TOTAL_RFQ_CREATED',
+                                    'REPORTS_ORDER_CONFIRMATION_SUMMARY',
+                                    'REPORTS_PRODUCT_ORDERED_DETAILS',
+                                    'REPORTS_VENDOR_WISE_ACTIVITY'];
+
+            $restrictedSlugsForDelete = ['GENERATE_NEW_RFQ',
+                                        'GENERATE_BULK_RFQ',
+                                        'EDIT_RFQ',
+                                        'ACTIVE_RFQS_CIS',
+                                        'TECHNICAL_APPROVAL',
+                                        'TECHNICAL_APPROVAL_WITH_PRICE',
+                                        'COUNTER_OFFER_RFQ',
+                                        'TO_GENERATE_UNAPPROVE_PO',
+                                        'TO_CONFIRM_ORDER',
+                                        'CANCEL_ORDER',
+                                        'CLOSE_RFQ',
+                                        'SENT_RFQ',
+                                        'ORDERS_CONFIRMED_LISTING',
+                                        'VENDORS_SEARCH',
+                                        'REPORTS_TOTAL_RFQ_CREATED',
+                                        'REPORTS_ORDER_CONFIRMATION_SUMMARY',
+                                        'REPORTS_PRODUCT_ORDERED_DETAILS',
+                                        'REPORTS_VENDOR_WISE_ACTIVITY',
+                                        'MY_PROFILE',
+                                        'MANAGE_USERS',
+                                        'MANAGE_ROLE',
+                                        'CHANGE_PASSWORD'];
+
+            $restrictedSlugsForView = ['GENERATE_NEW_RFQ',
+                                    'GENERATE_BULK_RFQ',
+                                    'EDIT_RFQ',
+                                    'TECHNICAL_APPROVAL',
+                                    'TO_GENERATE_UNAPPROVE_PO',
+                                    'CANCEL_ORDER',
+                                    'CLOSE_RFQ',
+                                    'CHANGE_PASSWORD'];
                 // Set available permissions based on slug restrictions
                 $module->available_permissions = [
                     'add' => !in_array($module->module_slug, $restrictedSlugsForAdd),
@@ -198,14 +226,72 @@ class RolePermissionController extends Controller
             ->get()
             ->map(function($module) use ($userRole) {
                 // Define restricted slugs for different permission types
-                $restrictedSlugsForAdd = ['ALL_VERIFIED_PRODUCTS','PRODUCTS_FOR_APPROVAL','NEW_PRODUCT_REQUEST','EDIT_PRODUCT','BUYER_MODULE','VENDOR_MODULE','BUYERS_ACCOUNTS','','VENDORS_ACCOUNTS','DIVISION_AND_CATEGORY_WISE','BUYER_TICKET_RAISED SUMMARY','VENDOR_TICKET_RAISED_SUMMARY','VENDOR_ACTIVITY_REPORTS','BUYER_ACTIVITY_REPORTS','BUYER_REPORTS','VENDOR_REPORTS','HELP_AND_SUPPORT','CHANGE_PASSWORD','BUYER_QUERY'];
+            $restrictedSlugsForAdd = ['EDIT_RFQ',
+                                        'ACTIVE_RFQS_CIS',
+                                        'TECHNICAL_APPROVAL_WITH_PRICE',
+                                        'COUNTER_OFFER_RFQ',
+                                        'SENT_RFQ',
+                                        'ORDERS_CONFIRMED_LISTING',
+                                        'UNAPPROVE_PO_LISTING',
+                                        'VENDORS_SEARCH',
+                                        'REPORTS_TOTAL_RFQ_CREATED',
+                                        'REPORTS_ORDER_CONFIRMATION_SUMMARY',
+                                        'REPORTS_PRODUCT_ORDERED_DETAILS',
+                                        'REPORTS_VENDOR_WISE_ACTIVITY',
+                                        'MY_PROFILE',
+                                        'CHANGE_PASSWORD'];
 
-                $restrictedSlugsForEdit = ['ALL_VERIFIED_PRODUCTS','DIVISION_AND_CATEGORY_WISE','BUYER_TICKET_RAISED SUMMARY','VENDOR_TICKET_RAISED_SUMMARY','VENDOR_ACTIVITY_REPORTS','BUYER_ACTIVITY_REPORTS','BUYER_REPORTS','VENDOR_REPORTS','BUYER_QUERY'];
+            $restrictedSlugsForEdit = ['GENERATE_NEW_RFQ',
+                                    'GENERATE_BULK_RFQ',
+                                    'TECHNICAL_APPROVAL',
+                                    'TECHNICAL_APPROVAL_WITH_PRICE',
+                                    'COUNTER_OFFER_RFQ',
+                                    'TO_GENERATE_UNAPPROVE_PO',
+                                    'TO_CONFIRM_ORDER',
+                                    'CANCEL_ORDER',
+                                    'CLOSE_RFQ',
+                                    'ORDERS_CONFIRMED_LISTING',
+                                    'UNAPPROVE_PO_LISTING',
+                                    'VENDORS_SEARCH',
+                                    'FAVOURITE_VENDORS',
+                                    'BLACKLISTED_VENDORS',
+                                    'REPORTS_TOTAL_RFQ_CREATED',
+                                    'REPORTS_ORDER_CONFIRMATION_SUMMARY',
+                                    'REPORTS_PRODUCT_ORDERED_DETAILS',
+                                    'REPORTS_VENDOR_WISE_ACTIVITY'];
 
-                $restrictedSlugsForDelete = ['PRODUCT_DIRECTORY','ALL_VERIFIED_PRODUCTS','PRODUCTS_FOR_APPROVAL','NEW_PRODUCT_REQUEST','EDIT_PRODUCT','BUYER_MODULE','VENDOR_MODULE','ADVERTISEMENT_AND_MARKETING','BUYERS_ACCOUNTS','','VENDORS_ACCOUNTS','PLAN_MODULE','DIVISION_AND_CATEGORY_WISE','BUYER_TICKET_RAISED SUMMARY','VENDOR_TICKET_RAISED_SUMMARY','VENDOR_ACTIVITY_REPORTS','BUYER_ACTIVITY_REPORTS','BUYER_REPORTS','VENDOR_REPORTS','ADMIN_USERS','MANAGE_ROLE','HELP_AND_SUPPORT','CHANGE_PASSWORD','BUYER_QUERY'];
+            $restrictedSlugsForDelete = ['GENERATE_NEW_RFQ',
+                                        'GENERATE_BULK_RFQ',
+                                        'EDIT_RFQ',
+                                        'ACTIVE_RFQS_CIS',
+                                        'TECHNICAL_APPROVAL',
+                                        'TECHNICAL_APPROVAL_WITH_PRICE',
+                                        'COUNTER_OFFER_RFQ',
+                                        'TO_GENERATE_UNAPPROVE_PO',
+                                        'TO_CONFIRM_ORDER',
+                                        'CANCEL_ORDER',
+                                        'CLOSE_RFQ',
+                                        'SENT_RFQ',
+                                        'ORDERS_CONFIRMED_LISTING',
+                                        'VENDORS_SEARCH',
+                                        'REPORTS_TOTAL_RFQ_CREATED',
+                                        'REPORTS_ORDER_CONFIRMATION_SUMMARY',
+                                        'REPORTS_PRODUCT_ORDERED_DETAILS',
+                                        'REPORTS_VENDOR_WISE_ACTIVITY',
+                                        'MY_PROFILE',
+                                        'MANAGE_USERS',
+                                        'MANAGE_ROLE',
+                                        'CHANGE_PASSWORD'];
 
-                $restrictedSlugsForView = ['CHANGE_PASSWORD'];
-
+            $restrictedSlugsForView = ['GENERATE_NEW_RFQ',
+                                    'GENERATE_BULK_RFQ',
+                                    'EDIT_RFQ',
+                                    'TECHNICAL_APPROVAL',
+                                    'TO_GENERATE_UNAPPROVE_PO',
+                                    'CANCEL_ORDER',
+                                    'CLOSE_RFQ',
+                                    'CHANGE_PASSWORD'];
+                // Set available permissions based on slug restrictions
                 // Get the role's existing permissions for this module
                 $rolePermissions = $userRole->permissions->where('module_id', $module->id)->first();
 

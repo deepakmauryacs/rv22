@@ -192,7 +192,8 @@ $(document).ready(function () {
                 traditional: false,
                 success: function (response) {
                     if (response.status === 1) {
-                        let inventories = response.data;
+                        // let inventories = response.data;
+                        let inventories = Object.values(response.data);
                         let tbodyHtml = '';
 
                         inventories.forEach(function (item) {

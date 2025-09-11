@@ -56,6 +56,7 @@ Route::get('/clear-cache', function () {
     return '<h1>Cache Cleared</h1>';
 });
 Route::get('/test-mail', [HomeController::class, 'index']);
+Route::post('/update-notification-status', [HomeController::class, 'updateNotificationStatus'])->name('update-notification-status');
 Route::get('/', [LoginController::class, 'showLoginForm']);
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('login.submit');
@@ -72,7 +73,7 @@ Route::post('/resend-verification-code', [RegisterController::class, 'resendVeri
 Route::middleware(['auth'])->group(function () {
     Route::controller(MessageController::class)->group(function () {
         Route::prefix('message')->group(function () {
-            Route::post('sshow-popup', 'create')->name('message.showPopUp');
+            Route::post('show-popup', 'create')->name('message.showPopUp');
             Route::post('store-message-data', 'storeMessageData')->name('message.storeMessageData');
         });
     });
@@ -113,6 +114,7 @@ Route::group(['prefix' => 'super-admin'], function () {
             Route::post('/get-state-by-country-id', [CommonController::class, 'getStateByCountryId'])->name('get-state-by-country-id');
             Route::post('/get-city-by-state-id', [CommonController::class, 'getCityByStateId'])->name('get-city-by-state-id');
         });
+        Route::post('/check_notification', [CommonController::class, 'notification'])->name('admin.check_notification');
 
         // User Roles
         Route::prefix('user-roles')->name('admin.')->group(function () {
@@ -396,8 +398,10 @@ Route::group(['prefix' => 'super-admin'], function () {
         });
 
         Route::prefix('vendor-activity-report')->name('admin.')->group(function () {
-            Route::get('/', [VendorActivityReportController::class, 'index'])
-                ->name('vendor-activity-report.index');
+            Route::get('/', [VendorActivityReportController::class, 'index'])->name('vendor-activity-report.index');
+            Route::get('/exportTotal', [VendorActivityReportController::class, 'exportTotal'])->name('vendor-activity-report.exportTotal');
+            Route::get('/exportBatch', [VendorActivityReportController::class, 'exportBatch'])->name('vendor-activity-report.exportBatch');
+
         });
 
     });

@@ -217,12 +217,13 @@ class LiveAuctionRfqSinglePriceController extends Controller
             $startTotal = $startTotalFromUI;
         }
 
-        if ($startTotal > 0 && $lotPrice > $startTotal) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'Your lot bid cannot exceed the Start Total (' . number_format($startTotal, 2) . ').',
-            ]);
-        }
+        // 11Sept25
+        // if ($startTotal > 0 && $lotPrice > $startTotal) {
+        //     return response()->json([
+        //         'status'  => false,
+        //         'message' => 'Your lot bid cannot exceed the Start Total (' . number_format($startTotal, 2) . ').',
+        //     ]);
+        // }
 
         $check = $this->checkRankByPrice(
             $rfqId,
@@ -463,12 +464,13 @@ class LiveAuctionRfqSinglePriceController extends Controller
             $effective_decrement = min($min_bid_decrement, $max_decrement);
             $total_bid_price    = round((float) $total_bid_price, 2);
 
-            if ($total_price > $total_bid_price) {
-                return [
-                    'status' => 2,
-                    'message' => 'You cannot enter a price higher than the start price ' . request()->input('vendor_currency') . $total_bid_price . '.'
-                ];
-            }
+            // 11Sept25
+            // if ($total_price > $total_bid_price) {
+            //     return [
+            //         'status' => 2,
+            //         'message' => 'You cannot enter a price higher than the start price ' . request()->input('vendor_currency') . $total_bid_price . '.'
+            //     ];
+            // }
 
             if ($effective_decrement > 0) {
                 $expected_min_price = round($total_bid_price - ($total_bid_price * ($effective_decrement / 100)), 2);

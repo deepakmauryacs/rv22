@@ -50,7 +50,9 @@ function IND_amount_format($amount) {
             </ol>
         </nav>
         <div>
+            @if($is_international_vendor=='0' && $is_international_buyer_check=='0')
             <h2 class="font-size-15 fw-bold">Please Quote Rate without GST</h2>
+            @endif
         </div>
     </div>
 
@@ -134,17 +136,17 @@ function IND_amount_format($amount) {
                         @php
                         $productVariants = $variants[$product->product_id] ?? collect();
                         $showCounterOffer = $productVariants->contains(function ($v) {
-                        $hasHistRel = !empty($v->buyer_counter_offers) && count($v->buyer_counter_offers) > 0;
-                        $hasSingle = !empty(optional($v->vendor_quotation)->counter_offer);
-                        return $hasHistRel || $hasSingle;
+                            $hasHistRel = !empty($v->buyer_counter_offers) && count($v->buyer_counter_offers) > 0;
+                            $hasSingle = !empty(optional($v->vendor_quotation)->counter_offer);
+                            return $hasHistRel || $hasSingle;
                         });
                         $showHistPrice = $productVariants->contains(function ($v) {
-                        $hasHistRel = !empty($v->vendor_price_history) && count($v->vendor_price_history) > 0;
-                        $hasSingle = !empty(optional($v->vendor_quotation)->hist_price);
-                        return $hasHistRel || $hasSingle;
+                            $hasHistRel = !empty($v->vendor_price_history) && count($v->vendor_price_history) > 0;
+                            $hasSingle = !empty(optional($v->vendor_quotation)->hist_price);
+                            return $hasHistRel || $hasSingle;
                         });
                         $showAttachment = $productVariants->contains(function ($v) {
-                        return !empty($v->attachment);
+                            return !empty($v->attachment);
                         });
                         @endphp
 
@@ -192,12 +194,19 @@ function IND_amount_format($amount) {
                                         {!! $variant->size !!}
                                         @endif
                                     </td>
-                                    <td class="text-center">{{ $variant->quantity }} {{ getUOMName($variant->uom) }}
+                                    <td class="text-center">
+                                        {{ $variant->quantity }} {{ getUOMName($variant->uom) }}
                                     </td>
                                     @if ($showAttachment)
                                     <td class="text-center">
                                         @if (!empty($variant->attachment))
-                                        <a href="{{ asset('public/uploads/rfq_product/sub_products/' . $variant->attachment) }}" target="_blank">View</a>
+                                        <a href="{{ asset('public/uploads/rfq-attachment/' . $variant->attachment) }}" target="_blank">
+                                            {!!
+                                                strlen($variant->attachment) > 10
+                                                    ? substr($variant->attachment, 0, 10)
+                                                    : $variant->attachment
+                                            !!}
+                                        </a>
                                         @endif
                                     </td>
                                     @endif
@@ -373,7 +382,7 @@ function IND_amount_format($amount) {
                             $fileName = $existingFile ? basename($existingFile) : 'Attach file';
                             @endphp
                             @if ($existingFile)
-                            <a href="{{ asset('public/uploads/rfq_product/sub_products/' . $existingFile) }}"
+                            <a href="{{ asset('public/uploads/rfq-attachment/' . $existingFile) }}"
                                 target="_blank" class="btn btn-link btn-sm ms-2" title="View file">
                                 {{ $existingFile }}
                             </a>
@@ -901,8 +910,8 @@ function rfq_counter_submit_data(_this, action) {
         contentType: false,
         success: function (response) {
             if (response.status) {
-                alert(response.message || "Submitted successfully.");
-                window.location.href = response.redirect_url || window.location.href;
+                // alert(response.message || "Submitted successfully.");
+                window.location.href = response.redirect_url;// || window.location.href;
             } else {
                 alert(response.message || "Something went wrong.");
             }

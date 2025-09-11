@@ -173,10 +173,18 @@ class CISController extends Controller
             'current_status'
         );
 
-        if ($request->input('export')) {
-            return Excel::download(new CisExport($data), "CIS-Sheet-{$rfq_id}-" . now()->format('d-m-Y') . ".xlsx");
-        }
+        /***:- download xlsx -:***/
+        if ($request->has('export') && $request->export == 'true') {
 
+
+            $filename = ('CIS-Sheet ' . $rfq['rfq_id'] . ' ') . date('d-m-Y') . ".xls";
+            header("Content-Type: application/vnd.ms-excel");
+            header("Content-disposition: attachment; filename=$filename");
+            echo view('buyer.rfq.cis.cis-export', $data);
+            exit;
+
+            // return Excel::download(new CisExport($data), "CIS-Sheet-{$rfq_id}-" . now()->format('d-m-Y') . ".xlsx");
+        }
         DB::table('rfqs')->where("rfq_id", $rfq_id)->update(['buyer_rfq_read_status' => 2]);
 
         return view('buyer.rfq.cis.rfq-cis', $data);
@@ -315,6 +323,7 @@ class CISController extends Controller
                 }
             }
             $updated_vendors = array_keys($updated_vendors);
+            
             if (!empty($updated_vendors)) {
                 // Update vendor_status to 4 for this vendor in the relevant table
                 DB::table('rfq_vendors')
@@ -366,7 +375,7 @@ class CISController extends Controller
                 $notification_data['rfq_no'] = $rfq_id;
                 $notification_data['message_type'] = 'Counter Offer Received';
                 $notification_data['notification_link'] = route("vendor.rfq.reply", ["rfq_id" => $rfq_id]); //route will change after RFQ Details page created on vendor side
-                $notification_data['to_user_id'] = array_keys($updated_vendors);
+                $notification_data['to_user_id'] = $updated_vendors;
                 $status = sendNotifications($notification_data);
             }
 
@@ -470,41 +479,39 @@ class CISController extends Controller
     public function last_cis_po(Request $request)
     {
         $this->ensurePermission('ACTIVE_RFQS_CIS', 'view', '1');
-        $rfq_id=$request->rfq_id;
-        $cis_po=$request->cis_po;
-        $product_id=$request->product_id;
-        $html='';
-        if($cis_po=='cis')
-        {
-            $rfq = Rfq::select('id','rfq_id','scheduled_date','created_at')->where('buyer_id', getParentUserId())
-                    ->where('rfq_id','!=', $rfq_id)
-                    ->whereHas('rfqProducts', function ($q) use ($product_id) {
-                        $q->where('product_id', $product_id);
-                    })->where('record_type',2)->whereNotIn('buyer_rfq_status',[1,2])
-                    ->orderBy('created_at', 'desc')
-                    ->limit(3)
-                    ->get();
-            if($rfq->isNotEmpty()){
-                foreach($rfq as $key => $value){
-                    $html.='<tr><td>'.(++$key).'</td><td>'.$value->rfq_id.'</td><td>'.date('d/m/Y', strtotime((!empty($value->scheduled_date)?$value->scheduled_date:$value->created_at))).'</td><td><a target="_blank" href="'.route('buyer.rfq.cis-sheet', $value->rfq_id).'">Click to View</a></td></tr>';
+        $rfq_id = $request->rfq_id;
+        $cis_po = $request->cis_po;
+        $product_id = $request->product_id;
+        $html = '';
+        if ($cis_po == 'cis') {
+            $rfq = Rfq::select('id', 'rfq_id', 'scheduled_date', 'created_at')->where('buyer_id', getParentUserId())
+                ->where('rfq_id', '!=', $rfq_id)
+                ->whereHas('rfqProducts', function ($q) use ($product_id) {
+                    $q->where('product_id', $product_id);
+                })->where('record_type', 2)->whereNotIn('buyer_rfq_status', [1, 2])
+                ->orderBy('created_at', 'desc')
+                ->limit(3)
+                ->get();
+            if ($rfq->isNotEmpty()) {
+                foreach ($rfq as $key => $value) {
+                    $html .= '<tr><td>' . (++$key) . '</td><td>' . $value->rfq_id . '</td><td>' . date('d/m/Y', strtotime((!empty($value->scheduled_date) ? $value->scheduled_date : $value->created_at))) . '</td><td><a target="_blank" href="' . route('buyer.rfq.cis-sheet', $value->rfq_id) . '">Click to View</a></td></tr>';
                 }
-            }else{
-                $html='<tr><td colspan="4">Last CIS not found for selected product</td></tr>';
+            } else {
+                $html = '<tr><td colspan="4">Last CIS not found for selected product</td></tr>';
             }
         }
-        if($cis_po=='po')
-        {
-            $query = Order::select('id','po_number','created_at')->with('order_variants')->where('buyer_id', getParentUserId())->where('order_status','!=','3');
+        if ($cis_po == 'po') {
+            $query = Order::select('id', 'po_number', 'created_at')->with('order_variants')->where('buyer_id', getParentUserId())->where('order_status', '!=', '3');
             $query->whereHas('order_variants', function ($q) use ($product_id) {
                 $q->where('product_id', $product_id);
             })->orderBy('created_at', 'desc')->limit(3);
             $rfq = $query->get();
-            if($rfq->isNotEmpty()){
-                foreach($rfq as $key => $value){
-                    $html.='<tr><td>'.(++$key).'</td><td>'.$value->po_number.'</td><td>'.date('d/m/Y', strtotime($value->created_at)).'</td><td><a target="_blank" href="'.route('buyer.rfq.order-confirmed.view', $value->id).'">Click to View</a></td></tr>';
+            if ($rfq->isNotEmpty()) {
+                foreach ($rfq as $key => $value) {
+                    $html .= '<tr><td>' . (++$key) . '</td><td>' . $value->po_number . '</td><td>' . date('d/m/Y', strtotime($value->created_at)) . '</td><td><a target="_blank" href="' . route('buyer.rfq.order-confirmed.view', $value->id) . '">Click to View</a></td></tr>';
                 }
-            }else{
-                $html='<tr><td colspan="4">Last PO not found for selected product</td></tr>';
+            } else {
+                $html = '<tr><td colspan="4">Last PO not found for selected product</td></tr>';
             }
         }
         return response()->json($html);

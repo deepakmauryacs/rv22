@@ -97,8 +97,8 @@
                                         @endphp
                                         <tr>
                                             <td class="module-name">
-                                                <input type="checkbox" class="module-check me-4"
-                                                    data-id="{{ $module->id }}">
+                                                <input type="checkbox" class="module-check me-4" data-id="{{ $module->id }}"
+                                                    {{ $rolePermissions && ($rolePermissions->can_add||$rolePermissions->can_edit||$rolePermissions->can_delete||$rolePermissions->can_view) ? 'checked' : '' }}>
                                                 <span class="font-size-11">{{ strtoupper($module->module_name) }}</span>
                                             </td>
                                             <td>
@@ -107,7 +107,7 @@
                                                     value="1" class="add-checkbox"
                                                     {{ $rolePermissions && $rolePermissions->can_add ? 'checked' : '' }}>
                                                 @else
-                                                <span>-</span>
+                                                <span>X</span>
                                                 @endif
                                             </td>
                                             <td>
@@ -116,7 +116,7 @@
                                                     value="1" class="edit-checkbox"
                                                     {{ $rolePermissions && $rolePermissions->can_edit ? 'checked' : '' }}>
                                                 @else
-                                                <span>-</span>
+                                                <span>X</span>
                                                 @endif
                                             </td>
                                             <td>
@@ -125,7 +125,7 @@
                                                     value="1" class="delete-checkbox"
                                                     {{ $rolePermissions && $rolePermissions->can_delete ? 'checked' : '' }}>
                                                 @else
-                                                <span>-</span>
+                                                <span>X</span>
                                                 @endif
                                             </td>
                                             <td>
@@ -134,7 +134,7 @@
                                                     value="1" class="view-checkbox"
                                                     {{ $rolePermissions && $rolePermissions->can_view ? 'checked' : '' }}>
                                                 @else
-                                                <span>-</span>
+                                                <span>X</span>
                                                 @endif
                                             </td>
                                         </tr>

@@ -486,24 +486,6 @@ $('#select-all-vendor').on('click', function() {
     markSelectedSelectAllCheckbox();
 });
 
-$(document).on('click', 'a', function() {
-    hrefAttribute = $(this).attr('href');
-    let hrefTarget = $(this).attr('target');
-    if(hrefTarget!='' && hrefTarget=="_blank"){
-        window.open(hrefAttribute, '_blank').focus();
-        return false;
-    }
-    if ($(this).hasClass("show-searched-product") || $(this).hasClass("menubtn") || $(this).hasClass("close-icon") || hrefAttribute.indexOf('#') > -1 ) {} else {
-        if ($(".product-form-section").length > 0) {
-            if (confirm('Are you sure, you want to leave the page?') === false) {
-                return false;
-            } else {
-                finalUpdateRFQ();
-                saveformData(hrefAttribute);
-            }
-        }
-    }
-});
 function saveformData(hreflocation = null) {
     if (hreflocation != null && hreflocation != '') {
         setTimeout(function() {

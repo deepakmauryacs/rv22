@@ -383,6 +383,12 @@ $(document).ready(function(){
     updateGrandTotal($inp.closest('table'));
   });
 
+  $(document).on('blur', '#minBidDecrement', function(){
+    const $inp = $(this);
+    const v = $inp.val();
+    const val = v === '' ? toNum($inp.attr('placeholder')) : toNum(v);
+    $inp.val(val ? val.toFixed(2) : '');
+  });
   $(document).on('blur', '.start-price', function(){
     const $inp = $(this);
     const v = $inp.val();

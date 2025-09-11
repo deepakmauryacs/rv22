@@ -179,4 +179,203 @@ class VendorActivityReportController extends Controller
 
         return view('admin.vendor-activity-report.index', ['vendors' => $vendors]);
     }
+
+    public function exportTotal(Request $request)
+    {
+        $vendorsQuery = Vendor::with([
+                'user:id,name,email,mobile,last_login',
+                'vendor_city:id,city_name',
+                'vendor_state:id,name',
+            ])
+            ->select([
+                'id',
+                'user_id',
+                'legal_name',
+                'created_at',
+                'gstin as gst_no',
+                'registered_address as address',
+                'city',
+                'state',
+            ])->where('t_n_c',1)
+            ->orderByDesc('created_at');
+
+        if ($request->filled('vendor_name')) {
+            $vendorsQuery->where('legal_name', 'like', '%' . $request->vendor_name . '%');
+        }
+
+        if ($request->filled('registered_address')) {
+            $vendorsQuery->where('registered_address', 'like', '%' . $request->registered_address . '%');
+        }
+
+        if ($request->filled('from_date')) {
+            $vendorsQuery->whereDate('created_at', '>=', $request->from_date);
+        }
+
+        if ($request->filled('to_date')) {
+            $vendorsQuery->whereDate('created_at', '<=', $request->to_date);
+        }
+
+        $total = $vendorsQuery->count();
+        return response()->json(['total' => $total]);
+    }
+
+    public function exportBatch(Request $request)
+    {
+        $offset = intval($request->input('start', 0));
+        $limit = intval($request->input('limit', 1000));
+
+        // Step 1: Prepare base query
+        $vendorsQuery = Vendor::with([
+                'user:id,name,email,mobile,last_login',
+                'vendor_city:id,city_name',
+                'vendor_state:id,name',
+            ])
+            ->select([
+                'id',
+                'user_id',
+                'legal_name',
+                'created_at',
+                'gstin as gst_no',
+                'registered_address as address',
+                'city',
+                'state',
+            ])
+            ->where('t_n_c', 1)
+            ->orderByDesc('created_at');
+
+        // Step 2: Apply filters
+        if ($request->filled('vendor_name')) {
+            $vendorsQuery->where('legal_name', 'like', '%' . $request->vendor_name . '%');
+        }
+
+        if ($request->filled('registered_address')) {
+            $vendorsQuery->where('registered_address', 'like', '%' . $request->registered_address . '%');
+        }
+
+        if ($request->filled('from_date')) {
+            $vendorsQuery->whereDate('created_at', '>=', $request->from_date);
+        }
+
+        if ($request->filled('to_date')) {
+            $vendorsQuery->whereDate('created_at', '<=', $request->to_date);
+        }
+
+        // Step 3: Paginate and fetch the data
+        $vendors = $vendorsQuery->skip($offset)->take($limit)->get();
+
+        $vendorIds = $vendors->pluck('id')->all();
+        $userIds   = $vendors->pluck('user_id')->all();
+
+        // Step 4: Summary data fetch
+        $rfqReceived = RfqVendor::whereIn('vendor_user_id', $userIds)
+            ->selectRaw('vendor_user_id, COUNT(*) as count')
+            ->groupBy('vendor_user_id')
+            ->pluck('count', 'vendor_user_id')
+            ->toArray();
+
+        $quotationGiven = DB::table('rfq_vendor_quotations as q')
+            ->join('rfq_vendors as v', 'q.vendor_id', '=', 'v.vendor_user_id')
+            ->join('rfq_product_variants as pv', function ($join) {
+                $join->on('q.rfq_product_variant_id', '=', 'pv.id')
+                    ->on('v.rfq_id', '=', 'pv.rfq_id');
+            })
+            ->whereIn('q.vendor_id', $userIds)
+            ->select('q.vendor_id', DB::raw('COUNT(q.id) as count'))
+            ->groupBy('q.vendor_id')
+            ->pluck('count', 'q.vendor_id')
+            ->toArray();
+
+        $confirmedOrders = Order::whereIn('vendor_id', $userIds)
+            ->where('order_status', 1)
+            ->select(DB::raw('vendor_id, COUNT(*) as count, SUM(order_total_amount) as total_value'))
+            ->groupBy('vendor_id')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                return [
+                    $item->vendor_id => [
+                        'count'       => $item->count,
+                        'total_value' => $item->total_value,
+                    ]
+                ];
+            })->toArray();
+
+        $verifiedProducts = VendorProduct::whereIn('vendor_id', $userIds)
+            ->where('vendor_status', 1)
+            ->select(DB::raw('vendor_id, COUNT(*) as count'))
+            ->groupBy('vendor_id')
+            ->pluck('count', 'vendor_id')
+            ->toArray();
+
+        $lastLogins = DB::table('user_session')
+            ->whereIn('user_id', $userIds)
+            ->select('user_id', DB::raw('MAX(updated_date) as last_login'))
+            ->groupBy('user_id')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                return [
+                    $item->user_id => (!empty($item->last_login) && $item->last_login !== '0000-00-00 00:00:00')
+                        ? date('d/m/Y', strtotime($item->last_login))
+                        : '-'
+                ];
+            })->toArray();
+
+        // Step 5: Map data
+        $summary = $vendors->map(function ($vendor) use (
+            $rfqReceived, $quotationGiven, $confirmedOrders, $verifiedProducts, $lastLogins
+        ) {
+            $user    = $vendor->user;
+            $userId  = $vendor->user_id;
+            $orders  = $confirmedOrders[$userId] ?? ['count' => 0, 'total_value' => 0];
+
+            return [
+                'user_id'                   => $userId,
+                'vendor_name'               => $vendor->legal_name,
+                'primary_contact'           => $user?->name ?? '-',
+                'phone_no'                  => $user?->mobile ?? '-',
+                'email'                     => $user?->email ?? '-',
+                'gst_no'                    => $vendor->gst_no,
+                'registered_address'        => $vendor->address,
+                'state'                     => $vendor->vendor_state?->name ?? '',
+                'city'                      => $vendor->vendor_city?->city_name ?? '',
+                'created'                   => optional($vendor->created_at)->format('d-m-Y') ?? '-',
+                'total_rfq_received'        => $rfqReceived[$userId] ?? 0,
+                'total_quotation'           => $quotationGiven[$userId] ?? 0,
+                'total_confirmed_orders'    => $orders['count'],
+                'value_of_confirmed_orders' => $orders['total_value'],
+                'no_of_verified_product'    => $verifiedProducts[$userId] ?? 0,
+                'last_login_date'           => $lastLogins[$userId] ?? '-',
+            ];
+        });
+
+        // Step 6: Format result for export
+        $result = [];
+        foreach ($summary as $vendor) {
+            $addressParts = array_filter([
+                $vendor['registered_address'],
+                $vendor['state'] ? "<b>{$vendor['state']}</b>" : null,
+                $vendor['city'] ? "<b>{$vendor['city']}</b>" : null,
+            ]);
+            $fullAddress = implode(', ', $addressParts);
+
+            $result[] = [
+                $vendor['vendor_name'],
+                $vendor['primary_contact'],
+                $vendor['phone_no'],
+                $vendor['email'],
+                $vendor['gst_no'],
+                $fullAddress,
+                getTotalUserAccountsByUserId($vendor['user_id']) . '/' . getNoOfUsersByUserId($vendor['user_id']),
+                $vendor['total_rfq_received'],
+                $vendor['total_quotation'],
+                $vendor['total_confirmed_orders'],
+                number_format($vendor['value_of_confirmed_orders'], 2),
+                $vendor['no_of_verified_product'],
+                $vendor['last_login_date']
+            ];
+        }
+
+        return response()->json(['data' => $result]);
+    }
+
+
 }

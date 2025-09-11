@@ -21,8 +21,8 @@
                 </p>
             </div>
             <p class="message-body-line">
-                <a href="{{$notification->link}}" target="_blank" rel="noopener noreferrer"> 
-                   {!! $notification->message ?? '' !!} 
+                <a href="{{$notification->link}}" target="_blank" rel="noopener noreferrer">
+                   {!! $notification->message ?? '' !!}
                    @php $key =$key==4 ? 0 : $key @endphp
                    <i class="bi bi-eye"></i>
                 </a>
@@ -101,4 +101,3 @@
 
 <x-paginationwithlength :paginator="$notifications" />
 
-    

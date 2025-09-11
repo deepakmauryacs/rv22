@@ -26,7 +26,7 @@
         </button>
       </div>
       <div class="brand">
-        <a class="logo-brand p-0" href="javascript:void(0)">
+        <a class="logo-brand p-0" href="{{route('vendor.dashboard')}}">
           <img alt="Raprocure logo" class="brand-logo-img" src="{{ asset('public/assets/images/rfq-logo.png') }}">
         </a>
       </div>

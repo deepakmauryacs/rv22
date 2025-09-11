@@ -47,7 +47,9 @@ class RfqReceivedController extends Controller
             })
             // Eager load relationships for table display
             ->with([
-                'rfqVendors',
+                'rfqVendors' => function ($q) use ($vendorId) {
+                    $q->where('vendor_user_id', $vendorId);
+                },
                 'rfqProducts',
                 'rfqProducts.masterProduct',
                 'buyer'
@@ -382,11 +384,11 @@ class RfqReceivedController extends Controller
                     $file = $request->file("vendor_attachment.$variantId");
 
                     // Delete old file if exists
-                    if ($attachmentPath && file_exists(public_path('uploads/rfq_product/sub_products/' . $attachmentPath))) {
-                        @unlink(public_path('uploads/rfq_product/sub_products/' . $attachmentPath));
+                    if ($attachmentPath && file_exists(public_path('uploads/rfq-attachment/' . $attachmentPath))) {
+                        @unlink(public_path('uploads/rfq-attachment/' . $attachmentPath));
                     }
 
-                    $uploadPath = public_path('uploads/rfq_product/sub_products');
+                    $uploadPath = public_path('uploads/rfq-attachment');
                     if (!file_exists($uploadPath)) {
                         mkdir($uploadPath, 0755, true);
                     }
@@ -484,12 +486,40 @@ class RfqReceivedController extends Controller
                         $this->updateRfqStatuses(9, 9, $rfq_id, $vendor_user_id);
                     }
                 }
+
+                $notification_type = "Counter Offer to Buyer";
+                if($vend_rfq_status==1){
+                    $notification_type = "Quotation to Buyer";
+                }
+
+                $notification_data = array();
+                $notification_data['rfq_no'] = $rfq_id;
+                $notification_data['message_type'] = $notification_type;
+                $notification_data['notification_link'] = route("buyer.rfq.cis-sheet", ['rfq_id'=>$rfq_id]);
+                $notification_data['to_user_id'] = $buyerSide->buyer_id;
+                sendNotifications($notification_data);
+
+                if($buyerSide->buyer_id != $buyerSide->buyer_user_id){
+                    $notification_data['to_user_id'] = $buyerSide->buyer_user_id;
+                    sendNotifications($notification_data);
+                }
+
+                // send mail if this is 3rd vendor
+                // $mail_data = getSystemEmail('CIS-prepared');
+                // if (($vendor_price_count == 2) && ($rfq->buyer_rfq_status != 7 || $rfq->vend_rfq_status != 9)) {
+                //     if (!in_array($vend_id, $quoted_vendors_id)) {
+                //         $this->send_mail_to_buyer_for_3_vendor($_POST['rfq_number']);
+                //     }
+                // }
             }
+
+            setSessionWithExpiry('counter_offer_rfq_number', ['rfq_id'=> $rfq_id, 'page' => ($vend_rfq_status==1 ? 'quotation' : 'counter-offer')]);
 
             DB::commit();
 
             return response()->json([
                 'status'  => true,
+                'redirect_url'  => route('vendor.rfq.success', ['rfq_id' => $rfq_id]),
                 'message' => 'RFQ ' . ($status === '2' ? 'saved' : 'submitted') . ' successfully!',
             ]);
 
@@ -501,6 +531,18 @@ class RfqReceivedController extends Controller
                 'message' => 'Something went wrong while processing your quotation.',
             ], 500);
         }
+    }
+
+    
+    public function success($rfq_id)
+    {
+        $session_rfq = getSessionWithExpiry('counter_offer_rfq_number');
+        if (empty($session_rfq) || $rfq_id != $session_rfq['rfq_id']) {
+            session()->flash('error', "Page has expired.");
+            return redirect()->route('vendor.dashboard');
+        }
+        $page = $session_rfq['page'];
+        return view('vendor.rfq-received.rfq-success', compact('rfq_id', 'page'));
     }
 
     /**

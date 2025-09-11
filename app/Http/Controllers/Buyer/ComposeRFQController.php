@@ -13,6 +13,7 @@ use App\Models\Vendor;
 use Illuminate\Support\Facades\Auth;
 use DB;
 use Illuminate\Support\Facades\Session;
+use App\Http\Controllers\Buyer\InventoryController;    
 // use App\Helpers\EmailHelper;
 use Carbon\Carbon;
 use App\Traits\HasModulePermission;
@@ -80,10 +81,26 @@ class ComposeRFQController extends Controller
             $rfq->record_type = 2;
             $rfq->buyer_rfq_status = $rfq_status;
             $rfq->save();
-
+            
             RfqProduct::where('rfq_id', $is_draft_exists->rfq_id)->update(['rfq_id'=>$rfq_number]);
             RfqProductVariant::where('rfq_id', $is_draft_exists->rfq_id)->update(['rfq_id'=>$rfq_number]);
             RfqVendor::where('rfq_id', $is_draft_exists->rfq_id)->update(['rfq_id'=>$rfq_number]);
+            //echo $rfq_number; die('AAAA');
+            /*need to webhook for inventory*/
+            $RfqProductVariants = RfqProductVariant::where('rfq_id', $rfq_number)->get();
+            foreach ($RfqProductVariants as $variant) {
+                $productId = $variant->product_id;
+                $specification = $variant->specification;
+                $size = $variant->size;
+                $uomId = $variant->uom;
+                $qty = $variant->quantity;
+                $branchId = $rfq->buyer_branch;
+                
+                $inventoryController = app(InventoryController::class);
+                $inventoryController->updateInventory($productId, $specification, $size, $uomId, $qty, $company_id, $branchId, $rfq_number);
+            }
+            /*need to webhook for inventory*/
+
 
             if (empty($is_draft_exists->scheduled_date)) {
                 $rfq_vendors = RfqVendor::with(

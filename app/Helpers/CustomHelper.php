@@ -380,6 +380,15 @@ if(!function_exists('sendNotifications')){
             'RFQ Edited' => (function () use ($notification_data, $sender_name) {
                 return "RFQ No. ".$notification_data['rfq_no']." has been edited. Update your quote accordingly.";
             })(),
+            'RFQ Auction' => (function () use ($notification_data, $sender_name) {
+                return "A new Auction has been scheduled. Time <b style='color:red;'>".$notification_data['auction_time']."</b> on <b style='color:red;'>".$notification_data['auction_date']."</b> for <b>".$notification_data['rfq_no']."</b> from <b>".$sender_name."</b> against RFQ No. ".$notification_data['rfq_no'].".";
+            })(),
+            'Quotation to Buyer' => (function () use ($notification_data, $sender_name) {
+                return "<b>".$sender_name."</b> has responded to your RFQ No. ".$notification_data['rfq_no'].". You can check their quote here.";
+            })(),
+            'Counter Offer to Buyer' => (function () use ($notification_data, $sender_name) {
+                return "<b>".$sender_name."</b> has responded to the counter offer for RFQ No. ".$notification_data['rfq_no'].". You can check their revised quote here.";
+            })(),
             // 'editor' => (function () {
             //     logAccess('editor');
             //     return 'Edit access granted';

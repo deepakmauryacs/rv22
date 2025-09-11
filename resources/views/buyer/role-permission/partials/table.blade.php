@@ -8,7 +8,7 @@
             <th class="text-center">Modified</th>
             <!-- <th width="15%">Actions</th> -->
         </tr>
-    </thead> 
+    </thead>
     <tbody>
         @php
             $i = ($results->currentPage() - 1) * $results->perPage() + 1;
@@ -19,7 +19,7 @@
                 <td>{{ ($results->currentPage() - 1) * $results->perPage() + $loop->iteration }}</td>
                 <td>{{ $result->role_name }}</td>
                 <td class="text-center w-200px">
-                    <a href="{{ route('buyer.role-permission.edit-role', $result->id) }}" class="btn-sm btn-rfq btn-rfq-white width-inherit px-2 py-1">
+                    <a href="{{ route('buyer.role-permission.edit-role', $result->id) }}" class="btn-sm btn-rfq btn-rfq-white width-inherit px-2 py-1 border">
                         <i class="bi bi-lock-fill"></i>
                     </a>
                 </td>

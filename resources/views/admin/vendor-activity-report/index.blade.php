@@ -63,7 +63,7 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="bi bi-journal-text"></i></span>
                                             <div class="form-floating">
-                                                <input type="text" name="product_name" class="form-control fillter-form-control" value="{{ request('register_address') }}" placeholder="Register Address">
+                                                <input type="text" name="registered_address" class="form-control fillter-form-control" value="{{ request('registered_address') }}" placeholder="Register Address">
                                                 <label>Register Address</label>
                                             </div>
                                         </div>
@@ -149,64 +149,7 @@ $(document).ready(function() {
         });
     }
 });
-$(document).ready(function() {
-    // When "Select All" is clicked
-    $('#select-all-products').on('change', function() {
-        $('.product-checkbox').prop('checked', this.checked);
-    });
 
-    // When any individual checkbox is clicked
-    $('.product-checkbox').on('change', function() {
-        // If any checkbox is unchecked, uncheck "Select All"
-        if (!$(this).prop('checked')) {
-            $('#select-all-products').prop('checked', false);
-        } else {
-            // If all checkboxes are checked, check "Select All"
-            if ($('.product-checkbox:checked').length === $('.product-checkbox').length) {
-                $('#select-all-products').prop('checked', true);
-            }
-        }
-    });
-});
-$(document).on('click', '#delete-selected', function () {
-    let productIds = [];
-    let vendorIds = [];
-
-    $('.row-checkbox:checked').each(function () {
-        productIds.push($(this).data('product-id'));
-        vendorIds.push($(this).data('vendor-id'));
-    });
-
-    if (productIds.length === 0) {
-        alert("Please select at least one product to delete.");
-        return;
-    }
-
-    if (confirm("Are you sure you want to delete the selected products?")) {
-        $.ajax({
-            url: "{{ route('admin.vendor-disabled-product-report.bulkDelete') }}", // Laravel route
-            type: 'POST',
-            data: {
-                product_ids: productIds,
-                vendor_ids: vendorIds,
-                _token: '{{ csrf_token() }}' // CSRF token for Laravel
-            },
-            dataType: 'json',
-            success: function (response) {
-                if (response.status === 1) {
-                    toastr.success(response.message1);
-                    toastr.error(response.message2);
-                    // location.reload();
-                } else {
-                    alert(response.message);
-                }
-            },
-            error: function () {
-                alert("An error occurred while deleting products. Please try again.");
-            }
-        });
-    }
-});
 </script>
 <script src="{{ asset('public/assets/xlsx/xlsx.full.min.js') }}"></script>
 <script src="{{ asset('public/assets/xlsx/export.js') }}"></script>
@@ -216,15 +159,24 @@ $(document).ready(function () {
         chunkSize: 1000,
         rowLimitPerSheet: 200000,
         headers: [
-            "Vendor Name",
-            "Product Name",
-            "Division > Category",
-            "Date"
+            "Name Of Vendor",
+            "Primary Contact",
+            "Phone No",
+            "Email",
+            "GST No",
+            "Registered Address (Address,City,State)",
+            "No. of Accounts",
+            "Total RFQ Received",
+            "Total Quotation Given",
+            "Total Confirmed Orders (Received)",
+            "Value (Of Confirmed Orders)",
+            "No. Of Verified Product",
+            "Last Login Date"
         ],
-        totalUrl: "{{ route('admin.vendor-disabled-product-report.exportTotal') }}",
-        batchUrl: "{{ route('admin.vendor-disabled-product-report.exportBatch') }}",
+        totalUrl: "{{ route('admin.vendor-activity-report.exportTotal') }}",
+        batchUrl: "{{ route('admin.vendor-activity-report.exportBatch') }}",
         token: "{{ csrf_token() }}",
-        exportName: "Disabled-Products-Report",
+        exportName: "Vendor-Activity-Reportt",
         expButton: '#export-btn',
         exportProgress: '#export-progress',
         progressText: '#progress-text',
@@ -232,8 +184,10 @@ $(document).ready(function () {
         fillterReadOnly: '.fillter-form-control',
         getParams: function () {
             return {
-                product_name: $('[name="product_name"]').val(),
-                vendor_name: $('[name="vendor_name"]').val()
+                vendor_name: $('[name="vendor_name"]').val(),
+                registered_address: $('[name="registered_address"]').val(),
+                from_date: $('[name="from_date"]').val(),
+                to_date: $('[name="to_date"]').val(),
             };
         }
     });

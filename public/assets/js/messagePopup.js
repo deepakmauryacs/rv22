@@ -59,8 +59,8 @@ function initFileUpload() {
 // End of Custom file input button
 let ckEditorInstance = null;
 
-function initCkEditor(initialData = '') {
-    const editorElement = document.querySelector('#msg');
+function initCkEditor(initialData = '', idSelector = "#msg") {
+    const editorElement = document.querySelector(idSelector);
 
     if (!editorElement) {
         console.warn('CKEditor target #msg not found');

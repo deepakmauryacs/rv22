@@ -20,6 +20,8 @@ use Illuminate\Support\Facades\{
 use App\Rules\NoSpecialCharacters;
 use App\Traits\TrimFields;
 
+
+
 class InventoryController extends Controller
 {
     use TrimFields;
@@ -1088,14 +1090,14 @@ class InventoryController extends Controller
 
 
     //------------------------------------------------------Update Inventory---------------------------------------------------
-    public function updateInventory($productId, $specification, $size, $uomId, $qty, $companyId, $branchId,$rfqId)
+    public function updateInventory($productId, $specification, $size, $uomId, $qty, $companyId, $branchId, $rfqId)
     {
         DB::beginTransaction();
 
         try {
-            $spec = strtolower(trim($specification));
-            $sz   = strtolower(trim($size));
-
+            $spec = trim($specification);
+            $sz   = trim($size);
+            
             // Check or create inventory
             $inventory = Inventories::firstOrCreate([
                 'product_id'    => $productId,
@@ -1110,15 +1112,30 @@ class InventoryController extends Controller
                 'created_by'    => Auth::user()->id,
                 'created_at'    => now(),
             ]);
-
+            
             //update inventory id
-            RfqProductVariant::where('product_id', $productId)
-                ->where('specification', $spec)
-                ->where('size', $sz)
-                ->where('rfq_id', $rfqId)
-                ->update(['inventory_id' => $inventory->id]);
+            $query = RfqProductVariant::where('product_id', $productId)
+                ->where('rfq_id', $rfqId);
 
+            if (empty($spec)) {
+                $query->whereNull('specification');
+            } else {
+                $query->where('specification', $spec);
+            }
 
+            if (empty($sz)) {
+                $query->whereNull('size');
+            } else {
+                $query->where('size', $sz);
+            }
+
+            $query->update([
+                'inventory_id' => $inventory->id,
+                'updated_at' => now()
+            ]);
+            
+
+            
             //Get open RFQ quantity (status not in 8, 10)
             $openRfqQty = RfqProductVariant::where('inventory_id', $inventory->id)
                             ->where('inventory_status', 1)
@@ -1129,7 +1146,7 @@ class InventoryController extends Controller
                         })
                         ->sum('quantity');
 
-
+                     
             // Get existing indent quantity
             $existingIndentQty = Indent::where('inventory_id', $inventory->id)
                 ->where('closed_indent', 2)
@@ -1140,6 +1157,7 @@ class InventoryController extends Controller
 
             // Insert indent if shortfall
             // if ($totalCommitted < $qty) {
+            echo $existingIndentQty.'-'.$openRfqQty; //die();
             if ($existingIndentQty < $openRfqQty) {
                 // $indentQty = $qty - $totalCommitted;
                 $indentQty = $openRfqQty - $existingIndentQty;

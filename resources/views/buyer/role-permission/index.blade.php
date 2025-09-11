@@ -1,6 +1,7 @@
 @extends('buyer.layouts.app', ['title'=>'Manage Role'])
 
 @section('css')
+<link rel="stylesheet" href="{{ asset('public/assets/buyer/css/toggal.css') }}" />
 @endsection
 
 @section('content')
@@ -26,5 +27,34 @@
 @endsection
 
 @section('scripts')
+<script>
+     // Status toggle handler
+    $('.status-toggle').on('change', function() {
+        const roleId = $(this).data('id');
+        const isActive = $(this).is(':checked');
 
+        $.ajax({
+            url: "{{ route('buyer.role-permission.status', ['id' => ':id']) }}".replace(':id', roleId),
+            type: 'PUT',
+            data: {
+                _token: "{{ csrf_token() }}",
+                is_active: isActive ? 1 : 0
+            },
+            beforeSend: function() {
+                $(`#status-${roleId}`).prop('disabled', true);
+            },
+            success: function(response) {
+                toastr.success(response.message || 'Status updated successfully');
+            },
+            error: function(xhr) {
+                // Revert the toggle on error
+                $(`#status-${roleId}`).prop('checked', !isActive);
+                toastr.error(xhr.responseJSON?.message || 'Error updating status');
+            },
+            complete: function() {
+                $(`#status-${roleId}`).prop('disabled', false);
+            }
+        });
+    });
+</script>
 @endsection

@@ -18,6 +18,7 @@ class NotificationController extends Controller
     }
 
     public function index(Request $request) {
+        Notification::where('user_id',getParentUserId())->update(['status' => 1]);
         $query = Notification::with(['users', 'senders']);
 
         if ($request->filled('user')) {

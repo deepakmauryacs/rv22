@@ -239,6 +239,8 @@ class AuctionCISController extends Controller
             }
         }
 
+        $liveAuction = $auction;
+
         // 12) Render
         return view('buyer.auction.cis.rfq-cis', compact(
             'uom',
@@ -249,6 +251,7 @@ class AuctionCISController extends Controller
             'is_date_filter',
             'currencies',
             'auction',
+            'liveAuction',
             'editId',
             'selectedVendorIds',
             'prefill',

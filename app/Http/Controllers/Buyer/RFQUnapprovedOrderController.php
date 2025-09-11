@@ -388,9 +388,10 @@ class RFQUnapprovedOrderController extends Controller
     public function generatePO(Request $request)
     {
         $this->ensurePermission('TO_GENERATE_UNAPPROVE_PO', 'add', '1');
+        $company_id = getParentUserId();
 
-        /***:- validate the request  -:***/
-        $request->validate([
+        /***:- validation rule  -:***/
+        $rules = [
             'rfq_id' => 'required|exists:rfqs,rfq_id',
             'vendor_id' => 'required|integer|exists:users,id',
             'order_price_basis' => 'required',
@@ -410,9 +411,19 @@ class RFQUnapprovedOrderController extends Controller
             'variants.*.order_discount' => 'required|numeric|min:0|max:100|regex:/^\d+(\.\d{1,2})?$/',
             'variants.*.order_price' => 'required|numeric|min:0|regex:/^\d+(\.\d{1,2})?$/',
 
-            'variants.*.product_gst' => 'required|numeric|min:0',
             'variants.*.rfq_id' => 'required|exists:rfqs,rfq_id',
-        ]);
+        ];
+
+        /***:- Conditionally add GST validation if both are national  -:***/
+        if (is_national($request->input('vendor_id')) && is_national_buyer($company_id)) {
+            $rules['variants.*.product_gst'] = 'required|numeric|min:0';
+        } else {
+            $rules['variants.*.product_gst'] = 'nullable|numeric|min:0';
+        }
+
+
+        /***:- validate the request  -:***/
+        $request->validate($rules);
 
 
 
@@ -420,7 +431,7 @@ class RFQUnapprovedOrderController extends Controller
         try {
             $grandTotal = 0;
             $po_number = $this->generateUnapprovedPoId($request->rfq_id);
-            $company_id = getParentUserId();
+
 
             /***:- Create the order  -:***/
             $order = Order::create([
@@ -454,7 +465,15 @@ class RFQUnapprovedOrderController extends Controller
                 $discountedPrice = $price - ($price * $discount / 100);
                 $amount = $qty * $discountedPrice;
 
-                $gst = isset($variant['product_gst']) ? (float) $variant['product_gst'] : 0;
+                $gst = 0;
+                $product_gst = 0;
+
+                /***:- check international buyer or vendor  -:***/
+                if (is_national($request->input('vendor_id')) && is_national_buyer($company_id)) {
+                    $gst = isset($variant['product_gst']) ? (float) $variant['product_gst'] : 0;
+                    $product_gst =  $gst;
+                }
+
                 if ($gst > 0) {
                     $amount += ($amount * $gst / 100);
                 }
@@ -469,7 +488,7 @@ class RFQUnapprovedOrderController extends Controller
                     "order_mrp" => $variant['order_mrp'],
                     "order_discount" => $variant['order_discount'],
                     "order_price" => $variant['order_price'],
-                    "product_gst" => $variant['product_gst'],
+                    "product_gst" => $product_gst,
                     "po_number" => $po_number
                 ];
             }

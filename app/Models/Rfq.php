@@ -285,28 +285,28 @@ class Rfq extends Model
                 },
 
                 // Load auction prices with aliases to match rfqVendorQuotations
-                'rfqVendorAuctionPrices' => function ($q) {
-                    $q->select([
-                        'id',
-                        'rfq_no',
-                        \DB::raw('NULL as rfq_id'),
-                        'vendor_id',
-                        \DB::raw('rfq_product_veriant_id as rfq_product_variant_id'),
-                        \DB::raw('vend_price as price'),
-                        \DB::raw('NULL as mrp'),
-                        \DB::raw('NULL as discount'),
-                        \DB::raw('0 as buyer_price'),
-                        \DB::raw('NULL as vendor_brand'),
-                        \DB::raw('vend_specs as vendor_remarks'),
-                        \DB::raw('NULL as vendor_additional_remarks'),
-                        \DB::raw('vend_price_basis as vendor_price_basis'),
-                        \DB::raw('vend_payment_terms as vendor_payment_terms'),
-                        \DB::raw('vend_delivery_period as vendor_delivery_period'),
-                        \DB::raw('vend_currency as vendor_currency'),
-                        'created_at',
-                        'updated_at',
-                    ])->orderBy('id', 'desc');
-                },
+                // 'rfqVendorAuctionPrices' => function ($q) {
+                //     $q->select([
+                //         'id',
+                //         'rfq_no',
+                //         \DB::raw('NULL as rfq_id'),
+                //         'vendor_id',
+                //         \DB::raw('rfq_product_veriant_id as rfq_product_variant_id'),
+                //         \DB::raw('vend_price as price'),
+                //         \DB::raw('NULL as mrp'),
+                //         \DB::raw('NULL as discount'),
+                //         \DB::raw('0 as buyer_price'),
+                //         \DB::raw('NULL as vendor_brand'),
+                //         \DB::raw('vend_specs as vendor_remarks'),
+                //         \DB::raw('NULL as vendor_additional_remarks'),
+                //         \DB::raw('vend_price_basis as vendor_price_basis'),
+                //         \DB::raw('vend_payment_terms as vendor_payment_terms'),
+                //         \DB::raw('vend_delivery_period as vendor_delivery_period'),
+                //         \DB::raw('vend_currency as vendor_currency'),
+                //         'created_at',
+                //         'updated_at',
+                //     ])->orderBy('id', 'desc');
+                // },
 
                 'rfqVendors' => function ($q) {
                     $q->select('id', 'rfq_id', 'vendor_user_id', 'product_id', 'vendor_status');
@@ -348,9 +348,9 @@ class Rfq extends Model
             ->first();
 
         // If auction bids exist, override rfqVendorQuotations with them
-        if ($cis && $cis->relationLoaded('rfqVendorAuctionPrices') && $cis->rfqVendorAuctionPrices->count() > 0) {
-            $cis->setRelation('rfqVendorQuotations', $cis->rfqVendorAuctionPrices);
-        }
+        // if ($cis && $cis->relationLoaded('rfqVendorAuctionPrices') && $cis->rfqVendorAuctionPrices->count() > 0) {
+        //     $cis->setRelation('rfqVendorQuotations', $cis->rfqVendorAuctionPrices);
+        // }
 
         $cis_filter = self::cisFilter($rfq_id);
 

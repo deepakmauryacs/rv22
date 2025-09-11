@@ -52,13 +52,15 @@ use App\Http\Controllers\Buyer\AuctionCISController;
 
 Route::name('buyer.')->group(function () {
 
-    Route::middleware(['auth', 'validate_account', 'usertype:1', 'permission'])->group(function () {
+    Route::middleware(['auth', 'validate_account', 'usertype:1'])->group(function () {
 
         // common routes
         Route::post('/get-state-by-country-id', [CommonController::class, 'getStateByCountryId'])->name('get-state-by-country-id');
         Route::post('/get-city-by-state-id', [CommonController::class, 'getCityByStateId'])->name('get-city-by-state-id');
+        Route::post('/check_notification', [CommonController::class, 'notification'])->name('check_notification');
 
-        Route::prefix('profile')->group(function() {
+
+        Route::prefix('profile')->group(function () {
             Route::get('/', [BuyerProfileController::class, 'index'])->name('profile');
             Route::post('/validate-buyer-gstin-vat', [BuyerProfileController::class, 'validateBuyerGSTINVat'])->name('validate-buyer-gstin-vat');
             Route::post('/validate-buyer-short-code', [BuyerProfileController::class, 'validateBuyerShortCode'])->name('validate-buyer-short-code');
@@ -108,6 +110,7 @@ Route::name('buyer.')->group(function () {
 
                 Route::get('active-rfq', [ActiveRFQController::class, 'index'])->name('rfq.active-rfq');
                 Route::get('sent-rfq', [ActiveRFQController::class, 'sent_rfq'])->name('rfq.sent-rfq');
+                Route::post('reuse-rfq', [ActiveRFQController::class, 'reuseRFQ'])->name('rfq.reuse');
                 Route::get('rfq-details/{rfq_id}', [ActiveRFQController::class, 'rfq_details'])->name('rfq.details');
                 Route::post('close-rfq', [ActiveRFQController::class, 'closeRFQ'])->name('rfq.close');
                 Route::post('edit-rfq', [ActiveRFQController::class, 'editRFQ'])->name('rfq.edit');
@@ -131,7 +134,7 @@ Route::name('buyer.')->group(function () {
             });
 
 
-            Route::prefix('unapproved-orders')->group(function() {
+            Route::prefix('unapproved-orders')->group(function () {
                 Route::get('list', [RFQUnapprovedOrderController::class, 'index'])->name('unapproved-orders.list');
                 Route::get('create/{rfq_id}', [RFQUnapprovedOrderController::class, 'create'])->name('unapproved-orders.create');
                 Route::post('generate-po', [RFQUnapprovedOrderController::class, 'generatePO'])->name('unapproved-orders.generatePO');
@@ -177,7 +180,7 @@ Route::name('buyer.')->group(function () {
             });
 
 
-            Route::prefix('ajax')->group(function() {
+            Route::prefix('ajax')->group(function () {
 
                 Route::post('get-vendor-product', [VendorProductController::class, 'getVendorProduct'])->name('vendor.get-product');
 
@@ -424,7 +427,7 @@ Route::name('buyer.')->group(function () {
                         Route::post('grn/export', [GrnController::class, 'exportGrnReport'])->name('exportGrnReport');
                         Route::post('grn/data', [GrnController::class, 'fetchGrnRowdata'])->name('fetchGrnRowdata');
                         Route::post('grn/updatedata', [GrnController::class, 'editGrnRowdata'])->name('editGrnRowdata');
-                        Route::get('grn/downloaddata/{id}', [GrnController::class,'downloadGrnRowdata'])->name('downloadGrnRowdata');
+                        Route::get('grn/downloaddata/{id}', [GrnController::class, 'downloadGrnRowdata'])->name('downloadGrnRowdata');
 
                         //prndinggrn reports
                         Route::get('pendingGrn/listdata', [GrnController::class, 'pendingGrnReportlistdata'])->name('pendingGrnReportlistdata');
@@ -478,7 +481,6 @@ Route::name('buyer.')->group(function () {
                     Route::get('/', 'index')->name('message.index');
                 });
             });
-
         });
 
         Route::get('forward-auction/view/{auction}', [ForwardAuctionController::class, 'view'])->name('forward-auction.show');

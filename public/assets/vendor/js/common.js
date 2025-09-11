@@ -199,19 +199,20 @@ document.querySelectorAll('.toggle-table-wrapper').forEach(wrapper => {
   const toggleBtn = wrapper.querySelector('.toggle-table-button');
   const toggleContent = wrapper.querySelector('.toggle-table-content');
   const toggleIcon = wrapper.querySelector('.toggle-icon');
-
-  toggleBtn.addEventListener('click', () => {
-    const isVisible = toggleContent.style.display !== 'none';
-    toggleContent.style.display = isVisible ? 'none' : 'block';
-    
-    toggleBtn.className = isVisible 
-      ? 'toggle-table-button ra-btn btn-show-hide bg-success' 
-      : 'toggle-table-button ra-btn btn-show-hide bg-danger';
+  if(toggleBtn){
+    toggleBtn.addEventListener('click', () => {
+      const isVisible = toggleContent.style.display !== 'none';
+      toggleContent.style.display = isVisible ? 'none' : 'block';
       
-    toggleIcon.className = isVisible 
-      ? 'toggle-icon bi bi-plus-lg' 
-      : 'toggle-icon bi bi-dash-lg';
-  });
+      toggleBtn.className = isVisible 
+        ? 'toggle-table-button ra-btn btn-show-hide bg-success' 
+        : 'toggle-table-button ra-btn btn-show-hide bg-danger';
+        
+      toggleIcon.className = isVisible 
+        ? 'toggle-icon bi bi-plus-lg' 
+        : 'toggle-icon bi bi-dash-lg';
+    });
+  }
 });
 
 // End of Suggestion Dropdown in Multi Product add

@@ -98,28 +98,28 @@
                                                 @if($module->available_permissions['add'])
                                                 <input type="checkbox" name="permissions[{{ $module->id }}][add]" value="1" class="add-checkbox">
                                                 @else
-                                                <span>-</span>
+                                                <span>X</span>
                                                 @endif
                                             </td>
                                             <td>
                                                 @if($module->available_permissions['edit'])
                                                 <input type="checkbox" name="permissions[{{ $module->id }}][edit]" value="1" class="edit-checkbox">
                                                 @else
-                                                <span>-</span>
+                                                <span>X</span>
                                                 @endif
                                             </td>
                                             <td>
                                                 @if($module->available_permissions['delete'])
                                                 <input type="checkbox" name="permissions[{{ $module->id }}][delete]" value="1" class="delete-checkbox">
                                                 @else
-                                                <span>-</span>
+                                                <span>X</span>
                                                 @endif
                                             </td>
                                             <td>
                                                 @if($module->available_permissions['view'])
                                                 <input type="checkbox" name="permissions[{{ $module->id }}][view]" value="1" class="view-checkbox">
                                                 @else
-                                                <span>-</span>
+                                                <span>X</span>
                                                 @endif
                                             </td>
                                         </tr>

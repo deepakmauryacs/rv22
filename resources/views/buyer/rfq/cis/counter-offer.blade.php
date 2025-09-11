@@ -309,16 +309,6 @@
                                                 {{-- <td class="align-middle p-1"></td> --}}
                                             </tr>
                                             <tr>
-                                                <td class="align-middle p-1" scope="row">Technical Approval</td>
-                                                <td class="align-middle p-1" colspan="4"></td>
-                                                {{-- <td class="align-middle p-1"></td> --}}
-                                            </tr>
-                                            <tr>
-                                                <td class="align-middle p-1 text-nowrap" scope="row">Technical Approval Remarks </td>
-                                                <td class="align-middle p-1" colspan="4"></td>
-                                                {{-- <td class="align-middle p-1"></td> --}}
-                                            </tr>
-                                            <tr>
                                                 <td class="align-middle p-1 bg-pink fw-bold" scope="row" colspan="5">
                                                     Company Information
                                                 </td>
@@ -645,32 +635,6 @@
                                                         <span class="bi bi-info-circle-fill text-dark font-size-11" aria-hidden="true"></span>
                                                     </span>
                                                     @endif
-                                                </td>
-                                                @endforeach
-                                            </tr>
-                                            <tr>
-                                                @foreach($cis['vendors'] as $vendor_id => $vendor)
-                                                    @php
-                                                        if(!empty($cis['filter_vendors']) && !in_array($vendor_id, $cis['filter_vendors'])) {
-                                                            continue;
-                                                        }
-                                                    @endphp
-                                                <td class="product-price p-1 align-middle text-center">
-                                                    <span role="button" type="button" class="p-0" data-bs-toggle="modal" data-bs-target="#viewTechApprovalModal" title="Technical Approval">
-                                                        <span class="bi bi-eye-fill text-dark font-size-14" aria-hidden="true"></span>
-                                                    </span>
-                                                </td>
-                                                @endforeach
-                                            </tr>
-                                            <tr>
-                                                @foreach($cis['vendors'] as $vendor_id => $vendor)
-                                                    @php
-                                                        if(!empty($cis['filter_vendors']) && !in_array($vendor_id, $cis['filter_vendors'])) {
-                                                            continue;
-                                                        }
-                                                    @endphp
-                                                <td class="product-price p-1 align-middle text-center">
-                                                    <span title=""></span>
                                                 </td>
                                                 @endforeach
                                             </tr>

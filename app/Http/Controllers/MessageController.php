@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class MessageController extends Controller
 {
@@ -62,58 +63,79 @@ class MessageController extends Controller
      */
     public function storeMessageData(Request $request, $draft = null)
     {
+
         try {
+            DB::beginTransaction();
             $message_type = 'raprocure';
             $type = 'compose_email';
             $email_label_id = 5;
-            $receiver_id = $request->receiverId;
-            $sender_id = $request->senderId;
+            if ($request->has('vendors')) {
+                // $receiver_id = $request->receiverId;
+                $sender_id = Auth::user()->id;
+            } else {
+                //$receiver_id = $request->receiverId;
+                $sender_id = $request->senderId;
+            }
             $subject = $request->subject;
-            $message = $request->message;
+            $messageData = $request->message;
 
-            $receiverUser = User::find($receiver_id);
-            $type_message =  $receiverUser->user_type == 1 || $receiverUser->user_type == 2 ? 2 : 3;
+            $multiReceiver = $request->has('vendors') ? $request->vendors : [$request->receiverId];
 
-            $message = Message::create([
-                'subject' => $subject,
-                'message' => $message,
-                'email_label_id' =>  $email_label_id,
-                'type_message' => $type_message,
-                'type' => 'compose_email',
-                'parent_id' => null,
-            ]);
 
+            /***:- save attachment  -:***/
+            $filePath = '';
+            $fileName = '';
             if ($request->hasFile('attachment')) {
                 $attachment = $request->file('attachment');
                 $fileName = time() . '.' . $attachment->getClientOriginalExtension();
                 $filePath = $attachment->storeAs('attachments', $fileName, ['disk' => 'public_uploads']);
+            }
 
-                MessageFile::create([
+            foreach ($multiReceiver  as $key => $receiver_id) {
+                $receiverUser = User::find($receiver_id);
+                $type_message =  $receiverUser->user_type == 1 || $receiverUser->user_type == 2 ? 2 : 3;
+                $message = Message::create([
+                    'subject' => $subject,
+                    'message' => $messageData,
+                    'email_label_id' =>  $email_label_id,
+                    'type_message' => $type_message,
+                    'type' => 'compose_email',
+                    'parent_id' => null,
+                ]);
+
+                if ($request->hasFile('attachment')) {
+                    MessageFile::create([
+                        'message_id' => $message->id,
+                        'file_path' => $filePath,
+                        'file_name' => $fileName,
+                    ]);
+                }
+                // Save the status of the message to the database
+                MessageStatus::create([
                     'message_id' => $message->id,
-                    'file_path' => $filePath,
-                    'file_name' => $fileName,
+                    'sender_id' => $sender_id,
+                    'receiver_id' =>  $receiver_id,
+                    'sender_send_status' => '2',
+                    'receiver_inbox_status' => '2',
+                    'sender_draft_status' => $draft
+                ]);
+
+                /***:- update for parent_id  -:***/
+                $message = Message::where('id', $message->id)->update([
+                    'parent_id' => $message->id
                 ]);
             }
-            // Save the status of the message to the database
-            MessageStatus::create([
-                'message_id' => $message->id,
-                'sender_id' => $sender_id,
-                'receiver_id' =>  $receiver_id,
-                'sender_send_status' => '2',
-                'receiver_inbox_status' => '2',
-                'sender_draft_status' => $draft
-            ]);
-
-            /***:- update for parent_id  -:***/
-            $message = Message::where('id', $message->id)->update([
-                'parent_id' => $message->id
-            ]);
-
-            return response()->json([
-                'status' => true,
-                'message' => 'Message sent successfully.'
-            ]);
+            DB::commit();
+            if ($request->has('vendors')) {
+                return back()->with('success', 'Message sent successfully.');
+            } else {
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Message sent successfully.'
+                ]);
+            }
         } catch (\Throwable $e) {
+            DB::rollBack();
             logger()->error($e);
             throw $e;
         }
