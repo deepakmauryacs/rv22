@@ -212,6 +212,16 @@ $(document).ready(function() {
         });
     });
 
+    $(document).on('change', '#select-all-products', function() {
+        const checked = $(this).is(':checked');
+        $('.product-checkbox').prop('checked', checked);
+    });
+
+    $(document).on('change', '.product-checkbox', function() {
+        const allChecked = $('.product-checkbox').length === $('.product-checkbox:checked').length;
+        $('#select-all-products').prop('checked', allChecked);
+    });
+
     $(document).on('click', '.btn-delete-product', function() {
         if (!confirm('Are you sure?')) return;
         const id = $(this).data('id');
