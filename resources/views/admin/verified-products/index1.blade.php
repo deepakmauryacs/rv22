@@ -81,7 +81,7 @@ $(document).ready(function() {
 
     $(document).on('change', '.product-status-toggle', function() {
         const id = $(this).data('id');
-        const status = $(this).is(':checked') ? 1 : 0;
+        const status = $(this).is(':checked') ? 1 : 2;
         const checkbox = $(this);
 
         $.ajax({
