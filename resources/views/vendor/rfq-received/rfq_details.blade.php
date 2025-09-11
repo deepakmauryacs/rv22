@@ -143,6 +143,9 @@ function IND_amount_format($amount) {
                         $hasSingle = !empty(optional($v->vendor_quotation)->hist_price);
                         return $hasHistRel || $hasSingle;
                         });
+                        $showAttachment = $productVariants->contains(function ($v) {
+                        return !empty($v->attachment);
+                        });
                         @endphp
 
                         <table class="table table-product-list table-d-block-mobile">
@@ -152,6 +155,9 @@ function IND_amount_format($amount) {
                                     <th style="text-align: start !important;">Specification</th>
                                     <th>Size</th>
                                     <th width="125">Quantity/UOM</th>
+                                    @if ($showAttachment)
+                                    <th>Attachment</th>
+                                    @endif
                                     <th width="125"><b>Price (<span class="currency-symbol"></span>)</b> <i
                                             class="bi bi-info-circle-fill text-primary" data-bs-toggle="tooltip"
                                             data-bs-placement="top" title="Net Price after Discount"></i></th>
@@ -188,6 +194,13 @@ function IND_amount_format($amount) {
                                     </td>
                                     <td class="text-center">{{ $variant->quantity }} {{ getUOMName($variant->uom) }}
                                     </td>
+                                    @if ($showAttachment)
+                                    <td class="text-center">
+                                        @if (!empty($variant->attachment))
+                                        <a href="{{ asset('public/uploads/rfq_product/sub_products/' . $variant->attachment) }}" target="_blank">View</a>
+                                        @endif
+                                    </td>
+                                    @endif
                                     <td>
                                         <input type="number" name="price[{{ $variant->id }}]"
                                             class="form-control form-control-sm variant-price price-change"
