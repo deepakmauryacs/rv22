@@ -202,15 +202,7 @@ class NewProductRequestController extends Controller
                 'uom' => $request->product_uom ?? 0,
                 'gst_id' => $request->product_gst,
                 'hsn_code' => $request->product_hsn_code ?? 0,
-                'specification' => $request->product_specifications,
-                'size' => $request->product_size,
-                'certificates' => $request->product_certification,
                 'dealership' => $request->product_dealership,
-                'packaging' => $request->product_packaging,
-                'model_no' => $request->product_model_no,
-                'gorw' => $request->product_gorw,
-                'gorw_year' => $request->product_gorw_year ?? 0,
-                'gorw_month' => $request->product_gorw_month ?? 0,
                 'brand' => $request->brand_name,
                 'country_of_origin' => $request->product_country_origin,
                 'edit_status' => 0,
@@ -238,8 +230,6 @@ class NewProductRequestController extends Controller
             // Upload additional documents
             $fileFields = [
                 'product_catalogue_file' => 'catalogue',
-                'product_specification_file' => 'specification_file',
-                'product_certificates_file' => 'certificates_file',
                 'product_dealership_file' => 'dealership_file'
             ];
 
@@ -345,15 +335,7 @@ class NewProductRequestController extends Controller
             'uom' => $request->product_uom ?? 0,
             'gst_id' => $request->product_gst,
             'hsn_code' => $request->product_hsn_code ?? 0,
-            'specification' => $request->product_specifications,
-            'size' => $request->product_size,
-            'certificates' => $request->product_certification,
             'dealership' => $request->product_dealership,
-            'packaging' => $request->product_packaging,
-            'model_no' => $request->product_model_no,
-            'gorw' => $request->product_gorw,
-            'gorw_year' => $request->product_gorw_year ?? 0,
-            'gorw_month' => $request->product_gorw_month ?? 0,
             'brand' => $request->brand_name,
             'country_of_origin' => $request->product_country_origin,
         ];
@@ -382,8 +364,6 @@ class NewProductRequestController extends Controller
             // Upload other documents
             $fileFields = [
                 'product_catalogue_file' => 'catalogue',
-                'product_specification_file' => 'specification_file',
-                'product_certificates_file' => 'certificates_file',
                 'product_dealership_file' => 'dealership_file'
             ];
 

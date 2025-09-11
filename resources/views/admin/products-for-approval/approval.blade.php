@@ -285,98 +285,6 @@
                                         </div>
                                     </div>
 
-                                    <!-- Product Specifications -->
-                                    <div class="row mb-3">
-                                        <div class="col-md-3 d-flex align-items-center">
-                                            <label class="form-label mb-0">Specifications</strong></label>
-                                        </div>
-                                        <div class="col-md-9">
-                                            <span class="char-count spec-char-count">Characters:
-                                                {{ strlen($product->specification) }}/500</span>
-                                            <textarea class="form-control" id="product_specifications" name="product_specifications">{{ $product->specification }}</textarea>
-                                            <span class="text-danger error-text product_specifications_error"></span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Specifications Attachment -->
-                                    <div class="row mb-3 align-items-center">
-                                        <div class="col-md-3 d-flex align-items-center">
-                                            <label class="form-label mb-0">Specifications Attachment</strong></label>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <input type="file" name="product_specification_file"
-                                                id="product_specification_file" class="form-control"
-                                                accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
-                                                onchange="validateProductFile(this, 'PDF/PNG/JPG/JPEG/DOCX/DOC')">
-                                            <span class="text-danger error-text product_specification_file_error"></span>
-                                            @if ($product->specification_file)
-                                                <div class="mt-2">
-                                                    <a href="{{ asset('public/uploads/product/docs/' . $product->specification_file) }}"
-                                                        target="_blank">
-                                                        {{ $product->specification_file }} <b> View Specification File </b>
-                                                    </a>
-                                                    <input type="hidden" name="existing_product_specification_file"
-                                                        value="{{ $product->specification_file }}">
-                                                </div>
-                                            @endif
-                                        </div>
-                                        <div class="col-md-4">
-                                            <span class="text-danger font-size-11">(PDF/Image/Document)</span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Size -->
-                                    <div class="row mb-3">
-                                        <div class="col-md-3 d-flex align-items-center">
-                                            <label class="form-label mb-0">Size</strong></label>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <input type="text" data-role="tagsinput" class="form-control"
-                                                name="product_size" id="size-input" value="{{ $product->size }}">
-                                            <span class="text-danger error-text product_size_error"></span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Certification -->
-                                    <div class="row mb-3">
-                                        <div class="col-md-3 d-flex align-items-center">
-                                            <label class="form-label mb-0">Certification</strong></label>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <input type="text" data-role="tagsinput" class="form-control"
-                                                name="product_certification" id="product_certification"
-                                                value="{{ $product->certificates }}">
-                                            <span class="text-danger error-text product_certification_error"></span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Certification Attachment -->
-                                    <div class="row mb-3 align-items-center">
-                                        <div class="col-md-3 d-flex align-items-center">
-                                            <label class="form-label mb-0">Certification Attachment</strong></label>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <input type="file" name="product_certificates_file"
-                                                id="product_certificates_file" class="form-control"
-                                                accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
-                                                onchange="validateProductFile(this, 'PDF/PNG/JPG/JPEG/DOCX/DOC')">
-                                            <span class="text-danger error-text product_certificates_file_error"></span>
-                                            @if ($product->certificates_file)
-                                                <div class="mt-2">
-                                                    <a href="{{ asset('public/uploads/product/docs/' . $product->certificates_file) }}"
-                                                        target="_blank">
-                                                        {{ $product->certificates_file }} <b> View Certification File </b>
-                                                    </a>
-
-                                                    <input type="hidden" name="existing_product_certificates_file"
-                                                        value="{{ $product->certificates_file }}">
-                                                </div>
-                                            @endif
-                                        </div>
-                                        <div class="col-md-4">
-                                            <span class="text-danger font-size-11">(PDF/Image/Document)</span>
-                                        </div>
-                                    </div>
 
                                     <!-- Dealership -->
                                     <div class="row mb-3">
@@ -419,68 +327,6 @@
                                         </div>
                                     </div>
 
-                                    <!-- Packaging -->
-                                    <div class="row mb-3">
-                                        <div class="col-md-3 d-flex align-items-center">
-                                            <label class="form-label mb-0">Packaging</strong></label>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <input type="text" class="form-control" name="product_packaging"
-                                                id="product_packaging" value="{{ $product->packaging }}"
-                                                maxlength="1700">
-                                            <span class="text-danger error-text product_packaging_error"></span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Model No -->
-                                    <div class="row mb-3">
-                                        <div class="col-md-3 d-flex align-items-center">
-                                            <label class="form-label mb-0">Model No.</strong></label>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <input type="text" class="form-control" name="product_model_no"
-                                                id="Model No." value="{{ $product->model_no }}" maxlength="255">
-                                            <span class="text-danger error-text product_model_no_error"></span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Guarantee/Warranty -->
-                                    <div class="row mb-3">
-                                        <div class="col-md-3 d-flex align-items-center">
-                                            <label class="form-label mb-0">Guarantee/Warranty</strong></label>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <select name="prod_gorw" id="waranty_guarantee_type" class="form-select">
-                                                <option value="Guarantee"
-                                                    {{ $product->gorw == 'Guarantee' ? 'selected' : '' }}>Guarantee
-                                                </option>
-                                                <option value="Waranty"
-                                                    {{ $product->gorw == 'Waranty' ? 'selected' : '' }}>Warranty</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-6 col-sm-2">
-                                            <div class="d-flex align-items-center pt-3 pt-sm-0">
-                                                <input type="text" class="form-control" name="product_gorw_year"
-                                                    id="product_gorw_year" value="{{ $product->gorw_year }}"
-                                                    placeholder="Ex. 1 Year"
-                                                    oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4)">
-                                                <label class="ms-2">Year</label>
-                                            </div>
-
-
-
-                                        </div>
-                                        <div class="col-6 col-sm-2">
-                                            <div class="d-flex align-items-center pt-3 pt-sm-0">
-                                                <input type="number" class="form-control" name="product_gorw_month"
-                                                    id="waranty_guarantee_value" min="0" max="12"
-                                                    value="{{ $product->gorw_month }}" placeholder="Ex. 1 Month"
-                                                    oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,2); if(parseInt(this.value) > 12) this.value = '12';">
-                                                <label class="ms-2">Month</label>
-                                            </div>
-
-                                        </div>
-                                    </div>
 
                                     <!-- Brand -->
                                     <div class="row mb-3">
@@ -600,7 +446,6 @@
 
             // Initialize both editors
             initEditor('#product_description', '.prod-des-count', '#product_description_error', true);
-            initEditor('#product_specifications', '.spec-char-count');
 
             $('#editProductForm input, #editProductForm select').on('keyup change', function() {
                 const fieldName = $(this).attr('name');
