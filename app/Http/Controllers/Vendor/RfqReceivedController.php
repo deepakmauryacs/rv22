@@ -366,8 +366,8 @@ class RfqReceivedController extends Controller
         $specs       = $request->input('vendor_spec', []);
         $sellerbrand = $request->input('sellerbrand', []);
 
-        DB::beginTransaction();
-        try {
+         DB::beginTransaction();
+         try {
             foreach ($prices as $variantId => $price) {
                 if ($price === null || $price === '') {
                     continue;
@@ -444,22 +444,25 @@ class RfqReceivedController extends Controller
              *
              * Logic matches CI update_rfq_statuses() semantics.
              */
+
+            // Get current statuses
+            $buyerSide = DB::table('rfqs')
+                ->select('buyer_id', 'buyer_user_id', 'buyer_rfq_status')
+                ->where('rfq_id', $rfq_id)
+                ->first();
+
+            $vendorSide = DB::table('rfq_vendors')
+                ->select('vendor_status')
+                ->where('rfq_id', $rfq_id)
+                ->where('vendor_user_id', $vendor_user_id)
+                ->orderByDesc('id')
+                ->first();
+
+            $buyer_rfq_status = (int)($buyerSide->buyer_rfq_status ?? 0);
+            $vend_rfq_status  = (int)($vendorSide->vendor_status ?? 0);
+
             if ($action !== 'save') {
-                // Get current statuses
-                $buyerSide = DB::table('rfqs')
-                    ->select('buyer_id', 'buyer_user_id', 'buyer_rfq_status')
-                    ->where('rfq_id', $rfq_id)
-                    ->first();
-
-                $vendorSide = DB::table('rfq_vendors')
-                    ->select('vendor_status')
-                    ->where('rfq_id', $rfq_id)
-                    ->where('vendor_user_id', $vendor_user_id)
-                    ->orderByDesc('id')
-                    ->first();
-
-                $buyer_rfq_status = (int)($buyerSide->buyer_rfq_status ?? 0);
-                $vend_rfq_status  = (int)($vendorSide->vendor_status ?? 0);
+                
 
                 // Status update logic (mirrors CI logic)
                 if ($buyer_rfq_status != 9) {
@@ -521,9 +524,12 @@ class RfqReceivedController extends Controller
 
             return response()->json([
                 'status'  => true,
-                'redirect_url'  => route('vendor.rfq.success', ['rfq_id' => $rfq_id]),
+                'redirect_url'  => ($action === 'save') 
+                    ? url()->previous()   // stay on same page
+                    : route('vendor.rfq.success', ['rfq_id' => $rfq_id]),
                 'message' => 'RFQ ' . ($status === '2' ? 'saved' : 'submitted') . ' successfully!',
             ]);
+
 
         } catch (\Throwable $e) {
             DB::rollBack();
