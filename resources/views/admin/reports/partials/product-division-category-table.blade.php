@@ -22,15 +22,15 @@
         @forelse ($results as $result)
             <tr>
                 <td class="text-wrap keep-word">{{ $result->product_name ?? ''}}</td>
-                <td class="text-wrap keep-word">{{ $result->division->division_name ?? ''}}</td>
-                <td class="text-wrap keep-word">{{ $result->category->category_name ?? ''}}</td>
-                <td class="text-wrap keep-word">{{ optional($result->master_alias)->pluck('alias')->implode(', ')}}</td>
-                <td>{{ optional($result->vendor_alias)->pluck('alias')->implode(', ')}}</td>
+                <td class="text-wrap keep-word">{{ $result->division_name ?? ''}}</td>
+                <td class="text-wrap keep-word">{{ $result->category_name ?? ''}}</td>
+                <td class="text-wrap keep-word">{{ $result->master_alias ?? ''}}</td>
+                <td>{{ $result->vendor_alias ?? ''}}</td>
                 <td>{{$result->vendor_count}}</td>
                 <td>
                     <a href="{{ route('admin.products.edit', $result->id) }}" class="btn-rfq btn-rfq-secondary btn-sm">Edit</a>
                 </td>
-                <td>{{$result->created_at->format('d/m/Y')}}</td>
+                <td>{{ \Carbon\Carbon::parse($result->created_at)->format('d/m/Y') }}</td>
                 <td>{{$result->rfq_count}}</td>
                 <td>{{$result->order_count}}</td>
                 <td> 

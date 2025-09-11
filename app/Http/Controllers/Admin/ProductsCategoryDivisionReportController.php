@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Product;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 use App\Traits\HasModulePermission;
 class ProductsCategoryDivisionReportController extends Controller
 {
@@ -15,7 +15,7 @@ class ProductsCategoryDivisionReportController extends Controller
         $this->ensurePermission('DIVISION_AND_CATEGORY_WISE');
 
         $query = $this->querires($request);
-        $results = $query->orderBy('product_name')->paginate(25);
+        $results = $query->orderBy('products.product_name')->paginate(25);
         if ($request->ajax()) {
             return view('admin.reports.partials.product-division-category-table', compact('results'))->render();
         }
@@ -33,9 +33,9 @@ class ProductsCategoryDivisionReportController extends Controller
         $limit = intval($request->input('limit'));
         $lastId = $request->input('last_id');
 
-        $query = $this->querires($request)->orderBy('id');
+        $query = $this->querires($request)->orderBy('products.id');
         if ($lastId !== null) {
-            $query->where('id', '>', $lastId);
+            $query->where('products.id', '>', $lastId);
         }
 
         $results = $query->take($limit)->get();
@@ -44,12 +44,12 @@ class ProductsCategoryDivisionReportController extends Controller
         foreach ($results as $res) {
             $result[] = [
                 $res->product_name ?? '',
-                $res->division->division_name ?? '',
-                $res->category->category_name ?? '',
-                optional($res->master_alias)->pluck('alias')->implode(', '),
-                optional($res->vendor_alias)->pluck('alias')->implode(', '),
+                $res->division_name ?? '',
+                $res->category_name ?? '',
+                $res->master_alias ?? '',
+                $res->vendor_alias ?? '',
                 $res->vendor_count,
-                $res->created_at->format('d/m/Y'),
+                Carbon::parse($res->created_at)->format('d/m/Y'),
                 $res->rfq_count,
                 $res->order_count,
                 $res->status == '1' ? 'Active' : 'Inactive',
@@ -66,49 +66,60 @@ class ProductsCategoryDivisionReportController extends Controller
 
     private function querires(Request $request)
     {
-        $rfqSub = DB::table('rfq_products')
-            ->select('product_id', DB::raw('COUNT(*) as rfq_count'))
-            ->groupBy('product_id');
-
-        $orderSub = DB::table('order_variants')
-            ->join('orders', function ($join) {
-                $join->on('orders.id', '=', 'order_variants.order_id')
-                    ->where('orders.order_status', 1);
-            })
-            ->select('order_variants.product_id', DB::raw('COUNT(*) as order_count'))
-            ->groupBy('order_variants.product_id');
-
-        $vendorSub = DB::table('product_vendors')
-            ->select('product_id', DB::raw('COUNT(*) as vendor_count'))
-            ->groupBy('product_id');
-
-        $query = Product::query()
+        $query = DB::table('products')
             ->select(
                 'products.id',
                 'products.division_id',
                 'products.category_id',
                 'products.product_name',
                 'products.status',
-                'products.created_at'
+                'products.created_at',
+                'divisions.division_name',
+                'categories.category_name',
+                DB::raw('COALESCE(ma.aliases, "") as master_alias'),
+                DB::raw('COALESCE(va.aliases, "") as vendor_alias'),
+                DB::raw('COALESCE(rp.rfq_count,0) as rfq_count'),
+                DB::raw('COALESCE(ov.order_count,0) as order_count'),
+                DB::raw('COALESCE(vp.vendor_count,0) as vendor_count')
             )
-            ->with(['division', 'category', 'master_alias', 'vendor_alias'])
-            ->leftJoinSub($rfqSub, 'rp', function ($join) {
-                $join->on('rp.product_id', '=', 'products.id');
-            })
-            ->leftJoinSub($orderSub, 'ov', function ($join) {
-                $join->on('ov.product_id', '=', 'products.id');
-            })
-            ->leftJoinSub($vendorSub, 'pv', function ($join) {
-                $join->on('pv.product_id', '=', 'products.id');
-            })
-            ->addSelect('rp.rfq_count', 'ov.order_count', 'pv.vendor_count')
-            ->groupBy(
-                'products.id',
-                'products.division_id',
-                'products.category_id',
-                'products.product_name',
-                'products.status',
-                'products.created_at'
+            ->leftJoin('divisions', 'divisions.id', '=', 'products.division_id')
+            ->leftJoin('categories', 'categories.id', '=', 'products.category_id')
+            ->leftJoinSub(
+                'SELECT product_id, GROUP_CONCAT(alias ORDER BY alias SEPARATOR ", ") as aliases
+                 FROM product_alias WHERE alias_of = 1 GROUP BY product_id',
+                'ma',
+                'ma.product_id',
+                '=',
+                'products.id'
+            )
+            ->leftJoinSub(
+                'SELECT product_id, GROUP_CONCAT(alias ORDER BY alias SEPARATOR ", ") as aliases
+                 FROM product_alias WHERE alias_of = 2 GROUP BY product_id',
+                'va',
+                'va.product_id',
+                '=',
+                'products.id'
+            )
+            ->leftJoinSub(
+                'SELECT product_id, COUNT(*) as rfq_count FROM rfq_products GROUP BY product_id',
+                'rp',
+                'rp.product_id',
+                '=',
+                'products.id'
+            )
+            ->leftJoinSub(
+                'SELECT ov.product_id, COUNT(*) as order_count FROM order_variants ov INNER JOIN orders o ON o.id = ov.order_id AND o.order_status = 1 GROUP BY ov.product_id',
+                'ov',
+                'ov.product_id',
+                '=',
+                'products.id'
+            )
+            ->leftJoinSub(
+                'SELECT product_id, COUNT(*) as vendor_count FROM vendor_products WHERE vendor_status = 1 AND approval_status = 1 GROUP BY product_id',
+                'vp',
+                'vp.product_id',
+                '=',
+                'products.id'
             );
 
         if ($request->filled('product_name')) {
@@ -124,6 +135,7 @@ class ProductsCategoryDivisionReportController extends Controller
         if ($request->filled('status')) {
             $query->where('products.status', $request->input('status'));
         }
+
         return $query;
     }
 }
