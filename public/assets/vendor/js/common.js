@@ -161,30 +161,42 @@ document.querySelectorAll('.file-upload-block-tooltip').forEach(block => {
 document.querySelectorAll('.simple-file-upload').forEach(wrapper => {
   const fileInput = wrapper.querySelector('.real-file-input');
   const fileDisplayBox = wrapper.querySelector('.file-display-box');
-
   let tooltip = bootstrap.Tooltip.getInstance(fileDisplayBox);
 
-  // Click box to trigger file input
-  fileDisplayBox.addEventListener('click', () => fileInput.click());
+  const reset = () => {
+    fileInput.value = '';
+    fileDisplayBox.textContent = 'Upload file';
+    fileDisplayBox.removeAttribute('title');
+    if (tooltip) { tooltip.dispose(); tooltip = null; }
+  };
+
+  // Click box to trigger file input when no file selected
+  fileDisplayBox.addEventListener('click', () => {
+    if (!fileInput.files.length) fileInput.click();
+  });
 
   // On file select
   fileInput.addEventListener('change', () => {
     if (fileInput.files.length > 0) {
       const fileName = fileInput.files[0].name;
-      fileDisplayBox.textContent = fileName;
+      fileDisplayBox.innerHTML = `<span class="file-name">${fileName}</span><span class="remove-file ms-2 text-danger" style="cursor:pointer;">&times;</span>`;
       fileDisplayBox.setAttribute('title', fileName);
 
-      // Dispose and recreate tooltip
-      if (tooltip) {
-        tooltip.dispose();
-      }
+      if (tooltip) { tooltip.dispose(); }
+      tooltip = new bootstrap.Tooltip(fileDisplayBox, { title: fileName });
 
-      // Recreate with updated title
-      tooltip = new bootstrap.Tooltip(fileDisplayBox, {
-        title: fileName
+      const removeBtn = fileDisplayBox.querySelector('.remove-file');
+      removeBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        reset();
       });
+    } else {
+      reset();
     }
   });
+
+  // Ensure initial state
+  reset();
 });
 
 // End of Simple Browse Button
