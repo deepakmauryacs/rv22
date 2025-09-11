@@ -839,7 +839,6 @@ function submitRfqCounterData(_this, action) {
 }
 </script>
 
-<script>
 @if($current_status == 1)
 <script>
 // Auto-fetch L1 price and rank every 2 minutes

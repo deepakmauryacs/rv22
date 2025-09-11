@@ -408,12 +408,15 @@ class LiveAuctionRfqSinglePriceController extends Controller
             ]);
         }
 
-        $l1 = $rows->min('total_price');
+        // ignore null prices when computing metrics
+        $priceColumn = $rows->pluck('total_price')->filter(fn($v) => $v !== null);
+
+        $l1         = $priceColumn->min();
         $vendorPrice = optional($rows->firstWhere('vendor_id', $vendorId))->total_price;
 
         $rank = null;
         if ($vendorPrice !== null) {
-            $distinct = $rows->pluck('total_price')
+            $distinct = $priceColumn
                 ->map(fn($v) => (float) $v)
                 ->unique()
                 ->sort()
