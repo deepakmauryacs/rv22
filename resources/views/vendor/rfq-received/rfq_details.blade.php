@@ -369,8 +369,7 @@ function IND_amount_format($amount) {
                                             accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" {{ $product->is_product
                                         == 'no' ? 'disabled' : '' }}>
                                         <div class="file-display-box form-control text-start font-size-12 text-dark"
-                                            role="button" data-bs-toggle="tooltip" data-bs-placement="top"
-                                            onclick="document.getElementById('uploadFile_{{ $productVariants[0]->id }}').click()">
+                                            role="button" data-bs-toggle="tooltip" data-bs-placement="top">
                                             Attach file
                                         </div>
                                     </div>
