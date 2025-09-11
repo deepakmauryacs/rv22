@@ -55,30 +55,5 @@
 </table>
 </div>
 <x-paginationwithlength :paginator="$products" />
-<script>
-    const selectAll = document.getElementById('select-all-products');
-    const checkboxes = document.querySelectorAll('.product-checkbox');
-
-    // When 'Select All' is clicked
-    selectAll.addEventListener('change', function () {
-        checkboxes.forEach(checkbox => {
-            checkbox.checked = this.checked;
-        });
-    });
-
-    // When any individual checkbox is changed
-    checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function () {
-            // If any checkbox is unchecked, uncheck 'Select All'
-            if (!this.checked) {
-                selectAll.checked = false;
-            } else {
-                // If all checkboxes are checked, check 'Select All'
-                const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-                selectAll.checked = allChecked;
-            }
-        });
-    });
-</script>
 
     
