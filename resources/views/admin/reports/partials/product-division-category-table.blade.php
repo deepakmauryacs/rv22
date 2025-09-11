@@ -24,8 +24,20 @@
                 <td class="text-wrap keep-word">{{ $result->product_name ?? ''}}</td>
                 <td class="text-wrap keep-word">{{ $result->division_name ?? ''}}</td>
                 <td class="text-wrap keep-word">{{ $result->category_name ?? ''}}</td>
-                <td class="text-wrap keep-word">{{ $result->master_alias ?? ''}}</td>
-                <td>{{ $result->vendor_alias ?? ''}}</td>
+                <td class="text-wrap keep-word">
+                    {{ $result->master_alias instanceof \Illuminate\Support\Collection
+                        ? $result->master_alias->implode(', ')
+                        : (is_array($result->master_alias)
+                            ? implode(', ', $result->master_alias)
+                            : ($result->master_alias ?? '')) }}
+                </td>
+                <td>
+                    {{ $result->vendor_alias instanceof \Illuminate\Support\Collection
+                        ? $result->vendor_alias->implode(', ')
+                        : (is_array($result->vendor_alias)
+                            ? implode(', ', $result->vendor_alias)
+                            : ($result->vendor_alias ?? '')) }}
+                </td>
                 <td>{{$result->vendor_count}}</td>
                 <td>
                     <a href="{{ route('admin.products.edit', $result->id) }}" class="btn-rfq btn-rfq-secondary btn-sm">Edit</a>
