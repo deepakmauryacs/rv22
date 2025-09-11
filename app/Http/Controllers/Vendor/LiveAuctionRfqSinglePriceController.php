@@ -211,25 +211,25 @@ class LiveAuctionRfqSinglePriceController extends Controller
             return response()->json(['status'=>false,'message'=>'No variants mapped to this auction.']);
         }
 
-        // Compute Start Total (server-side sum; if missing, fallback to UI)
+        // Compute Start Total server-side (unused but kept for potential future logic)
         $startTotal = (float) $variants->sum('start_price');
         if ($startTotal <= 0 && $startTotalFromUI > 0) {
             $startTotal = $startTotalFromUI;
         }
 
-        // 11Sept25
-        // if ($startTotal > 0 && $lotPrice > $startTotal) {
-        //     return response()->json([
-        //         'status'  => false,
-        //         'message' => 'Your lot bid cannot exceed the Start Total (' . number_format($startTotal, 2) . ').',
-        //     ]);
-        // }
+        // Validate against the Start Price provided in the request
+        if ($startTotalFromUI > 0 && $lotPrice > $startTotalFromUI) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Your lot bid cannot exceed the Start Price (' . number_format($startTotalFromUI, 2) . ').',
+            ]);
+        }
 
         $check = $this->checkRankByPrice(
             $rfqId,
             $vendorId,
             $lotPrice,
-            $startTotal,
+            $startTotalFromUI,
             (float)($auction->min_bid_decrement ?? 0)
         );
         if ($check['status'] !== 1) {
@@ -464,13 +464,12 @@ class LiveAuctionRfqSinglePriceController extends Controller
             $effective_decrement = min($min_bid_decrement, $max_decrement);
             $total_bid_price    = round((float) $total_bid_price, 2);
 
-            // 11Sept25
-            // if ($total_price > $total_bid_price) {
-            //     return [
-            //         'status' => 2,
-            //         'message' => 'You cannot enter a price higher than the start price ' . request()->input('vendor_currency') . $total_bid_price . '.'
-            //     ];
-            // }
+            if ($total_bid_price > 0 && $total_price > $total_bid_price) {
+                return [
+                    'status' => 2,
+                    'message' => 'You cannot enter a price higher than the start price ' . request()->input('vendor_currency') . $total_bid_price . '.',
+                ];
+            }
 
             if ($effective_decrement > 0) {
                 $expected_min_price = round($total_bid_price - ($total_bid_price * ($effective_decrement / 100)), 2);
