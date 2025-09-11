@@ -108,7 +108,7 @@ class ProductsCategoryDivisionReportController extends Controller
                 'products.id'
             )
             ->leftJoinSub(
-                'SELECT ov.product_id, COUNT(*) as order_count FROM order_variants ov INNER JOIN orders o ON o.id = ov.order_id AND o.order_status = 1 GROUP BY ov.product_id',
+                'SELECT ov.product_id, COUNT(*) as order_count FROM order_variants ov INNER JOIN orders o ON o.po_number = ov.po_number AND o.order_status = 1 GROUP BY ov.product_id',
                 'ov',
                 'ov.product_id',
                 '=',
