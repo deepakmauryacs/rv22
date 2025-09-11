@@ -11,14 +11,33 @@ if(!empty(Auth::user()->parent_id)){
 
 <style>
     #voice-search-btn.listening .bi-mic-fill {
-        color: #ea4335;
-        animation: pulse 1s infinite;
+        display: none;
     }
 
-    @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.3); }
-        100% { transform: scale(1); }
+    #voice-search-btn .voice-wave {
+        display: none;
+        height: 18px;
+        align-items: flex-end;
+    }
+
+    #voice-search-btn.listening .voice-wave {
+        display: inline-flex;
+    }
+
+    .voice-wave span {
+        width: 3px;
+        height: 8px;
+        margin: 0 1px;
+        background: #ea4335;
+        animation: wave 1s infinite ease-in-out;
+    }
+
+    .voice-wave span:nth-child(2) { animation-delay: -0.4s; }
+    .voice-wave span:nth-child(3) { animation-delay: -0.8s; }
+
+    @keyframes wave {
+        0%, 100% { transform: scaleY(1); }
+        50% { transform: scaleY(2); }
     }
 </style>
 
@@ -85,6 +104,11 @@ if(!empty(Auth::user()->parent_id)){
                             <input type="search" class="" id="product-search" placeholder="Search Product">
                             <button class="btn p-0" id="voice-search-btn" type="button" data-bs-toggle="tooltip" data-bs-placement="bottom" aria-label="Start Voice Search" data-bs-original-title="Start Voice Search">
                                 <span class="bi bi-mic-fill font-size-18"></span>
+                                <span class="voice-wave" aria-hidden="true">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </span>
                             </button>
                         </form>
                         <ul class="search_text_box" id="product-search-list" style="display: none;"></ul>
