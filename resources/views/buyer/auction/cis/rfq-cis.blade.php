@@ -365,7 +365,7 @@
                                                         @php
                                                             $vendor_last_quote = isset($vendor['last_quote'][$variant_id]) ? $vendor['last_quote'][$variant_id] : [];
                                                         @endphp
-                                                        <td class="product-price p-1 align-middle {{ !empty($vendor_last_quote) && $vendor_last_quote['price']==$variants['lowest_price'] ? 'bg-gold' : '' }} ">
+                                                        <td class="product-price p-1 align-middle {{ !empty($vendor_last_quote) && $vendor_last_quote['price']==$variants['lowest_price'] && (!isset($current_status) || $current_status != 1) ? 'bg-gold' : '' }} ">
                                                             @if(!empty($vendor_last_quote))
                                                             <div class="d-flex justify-content-center align-items-center gap-4">
                                                                 @php
@@ -411,7 +411,7 @@
                                                             continue;
                                                         }
                                                     @endphp
-                                                <td class="product-price p-1 align-middle text-center {{ !empty($cis['vendor_total_amount'][$vendor_id]) && $cis['vendor_total_amount'][$vendor_id] == $rfq['lowest_price_total'] ? 'bg-gold' : '' }} ">
+                                                <td class="product-price p-1 align-middle text-center {{ !empty($cis['vendor_total_amount'][$vendor_id]) && $cis['vendor_total_amount'][$vendor_id] == $rfq['lowest_price_total'] && (!isset($current_status) || $current_status != 1) ? 'bg-gold' : '' }} ">
                                                     <b>
                                                     {{!empty($vendor['latest_quote']) && !empty($vendor['latest_quote']['vendor_currency']) ? $vendor['latest_quote']['vendor_currency'] : '₹'}} {{$cis['vendor_total_amount'][$vendor_id] ? IND_money_format($cis['vendor_total_amount'][$vendor_id]) : 0}}
                                                     </b>
