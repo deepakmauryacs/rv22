@@ -217,10 +217,25 @@ function disableFormAutocomplete() {
 function validateFormFields(form_id, for_class = ".required") {
     let error_flags = true;
     $('#' + form_id + ' ' + for_class).each(function () {
+        // Skip non-form elements added by plugins (e.g., SumoSelect captions)
+        if (!$(this).is('input, select, textarea')) {
+            return;
+        }
+
         appendError(this);
-        if ($(this).val() == '') {
-            error_flags = false;
-            appendError(this, "This Field is Required");
+
+        // Handle checkboxes and radio buttons separately
+        if ($(this).is(':checkbox') || $(this).is(':radio')) {
+            if (!$(this).prop('checked')) {
+                error_flags = false;
+                appendError(this, "This Field is Required");
+            }
+        } else {
+            let val = $(this).val();
+            if (!val || (Array.isArray(val) && val.length === 0)) {
+                error_flags = false;
+                appendError(this, "This Field is Required");
+            }
         }
     });
     return error_flags;
