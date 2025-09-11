@@ -48,6 +48,7 @@ class AuctionRFQSummaryReportController extends Controller
             'b.legal_name as buyer_legal_name',
             'p.product_name',
             'v.legal_name as vendor_legal_name',
+            'rva.vendor_id',
             'u.email',
             'u.mobile',
             'u.status as vendor_user_status'
@@ -57,6 +58,35 @@ class AuctionRFQSummaryReportController extends Controller
         $results = $query->orderBy('ra.auction_date', 'desc')
             ->paginate($perPage)
             ->appends($request->all());
+
+        $collection = collect($results->items());
+        if ($collection->isNotEmpty()) {
+            $rfqNos = $collection->pluck('rfq_no')->unique();
+            $vendorIds = $collection->pluck('vendor_id')->unique();
+
+            $participated = DB::table('rfq_vendor_auction_price')
+                ->whereIn('rfq_no', $rfqNos)
+                ->whereIn('vendor_id', $vendorIds)
+                ->select('rfq_no', 'vendor_id')
+                ->distinct()
+                ->get()
+                ->keyBy(fn($row) => $row->vendor_id . '_' . $row->rfq_no);
+
+            $confirmedOrders = DB::table('orders')
+                ->whereIn('rfq_id', $rfqNos)
+                ->whereIn('vendor_id', $vendorIds)
+                ->where('order_status', 1)
+                ->select('rfq_id', 'vendor_id')
+                ->get()
+                ->keyBy(fn($row) => $row->vendor_id . '_' . $row->rfq_id);
+
+            $results->getCollection()->transform(function ($item) use ($participated, $confirmedOrders) {
+                $key = $item->vendor_id . '_' . $item->rfq_no;
+                $item->is_participated = isset($participated[$key]) ? 'Yes' : '-';
+                $item->order_confirmed = isset($confirmedOrders[$key]) ? 'Yes' : '-';
+                return $item;
+            });
+        }
 
         if ($request->ajax()) {
             return view('admin.reports.partials.auction-rfq-summary-report-table', compact('results'))
@@ -109,8 +139,28 @@ class AuctionRFQSummaryReportController extends Controller
 
         $dataList = $query->take($limit)->get();
 
+        $rfqNos = $dataList->pluck('rfq_no')->unique();
+        $vendorIds = $dataList->pluck('vendor_id')->unique();
+
+        $participated = DB::table('rfq_vendor_auction_price')
+            ->whereIn('rfq_no', $rfqNos)
+            ->whereIn('vendor_id', $vendorIds)
+            ->select('rfq_no', 'vendor_id')
+            ->distinct()
+            ->get()
+            ->keyBy(fn($row) => $row->vendor_id . '_' . $row->rfq_no);
+
+        $confirmedOrders = DB::table('orders')
+            ->whereIn('rfq_id', $rfqNos)
+            ->whereIn('vendor_id', $vendorIds)
+            ->where('order_status', 1)
+            ->select('rfq_id', 'vendor_id')
+            ->get()
+            ->keyBy(fn($row) => $row->vendor_id . '_' . $row->rfq_id);
+
         $result = [];
         foreach ($dataList as $value) {
+            $key = $value->vendor_id . '_' . $value->rfq_no;
             $result[] = [
                 $value->rfq_no ?? '',
                 date('d/m/Y', strtotime($value->auction_date)) ?? '',
@@ -123,9 +173,9 @@ class AuctionRFQSummaryReportController extends Controller
                 $value->mobile ?? '',
                 $value->vendor_user_status == 1
                     ? 'Active'
-                    : ($value->vendor_user_status == 0 ? 'Inactive' : ''),
-                '',
-                '',
+                    : ($value->vendor_user_status == 2 ? 'Inactive' : ''),
+                isset($participated[$key]) ? 'Yes' : '-',
+                isset($confirmedOrders[$key]) ? 'Yes' : '-',
             ];
         }
 
