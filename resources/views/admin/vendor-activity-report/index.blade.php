@@ -63,8 +63,8 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="bi bi-journal-text"></i></span>
                                             <div class="form-floating">
-                                                <input type="text" name="product_name" class="form-control fillter-form-control" value="{{ request('register_address') }}" placeholder="Register Address">
-                                                <label>Register Address</label>
+                                                <input type="text" name="registered_address" class="form-control fillter-form-control" value="{{ request('registered_address') }}" placeholder="Registered Address">
+                                                <label>Registered Address</label>
                                             </div>
                                         </div>
                                     </div>
@@ -216,15 +216,24 @@ $(document).ready(function () {
         chunkSize: 1000,
         rowLimitPerSheet: 200000,
         headers: [
-            "Vendor Name",
-            "Product Name",
-            "Division > Category",
-            "Date"
+            "Name Of Vendor",
+            "Primary Contact",
+            "Phone No",
+            "Email",
+            "GST No",
+            "Registered Address (Address,City,State)",
+            "No. of Accounts",
+            "Total RFQ Received",
+            "Total Quotation Given",
+            "Total Confirmed Orders (Received)",
+            "Value (Of Confirmed Orders)",
+            "No. Of Verified Product",
+            "Last Login Date"
         ],
-        totalUrl: "{{ route('admin.vendor-disabled-product-report.exportTotal') }}",
-        batchUrl: "{{ route('admin.vendor-disabled-product-report.exportBatch') }}",
+        totalUrl: "{{ route('admin.vendor-activity-report.exportTotal') }}",
+        batchUrl: "{{ route('admin.vendor-activity-report.exportBatch') }}",
         token: "{{ csrf_token() }}",
-        exportName: "Disabled-Products-Report",
+        exportName: "Vendor-Activity-Report",
         expButton: '#export-btn',
         exportProgress: '#export-progress',
         progressText: '#progress-text',
@@ -232,8 +241,10 @@ $(document).ready(function () {
         fillterReadOnly: '.fillter-form-control',
         getParams: function () {
             return {
-                product_name: $('[name="product_name"]').val(),
-                vendor_name: $('[name="vendor_name"]').val()
+                vendor_name: $('[name="vendor_name"]').val(),
+                registered_address: $('[name="registered_address"]').val(),
+                from_date: $('[name="from_date"]').val(),
+                to_date: $('[name="to_date"]').val()
             };
         }
     });
