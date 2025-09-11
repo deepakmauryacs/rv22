@@ -200,34 +200,119 @@ $(document).ready(function() {
 });
 </script>
 
-<script src="{{ asset('public/assets/xlsx/xlsx.full.min.js') }}"></script>
-<script src="{{ asset('public/assets/xlsx/export.js') }}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
 <script>
     $(document).ready(function () {
-        const exporter = new Exporter({
-            chunkSize: 100,
-            rowLimitPerSheet: 200000,
-            headers: ["Name Of Product", "Division", "Category", "Master Alias", "Vendor Alias", "No Of Vendor Allocated", "Added Since","Total RFQ Generated","Total Order Confirmed","Product Status"],
-            totalUrl: "{{ route('admin.product-division-category.exportTotal') }}",
-            batchUrl: "{{ route('admin.product-division-category.exportBatch') }}",
-            token: "{{ csrf_token() }}",
-            exportName: "Product-division-category-report",
-            expButton: '#export-btn',
-            exportProgress: '#export-progress',
-            progressText: '#progress-text',
-            progress: '#progress',
-            fillterReadOnly: '.fillter-form-control',
-            getParams: function () {
-                return {
-                    product_name: $('#product_name').val(),
-                    from_date: $('#from_date').val(),
-                    to_date: $('#to_date').val()
-                };
-            }
-        });
+        function getParams() {
+            return {
+                product_name: $('#product_name').val(),
+                from_date: $('#from_date').val(),
+                to_date: $('#to_date').val(),
+                _token: "{{ csrf_token() }}"
+            };
+        }
 
-        $('#export-btn').on('click', function () {
-            exporter.start();
+        function startExport() {
+            $('#export-btn').attr('disabled', true);
+            $('#export-progress').show();
+            $('#progress-text').text('0%');
+            $('.fillter-form-control').attr('readonly', true);
+
+            let workbook = new ExcelJS.Workbook();
+            let sheet = workbook.addWorksheet('Sheet1');
+            const headers = ["Name Of Product", "Division", "Category", "Master Alias", "Vendor Alias", "No Of Vendor Allocated", "Added Since","Total RFQ Generated","Total Order Confirmed","Product Status"];
+            sheet.addRow(headers);
+            let sheetRows = 0;
+            let sheetCount = 1;
+            let lastId = null;
+            let chunk = 0;
+            let totalChunks = 0;
+
+            $.ajax({
+                url: "{{ route('admin.product-division-category.exportTotal') }}",
+                type: 'GET',
+                data: getParams(),
+                dataType: 'json',
+                success: function(res){
+                    totalChunks = Math.ceil(res.total / 100);
+                    fetchChunk();
+                },
+                error: function(){ showError('Error fetching total count'); }
+            });
+
+            function fetchChunk(){
+                $.ajax({
+                    url: "{{ route('admin.product-division-category.exportBatch') }}",
+                    type: 'GET',
+                    data: {
+                        ...getParams(),
+                        limit: 100,
+                        last_id: lastId
+                    },
+                    dataType: 'json',
+                    success: function(response){
+                        const rows = response.data;
+                        if (rows.length){
+                            rows.forEach(row => {
+                                if (sheetRows >= 200000){
+                                    sheetCount++;
+                                    sheet = workbook.addWorksheet('Sheet'+sheetCount);
+                                    sheet.addRow(headers);
+                                    sheetRows = 0;
+                                }
+                                sheet.addRow(row);
+                                sheetRows++;
+                            });
+                            lastId = response.last_id;
+                        }
+
+                        chunk++;
+                        const progress = Math.round((chunk/totalChunks)*100);
+                        $('#progress').css('width', progress + '%');
+                        $('#progress-text').text(progress + '%');
+
+                        if (chunk < totalChunks && rows.length){
+                            fetchChunk();
+                        } else {
+                            finish();
+                        }
+                    },
+                    error: function(){ showError('Error fetching data chunk'); }
+                });
+            }
+
+            function finish(){
+                const now = new Date();
+                const date = now.toLocaleDateString('en-GB').replace(/\//g,'-');
+                const time = now.toLocaleTimeString('en-GB',{hour12:false}).replace(/:/g,'-');
+                const fileName = `Product-division-category-report-${date}-${time}.xlsx`;
+                workbook.xlsx.writeBuffer().then(buffer => {
+                    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = fileName;
+                    link.click();
+
+                    $('#export-progress').hide();
+                    $('#progress').css('width','0%');
+                    $('.fillter-form-control').attr('readonly', false);
+                    $('#export-btn').attr('disabled', false);
+                }).catch(() => showError('Error generating file'));
+            }
+
+            function showError(message){
+                alert(message);
+                $('#export-progress').hide();
+                $('#progress-text').text('0%');
+                $('#progress').css('width','0%');
+                $('.fillter-form-control').attr('readonly', false);
+                $('#export-btn').attr('disabled', false);
+            }
+        }
+
+        $('#export-btn').on('click', function(e){
+            e.preventDefault();
+            startExport();
         });
 
         $('#export-progress').hide();
