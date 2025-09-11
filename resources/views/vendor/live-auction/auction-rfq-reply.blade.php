@@ -299,7 +299,7 @@ function IND_amount_format($amount) {
                                     <span class="bi bi-calendar-date" aria-hidden="true"></span>
                                 </span>
                                 <div class="form-floating">
-                                    <input type="text" class="form-control form-control-delivery-period"
+                                    <input type="text" class="form-control form-control-delivery-period enforce-min-max"
                                         id="deliveryPeriodInDays" name="vendor_delivery_period" placeholder="Delivery Period (In Days)" value="{{ !empty($normal_product_data->vendor_delivery_period) ? $normal_product_data->vendor_delivery_period : ($rfq->buyer_delivery_period ?? '') }}">
                                     <label for="deliveryPeriodInDays">Delivery Period (In Days) <span class="text-danger">*</span></label>
                                 </div>
@@ -312,7 +312,7 @@ function IND_amount_format($amount) {
                                     <span class="bi bi-calendar-date" aria-hidden="true"></span>
                                 </span>
                                 <div class="form-floating">
-                                    <input type="text" class="form-control form-control-price-validity"
+                                    <input type="text" class="form-control form-control-price-validity enforce-min-max"
                                         id="priceValidityInDays" name="vendor_price_validity" placeholder="Price Validity (In Days)" value="{{ $normal_product_data->vendor_price_validity ?? '' }}">
                                     <label for="priceValidityInDays">Price Validity (In Days)</label>
                                 </div>
@@ -497,6 +497,24 @@ $(function() {
     $('input, select, textarea, button').prop('disabled', true);
     $('[data-bs-toggle="tooltip"],[data-toggle="tooltip"]').tooltip('disable');
   }
+});
+
+// Enforce 1-999 range for numeric fields
+$(document).on('input', '.enforce-min-max', function(){
+    let val = this.value.replace(/[^0-9]/g, '');
+    if (val === '0') val = '';
+    this.value = val;
+});
+$(document).on('blur', '.enforce-min-max', function(){
+    if (this.value === '') return;
+    let num = parseInt(this.value, 10);
+    if (isNaN(num) || num <= 0){
+        this.value = '';
+        return;
+    }
+    if (num < 1) num = 1;
+    if (num > 999) num = 999;
+    this.value = num;
 });
 
 // Price input validation on blur
