@@ -171,7 +171,19 @@
             const chunkSize = 1000;
             const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet('Sheet1');
-            worksheet.addRow(["RFQ No", "Auction Date", "Auction Time", "Buyer Name", "Products", "Vendor Name", "Email", "Mobile", "Status", "Is Participated", "Order Confirmed"]);
+            worksheet.addRow([
+                "RFQ No",
+                "Auction Date",
+                "Auction Time",
+                "Buyer Name",
+                "Products",
+                "Vendor Name",
+                "Email",
+                "Mobile",
+                "Status",
+                "Is Participated",
+                "Order Confirmed",
+            ]);
 
             $('#export-progress').show();
             $('#progress').css('width', '0%');

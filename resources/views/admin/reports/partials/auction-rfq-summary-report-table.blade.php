@@ -29,9 +29,9 @@
                 <td>{{ $result->vendor_legal_name ?? '' }}</td>
                 <td>{{ $result->email ?? '' }}</td>
                 <td>{{ $result->mobile ?? '' }}</td>
-                <td>{{ $result->vendor_user_status == 1 ? 'Active' : ($result->vendor_user_status == 0 ? 'Inactive' : '') }}</td>
-                <td></td>
-                <td></td>
+                <td>{{ $result->vendor_user_status == 1 ? 'Active' : ($result->vendor_user_status == 2 ? 'Inactive' : '') }}</td>
+                <td>{{ $result->is_participated ?? '-' }}</td>
+                <td>{{ $result->order_confirmed ?? '-' }}</td>
             </tr>
         @empty
             <tr>
