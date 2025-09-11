@@ -323,6 +323,8 @@ class RfqReceivedController extends Controller
         // Basic validation (same as your original)
         // Validate required fields
         $validator = Validator::make($request->all(), [
+            'rfq_id'                => 'required|string',
+            'action'               => 'required|in:save,quote',
             'vendor_dispatch_branch' => 'required|integer',
             'vendor_payment_terms'   => 'required|string',
             'vendor_price_basis'     => 'required|string',
@@ -373,8 +375,9 @@ class RfqReceivedController extends Controller
 
                 // Find latest existing quotation (to keep old attachment if not replaced)
                 $existingQuotation = RfqVendorQuotation::where([
-                    'vendor_id'               => $vendor_id,
-                    'rfq_product_variant_id'  => $variantId,
+                    'vendor_id'              => $vendor_id,
+                    'rfq_id'                 => $rfq_id,
+                    'rfq_product_variant_id' => $variantId,
                 ])->latest()->first();
 
                 $attachmentPath = $existingQuotation->vendor_attachment_file ?? null;
@@ -402,24 +405,26 @@ class RfqReceivedController extends Controller
                 if ($action === 'save') {
                     RfqVendorQuotation::where([
                         'vendor_id'              => $vendor_id,
+                        'rfq_id'                 => $rfq_id,
                         'rfq_product_variant_id' => $variantId,
                         'status'                 => '2',
                     ])->delete();
                 }
 
-                // Create a new quotation row for this variant
+                // Always insert a fresh quotation row
                 RfqVendorQuotation::create([
-                    'vendor_id'                 => $vendor_id,
-                    'rfq_id'                    => $rfq_id,
-                    'rfq_product_variant_id'    => $variantId,
-                    'price'                     => $price,
-                    'mrp'                       => $mrps[$variantId] ?? 0,
-                    'discount'                  => $discounts[$variantId] ?? 0,
-                    'buyer_price'               => 0,
-                    'specification'             => $specs[$variantId] ?? null,
-                    'vendor_attachment_file'    => $attachmentPath,
-                    'vendor_brand'              => $sellerbrand[$variantId] ?? null,
-                    'vendor_remarks'            => $request->input('seller-remarks'),
+                    'vendor_id'              => $vendor_id,
+                    'rfq_id'                 => $rfq_id,
+                    'rfq_product_variant_id' => $variantId,
+                    'status'                 => $status,
+                    'price'                  => $price,
+                    'mrp'                    => $mrps[$variantId] ?? 0,
+                    'discount'               => $discounts[$variantId] ?? 0,
+                    'buyer_price'            => 0,
+                    'specification'          => $specs[$variantId] ?? null,
+                    'vendor_attachment_file' => $attachmentPath,
+                    'vendor_brand'           => $sellerbrand[$variantId] ?? null,
+                    'vendor_remarks'         => $request->input('seller-remarks'),
                     'vendor_additional_remarks' => $request->input('Seller-Additional-Remarks'),
                     'vendor_price_basis'        => $request->input('vendor_price_basis'),
                     'vendor_payment_terms'      => $request->input('vendor_payment_terms'),
@@ -429,9 +434,6 @@ class RfqReceivedController extends Controller
                     'vendor_currency'           => $request->input('vendor_currency'),
                     'buyer_user_id'             => $buyer_user_id,
                     'vendor_user_id'            => $vendor_user_id,
-                    'status'                    => $status,
-                    'created_at'                => now(),
-                    'updated_at'                => now(),
                 ]);
             }
 
