@@ -332,7 +332,7 @@ function IND_amount_format($amount) {
                                 </span>
                                 <div class="form-floating">
                                     <input type="text" class="form-control form-control-delivery-period"
-                                        id="deliveryPeriodInDays" name="vendor_delivery_period" placeholder="Delivery Period (In Days)" value="{{ !empty($normal_product_data->vendor_delivery_period) ? $normal_product_data->vendor_delivery_period : ($rfq->buyer_delivery_period ?? '') }}">
+                                        id="deliveryPeriodInDays" name="vendor_delivery_period" placeholder="Delivery Period (In Days)" value="{{ !empty($normal_product_data->vendor_delivery_period) ? $normal_product_data->vendor_delivery_period : ($rfq->buyer_delivery_period ?? '') }}" data-num-range min="1" max="9999">
                                     <label for="deliveryPeriodInDays">Delivery Period (In Days) <span class="text-danger">*</span></label>
                                 </div>
                             </div>
@@ -345,7 +345,7 @@ function IND_amount_format($amount) {
                                 </span>
                                 <div class="form-floating">
                                     <input type="text" class="form-control form-control-price-validity"
-                                        id="priceValidityInDays" name="vendor_price_validity" placeholder="Price Validity (In Days)" value="{{ $normal_product_data->vendor_price_validity ?? '' }}">
+                                        id="priceValidityInDays" name="vendor_price_validity" placeholder="Price Validity (In Days)" value="{{ $normal_product_data->vendor_price_validity ?? '' }}" data-num-range min="1" max="9999">
                                     <label for="priceValidityInDays">Price Validity (In Days)</label>
                                 </div>
                             </div>
@@ -557,14 +557,40 @@ function IND_amount_format(amount) {
 </script>
 
 <script>
+// ===== Numeric range enforcement =====
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-num-range]').forEach(input => {
+        const min = parseInt(input.getAttribute('min')) || null;
+        const max = parseInt(input.getAttribute('max')) || null;
+        const clamp = () => {
+            let val = input.value.replace(/[^0-9]/g, '');
+            if (!val) { input.value = ''; return; }
+            let num = parseInt(val, 10);
+            if (num === 0) { input.value = ''; return; }
+            if (min !== null && num < min) num = min;
+            if (max !== null && num > max) num = max;
+            input.value = String(num);
+        };
+        input.addEventListener('input', clamp);
+        input.addEventListener('blur', clamp);
+    });
+});
+</script>
+
+<script>
 // ====== Total price validation ======
+let bidErrorLock = false;
 const showBidError = msg => {
+    if (bidErrorLock) return;
+    bidErrorLock = true;
     if (window.toastr) {
         toastr.error(msg);
     } else {
         alert(msg);
     }
+    setTimeout(() => { bidErrorLock = false; }, 800);
 };
+document.getElementById('PriceInput')?.addEventListener('input', () => { bidErrorLock = false; });
 
 const validateTotalPrice = price => {
     const totalBid  = parseFloat($('#total_bid_price').val().replace(/,/g, '')) || 0;
@@ -606,6 +632,7 @@ const handlePriceBlur = el => {
     if (!el.value) return;
     const price = parseFloat(el.value.replace(/,/g, ''));
     if (isNaN(price)) {
+        showBidError('Please enter a valid number.');
         el.value = '';
         return;
     }
