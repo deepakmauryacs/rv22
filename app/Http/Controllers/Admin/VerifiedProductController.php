@@ -61,7 +61,7 @@ class VerifiedProductController extends Controller
         }
 
         if ($request->filled('status')) {
-            $query->where('status', $request->input('status'));
+            $query->where('vendor_status', $request->input('status'));
         }
 
         $perPage = $request->input('per_page', 25); // default to 25 if not present
@@ -410,7 +410,7 @@ class VerifiedProductController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $product = VendorProduct::findOrFail($id);
-        $product->status = $request->status;
+        $product->vendor_status = $request->status == 1 ? 1 : 2;
         $product->save();
 
         return response()->json(['success' => true, 'message' => 'Status updated successfully']);
