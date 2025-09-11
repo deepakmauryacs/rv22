@@ -173,10 +173,19 @@ class LiveAuctionRfqSinglePriceController extends Controller
      */
     public function saveLotRfq(Request $request)
     {
+        if (!$request->ajax()) {
+            abort(404);
+        }
+
         $request->validate([
-            'rfq_id'          => ['required','string'],
-            'total_price'     => ['required','numeric','min:0.01'],
-            'total_bid_price' => ['nullable','string'],
+            'rfq_id'                => ['required','string'],
+            'total_price'           => ['required','numeric','min:0.01'],
+            'total_bid_price'       => ['nullable','string'],
+            'vendor_price_basis'    => ['required','string'],
+            'vendor_payment_terms'  => ['required','string'],
+            'vendor_delivery_period'=> ['required','integer'],
+            'vendor_dispatch_branch'=> ['required','integer'],
+            'vendor_currency'       => ['required','string'],
         ]);
 
         $vendorId  = (int) (function_exists('getParentUserId') ? getParentUserId() : (auth()->id() ?? 0));
@@ -240,16 +249,17 @@ class LiveAuctionRfqSinglePriceController extends Controller
         // Calculate the % adjustment using the original Start Total shown in the UI
         $adjustmentPercent = $this->calculate_price_adjustment($startTotalFromUI, $lotPrice);
 
-        DB::transaction(function () use (
-            $rfqId, $vendorId, $auction, $variants, $adjustmentPercent, $vendSpecs,
-            $vend_price_basis, $vend_payment_terms, $vend_delivery_period,
-            $vend_price_validity, $vend_dispatch_branch, $vend_currency, $lotPrice
-        ) {
-            // (A) Upsert lot total (if the table exists)
-            if (Schema::hasTable('rfq_vendor_auction_price_total')) {
-                $totalWhere = ['rfq_no'=>$rfqId,'vendor_id'=>$vendorId];
-                if (Schema::hasColumn('rfq_vendor_auction_price_total','rfq_auction_id')) {
-                    $totalWhere['rfq_auction_id'] = $auction->id;
+        try {
+            DB::transaction(function () use (
+                $rfqId, $vendorId, $auction, $variants, $adjustmentPercent, $vendSpecs,
+                $vend_price_basis, $vend_payment_terms, $vend_delivery_period,
+                $vend_price_validity, $vend_dispatch_branch, $vend_currency, $lotPrice
+            ) {
+                // (A) Upsert lot total (if the table exists)
+                if (Schema::hasTable('rfq_vendor_auction_price_total')) {
+                    $totalWhere = ['rfq_no'=>$rfqId,'vendor_id'=>$vendorId];
+                    if (Schema::hasColumn('rfq_vendor_auction_price_total','rfq_auction_id')) {
+                        $totalWhere['rfq_auction_id'] = $auction->id;
                 }
 
                 $existsTotal = DB::table('rfq_vendor_auction_price_total')
@@ -269,56 +279,81 @@ class LiveAuctionRfqSinglePriceController extends Controller
                 }
             }
 
-            // (B) Upsert per-variant unit price into rfq_vendor_auction_price
-            foreach ($variants as $v) {
-                $originalPrice  = (float) $v->start_price;
-                $adjustedPrice  = $originalPrice - ($originalPrice * ($adjustmentPercent / 100));
-                $vendPrice      = $originalPrice > 0 ? round($adjustedPrice, 2) : 0.00;
-                if ($vendPrice < 0) {
-                    $vendPrice = 0.00;
-                }
+                // (B) Upsert per-variant unit price into rfq_vendor_auction_price
+                foreach ($variants as $v) {
+                    $variantId = (int) $v->rfq_variant_id;
+                    $originalPrice = $v->start_price;
+                    if ($variantId <= 0 || $originalPrice === null || $originalPrice === '') {
+                        continue;
+                    }
+                    $originalPrice = (float) $originalPrice;
 
-                $specTxt = null;
-                if (array_key_exists($v->rfq_variant_id, $vendSpecs)) {
-                    $tmp = trim((string)$vendSpecs[$v->rfq_variant_id]);
-                    $specTxt = ($tmp === '') ? null : mb_substr($tmp, 0, 10000);
-                }
+                    $adjustedPrice  = $originalPrice - ($originalPrice * ($adjustmentPercent / 100));
+                    $vendPrice      = $originalPrice > 0 ? round($adjustedPrice, 2) : 0.00;
+                    if ($vendPrice < 0) {
+                        $vendPrice = 0.00;
+                    }
 
-                $rowWhere = [
-                    'rfq_no'                 => $rfqId,
-                    'rfq_auction_id'         => $auction->id,
-                    'vendor_id'              => $vendorId,
-                    'rfq_product_veriant_id' => (int) $v->rfq_variant_id,
-                ];
+                    $specTxt = null;
+                    if (array_key_exists($variantId, $vendSpecs)) {
+                        $tmp = trim((string)$vendSpecs[$variantId]);
+                        $tmp = preg_replace("/[<>\"'`~]/", '', $tmp);
+                        $specTxt = ($tmp === '') ? null : mb_substr($tmp, 0, 10000);
+                    }
 
-                $payload = [
-                    'vend_price'           => $vendPrice,
-                    'vend_specs'           => $specTxt,
-                    'vend_price_basis'     => $vend_price_basis,
-                    'vend_payment_terms'   => $vend_payment_terms,
-                    'vend_delivery_period' => $vend_delivery_period !== null ? (int)$vend_delivery_period : null,
-                    'vend_price_validity'  => ($vend_price_validity === '' ? null : (float)$vend_price_validity),
-                    'vend_dispatch_branch' => $vend_dispatch_branch !== null ? (int)$vend_dispatch_branch : null,
-                    'vend_currency'        => $vend_currency,
-                    'vendor_user_id'       => auth()->id() ?? $vendorId,
-                    'updated_at'           => now(),
-                ];
+                    $rowWhere = [
+                        'rfq_no'                 => $rfqId,
+                        'rfq_auction_id'         => $auction->id,
+                        'vendor_id'              => $vendorId,
+                        'rfq_product_veriant_id' => $variantId,
+                    ];
 
-                $existing = DB::table('rfq_vendor_auction_price')
-                    ->where($rowWhere)
-                    ->lockForUpdate()
-                    ->first();
+                    $payload = [
+                        'vend_price'           => $vendPrice,
+                        'vend_specs'           => $specTxt,
+                        'vend_price_basis'     => $vend_price_basis,
+                        'vend_payment_terms'   => $vend_payment_terms,
+                        'vend_delivery_period' => $vend_delivery_period !== null ? (int)$vend_delivery_period : null,
+                        'vend_price_validity'  => ($vend_price_validity === '' ? null : (float)$vend_price_validity),
+                        'vend_dispatch_branch' => $vend_dispatch_branch !== null ? (int)$vend_dispatch_branch : null,
+                        'vend_currency'        => $vend_currency,
+                        'vendor_user_id'       => auth()->id() ?? $vendorId,
+                        'updated_at'           => now(),
+                    ];
 
-                if ($existing) {
-                    DB::table('rfq_vendor_auction_price')
+                    $existing = DB::table('rfq_vendor_auction_price')
                         ->where($rowWhere)
-                        ->update($payload);
-                } else {
-                    DB::table('rfq_vendor_auction_price')
-                        ->insert(array_merge($rowWhere, $payload, ['created_at'=>now()]));
+                        ->lockForUpdate()
+                        ->first();
+
+                    if ($existing) {
+                        DB::table('rfq_vendor_auction_price')
+                            ->where($rowWhere)
+                            ->update($payload);
+                    } else {
+                        DB::table('rfq_vendor_auction_price')
+                            ->insert(array_merge($rowWhere, $payload, ['created_at'=>now()]));
+                    }
                 }
-            }
-        });
+
+                // (C) final duplicate total price guard
+                if (Schema::hasTable('rfq_vendor_auction_price_total')) {
+                    $dupQuery = DB::table('rfq_vendor_auction_price_total')
+                        ->where('rfq_no', $rfqId)
+                        ->where('vendor_id', '!=', $vendorId)
+                        ->where('total_price', $lotPrice)
+                        ->lockForUpdate();
+                    if (Schema::hasColumn('rfq_vendor_auction_price_total', 'rfq_auction_id')) {
+                        $dupQuery->where('rfq_auction_id', $auction->id);
+                    }
+                    if ($dupQuery->exists()) {
+                        throw new \RuntimeException($vend_currency . $lotPrice . ' already submitted by another vendor as Rank 1. Please enter a lower amount.');
+                    }
+                }
+            });
+        } catch (\Throwable $e) {
+            return response()->json(['status'=>false,'message'=>$e->getMessage()]);
+        }
 
         $variantIds = $variants->pluck('rfq_variant_id')->map(fn($v) => (int) $v)->all();
         $this->maybeExtendAuctionTail($auction, $rfqId, $vendorId, $variantIds);
@@ -440,20 +475,19 @@ class LiveAuctionRfqSinglePriceController extends Controller
                 ];
             }
 
-            if ($total_price < $l1_price && $min_bid_decrement > 0) {
-                $expected_min_price = round($l1_price - ($l1_price * ($min_bid_decrement / 100)), 2);
-                if ($total_price > $expected_min_price) {
-                    return [
-                        'status' => 5,
-                        'message' => 'Price must be ≤ ' . request()->input('vendor_currency') . $expected_min_price . ' (minimum bid decrement ' . $min_bid_decrement . '%)'
-                    ];
+            if ($total_price < $l1_price) {
+                if ($min_bid_decrement > 0) {
+                    $minAllowed = round($l1_price - ($l1_price * ($min_bid_decrement / 100)), 2);
+                    if ($total_price > $minAllowed) {
+                        return [
+                            'status' => 5,
+                            'message' => 'Price must be ≤ ' . request()->input('vendor_currency') . $minAllowed . ' (minimum bid decrement ' . $min_bid_decrement . '%)'
+                        ];
+                    }
                 }
-            }
 
-            $effective_decrement = $min_bid_decrement + $max_decrement;
-            if ($total_price < $l1_price && $effective_decrement > 0) {
-                $expected_min_price = round($l1_price - ($l1_price * ($effective_decrement / 100)), 2);
-                if ($total_price < $expected_min_price) {
+                $maxAllowed = round($l1_price - ($l1_price * ($max_decrement / 100)), 2);
+                if ($total_price < $maxAllowed) {
                     return [
                         'status' => 6,
                         'message' => 'Price cannot be reduced by more than 10% at once.'
@@ -461,8 +495,7 @@ class LiveAuctionRfqSinglePriceController extends Controller
                 }
             }
         } else {
-            $effective_decrement = min($min_bid_decrement, $max_decrement);
-            $total_bid_price    = round((float) $total_bid_price, 2);
+            $total_bid_price = round((float) $total_bid_price, 2);
 
             if ($total_bid_price > 0 && $total_price > $total_bid_price) {
                 return [
@@ -471,9 +504,19 @@ class LiveAuctionRfqSinglePriceController extends Controller
                 ];
             }
 
-            if ($effective_decrement > 0) {
-                $expected_min_price = round($total_bid_price - ($total_bid_price * ($effective_decrement / 100)), 2);
-                if ($total_price < $expected_min_price) {
+            if ($total_bid_price > 0 && $total_price < $total_bid_price) {
+                if ($min_bid_decrement > 0) {
+                    $minAllowed = round($total_bid_price - ($total_bid_price * ($min_bid_decrement / 100)), 2);
+                    if ($total_price > $minAllowed) {
+                        return [
+                            'status' => 5,
+                            'message' => 'Price must be ≤ ' . request()->input('vendor_currency') . $minAllowed . ' (minimum bid decrement ' . $min_bid_decrement . '%)'
+                        ];
+                    }
+                }
+
+                $maxAllowed = round($total_bid_price - ($total_bid_price * ($max_decrement / 100)), 2);
+                if ($total_price < $maxAllowed) {
                     return [
                         'status' => 6,
                         'message' => 'Price cannot be reduced by more than 10% from start price at once.'
