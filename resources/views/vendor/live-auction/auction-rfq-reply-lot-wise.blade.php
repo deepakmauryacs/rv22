@@ -571,6 +571,7 @@ const validateTotalPrice = price => {
     const lastPrice = parseFloat($('#last_price').text().replace(/,/g, '')) || 0;
     const minDec    = parseFloat($('#min_bid_decrement').val()) || 2;
     const base      = lastPrice > 0 ? lastPrice : totalBid;
+    const isFirstBid = lastPrice <= 0;
 
     if (base <= 0) return true;
 
@@ -581,16 +582,19 @@ const validateTotalPrice = price => {
         return false;
     }
 
-    const maxAllowed = parseFloat((base * (1 - minDec / 100)).toFixed(2));
-    if (price > maxAllowed) {
-        showBidError(`Your bid must be at least ${minDec}% lower than the last price. Maximum allowed bid is ${maxAllowed.toFixed(2)}.`);
-        $('#PriceInput').val('');
-        return false;
+    if (!isFirstBid) {
+        const maxAllowed = parseFloat((base * (1 - minDec / 100)).toFixed(2));
+        if (price > maxAllowed) {
+            showBidError(`Your bid must be at least ${minDec}% lower than the last price. Maximum allowed bid is ${maxAllowed.toFixed(2)}.`);
+            $('#PriceInput').val('');
+            return false;
+        }
     }
 
     const minAllowed = parseFloat((base * (1 - (minDec + 10) / 100)).toFixed(2));
+    const minContext = lastPrice > 0 ? 'the last price' : 'the Total Aggregate Value - Start Price';
     if (price < minAllowed) {
-        showBidError(`Your bid cannot be more than ${minDec + 10}% lower than the last price. Minimum allowed bid is ${minAllowed.toFixed(2)}.`);
+        showBidError(`Your bid cannot be more than ${minDec + 10}% lower than ${minContext}. Minimum allowed bid is ${minAllowed.toFixed(2)}.`);
         $('#PriceInput').val('');
         return false;
     }
