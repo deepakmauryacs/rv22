@@ -384,7 +384,7 @@
                                                                     </span>
                                                                 </div> --}}
 
-                                                                <div class="vendor-variant-price">
+                                                                <div class="vendor-variant-price {{ (isset($current_status) && $current_status == 1) ? 'd-none' : '' }}">
                                                                     {{IND_money_format($vendor_last_quote['price'])}}
                                                                     <!-- This Checkbox will show when Buyer click Proceed to order Button -->
                                                                     @if(!empty($vendor['latest_quote']) && $vendor['latest_quote']['left_qty'] > 0)
@@ -879,13 +879,15 @@
                 <div class="d-flex flex-wrap flex-md-nowrap align-items-center justify-content-center gap-3">
                     <button type="button"
                         class="ra-btn btn-outline-primary ra-btn-outline-primary text-uppercase text-nowrap font-size-10"
-                        data-bs-toggle="modal" data-bs-target="#createAuctionModal"><span
+                        data-bs-toggle="modal" data-bs-target="#createAuctionModal"
+                        @if(isset($current_status) && $current_status == 1) disabled @endif><span
                         class="bi bi-calendar-date font-size-12" aria-hidden="true"></span> VIEW/EDIT AUCTION
                     </button>
-                   
-                   
+
+
                     <a type="button"
-                        class="ra-btn btn-primary ra-btn-primary text-uppercase text-nowrap font-size-10 proceed-to-order-btn"><span
+                        class="ra-btn btn-primary ra-btn-primary text-uppercase text-nowrap font-size-10 proceed-to-order-btn @if(isset($current_status) && $current_status == 1) disabled @endif"
+                        @if(isset($current_status) && $current_status == 1) style="pointer-events: none;" @endif><span
                         class="bi bi-check2-square font-size-12" aria-hidden="true"></span> PROCEED TO ORDER
                     </a>
                     {{-- href="{{ route('buyer.unapproved-orders.create', ['rfq_id' => $rfq['rfq_id']]) }}" --}}
