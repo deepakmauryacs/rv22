@@ -16,7 +16,9 @@
             <div class="card">
                 <div class="card-header bg-white d-flex align-items-center justify-content-between">
                     <h1 class="font-size-18 mb-0">Manage Users</h1>
-                    <a href="{{ route('buyer.user-management.create-user') }}" class="ra-btn small-btn ra-btn-primary my-1">Add User</a>
+                    @if(checkPermission('MANAGE_USERS','add','1'))
+                        <a href="{{ route('buyer.user-management.create-user') }}" class="ra-btn small-btn ra-btn-primary my-1">Add User</a>
+                    @endif
                 </div>
                 <div class="card-body">
                     <form id="searchForm" action="{{ route('buyer.user-management.users') }}" method="GET"></form>

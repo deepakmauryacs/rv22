@@ -30,9 +30,11 @@
                 {{ $user->status == '1' ? 'Active' : 'Inactive' }}
             </td>
             <td>
-                <a href="{{ route('buyer.user-management.edit-user', $user->id) }}" class="ra-btn small-btn ra-btn-outline-primary-light">
-                    Edit
-                </a>
+                @if(checkPermission('MANAGE_USERS','edit','1'))
+                    <a href="{{ route('buyer.user-management.edit-user', $user->id) }}" class="ra-btn small-btn ra-btn-outline-primary-light">
+                        Edit
+                    </a>
+                @endif
             </td>
         </tr>
         @empty

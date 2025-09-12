@@ -16,7 +16,9 @@
             <div class="bg-white favourite-vendor user-manage-role">
                 <div class="card-head-line">
                     <h3>Manage Role</h3>
-                    <a href="{{route('buyer.role-permission.create-role')}}" class="btn ra-btn ra-btn-primary small-btn">+ Add New Role</a>
+                    @if(checkPermission('MANAGE_ROLE','add','1'))
+                        <a href="{{route('buyer.role-permission.create-role')}}" class="btn ra-btn ra-btn-primary small-btn">+ Add New Role</a>
+                    @endif
                 </div>
                 <div class="table-responsive">
                       @include('buyer.role-permission.partials.table', ['results' => $results])
