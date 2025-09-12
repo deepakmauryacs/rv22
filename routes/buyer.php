@@ -131,6 +131,8 @@ Route::name('buyer.')->group(function () {
                 Route::get('order-confirmed/view/{id}', [OrderConfirmedController::class, 'view'])->name('rfq.order-confirmed.view');
                 Route::get('order-confirmed/print/{id}', [OrderConfirmedController::class, 'print'])->name('rfq.order-confirmed.print');
                 Route::post('order-confirmed/cancel/{id}', [OrderConfirmedController::class, 'cancel'])->name('rfq.order-confirmed.cancel');
+                Route::get('order-confirmed/export/total', [OrderConfirmedController::class, 'exportTotal'])->name('rfq.order-confirmed.exportTotal');
+                Route::get('order-confirmed/export/batch', [OrderConfirmedController::class, 'exportBatch'])->name('rfq.order-confirmed.exportBatch');
             });
 
 

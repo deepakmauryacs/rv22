@@ -14,63 +14,73 @@ class OrderConfirmedController extends Controller
 {
     use HasModulePermission;
 
-    public function index(Request $request)
+    protected function baseQuery(Request $request)
     {
-        $this->ensurePermission('ORDERS_CONFIRMED_LISTING', 'view', '1');
+        $query = Order::with('order_variants.product', 'vendor', 'rfq', 'order_confirmed_by')
+            ->where('buyer_id', getParentUserId())
+            ->where('order_status', '!=', '3');
 
-        $query = Order::with('order_variants','vendor','rfq')->where('buyer_id', getParentUserId())->where('order_status','!=','3');
-        if ($request->filled('order_no')){
+        if ($request->filled('order_no')) {
             $query->where('po_number', 'like', '%' . $request->order_no . '%');
         }
-        if ($request->filled('rfq_no')){
+        if ($request->filled('rfq_no')) {
             $query->where('rfq_id', 'like', '%' . $request->rfq_no . '%');
         }
-        if($request->filled('division')){
+        if ($request->filled('division')) {
             $query->whereHas('order_variants', function ($q) use ($request) {
                 $q->whereHas('product', function ($q) use ($request) {
                     $q->where('division_id', $request->division);
                 });
             });
         }
-        if($request->filled('category')){
+        if ($request->filled('category')) {
             $query->whereHas('order_variants', function ($q) use ($request) {
                 $q->whereHas('product', function ($q) use ($request) {
                     $q->where('category_id', $request->category);
                 });
             });
         }
-        if($request->filled('branch')){
+        if ($request->filled('branch')) {
             $query->whereHas('rfq', function ($q) use ($request) {
                 $q->where('buyer_branch', $request->branch);
             });
         }
-        if($request->filled('from_date') && $request->filled('to_date')) {
+        if ($request->filled('from_date') && $request->filled('to_date')) {
             $query->whereBetween('created_at', [$request->from_date, $request->to_date]);
         }
-        if($request->filled('from_date') && !$request->filled('to_date')) {
+        if ($request->filled('from_date') && !$request->filled('to_date')) {
             $query->whereDate('created_at', '>=', $request->from_date);
         }
-        if(!$request->filled('from_date') && $request->filled('to_date')) {
+        if (!$request->filled('from_date') && $request->filled('to_date')) {
             $query->whereDate('created_at', '<=', $request->to_date);
         }
-        if($request->filled('product_name')){
+        if ($request->filled('product_name')) {
             $query->whereHas('order_variants', function ($q) use ($request) {
                 $q->whereHas('product', function ($q) use ($request) {
                     $q->where('product_name', 'like', "%$request->product_name%");
                 });
             });
         }
-        if ($request->filled('vendor_name'))
-        {
-            $legal_name=$request->vendor_name;
+        if ($request->filled('vendor_name')) {
+            $legal_name = $request->vendor_name;
             $query->whereHas('vendor', function ($q) use ($legal_name) {
                 $q->where('legal_name', 'like', "%$legal_name%");
             });
         }
-        if ($request->filled('status')){
+        if ($request->filled('status')) {
             $query->where('order_status', $request->status);
         }
-        $order=$request->order;
+
+        return $query;
+    }
+
+    public function index(Request $request)
+    {
+        $this->ensurePermission('ORDERS_CONFIRMED_LISTING', 'view', '1');
+
+        $query = $this->baseQuery($request);
+
+        $order = $request->order;
         if (!empty($order)) {
             $query->orderBy($column[$order['0']['column']], $order['0']['dir']);
         } else {
@@ -95,9 +105,51 @@ class OrderConfirmedController extends Controller
             $unique_category[$name][] = $id;
         }
         ksort($unique_category);
-        $branchs=getBuyerBranchs();
+        $branchs = getBuyerBranchs();
 
-        return view('buyer.rfq.order_confirmed.index',compact('results','divisions','unique_category','branchs'));
+        return view('buyer.rfq.order_confirmed.index', compact('results', 'divisions', 'unique_category', 'branchs'));
+    }
+
+    public function exportTotal(Request $request)
+    {
+        $total = $this->baseQuery($request)->count();
+        return response()->json(['total' => $total]);
+    }
+
+    public function exportBatch(Request $request)
+    {
+        $limit = intval($request->input('limit'));
+        $lastId = $request->input('last_id');
+
+        $query = $this->baseQuery($request)->orderBy('id');
+        if ($lastId) {
+            $query->where('id', '>', $lastId);
+        }
+
+        $data_list = $query->take($limit)->get();
+
+        $result = [];
+        foreach ($data_list as $row) {
+            $result[] = [
+                $row->po_number ?? '-',
+                $row->buyer_order_number,
+                $row->rfq_id ?? '-',
+                date('d/m/Y', strtotime($row->created_at)),
+                $row->rfq ? date('d/m/Y', strtotime($row->rfq->created_at)) : '-',
+                !empty($row->rfq->buyer_branch) ? getbuyerBranchById($row->rfq->buyer_branch)->name : '-',
+                $row->order_variants->pluck('product.product_name')->filter()->unique()->join(', ') ?? '-',
+                $row->order_confirmed_by->name ?? '-',
+                $row->vendor->legal_name ?? '-',
+                ($row->vendor_currency ?? '') . ($row->order_total_amount ? IND_money_format($row->order_total_amount) : '0'),
+                $row->order_status == 2 ? 'Cancelled' : '',
+            ];
+        }
+
+        $lastRow = $data_list->last();
+        return response()->json([
+            'data' => $result,
+            'last_id' => $lastRow->id ?? null,
+        ]);
     }
 
     public function view(Request $request,$id) {
