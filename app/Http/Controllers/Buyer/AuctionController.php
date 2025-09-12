@@ -7,8 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Category;
 use App\Models\Division;
 use App\Models\LiveVendorProduct;
-use App\Models\Rfq;
-use App\Models\RfqProduct;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -30,103 +29,78 @@ class AuctionController extends Controller
     {
         $this->ensurePermission('AUCTION', 'view', '1');
         $user_branch_id_only = getBuyerUserBranchIdOnly();
+        $params = [getParentUserId()];
 
-        $query = Rfq::query()
-            ->from('rfqs')
-            // LEFT JOIN rfq_auctions so RFQs without auctions still appear
-            ->Join('rfq_auctions as ra', 'ra.rfq_no', '=', 'rfqs.rfq_id')
-            ->select([
-                'rfqs.*',
-                DB::raw('ra.rfq_no as auction_rfq_no'),
-                DB::raw('ra.auction_date'),
-                DB::raw('ra.auction_start_time'),
-                DB::raw('ra.auction_end_time'),
-            ])
-            // Auction status: 0=none, 1=upcoming, 2=live, 3=completed
-            ->selectRaw("
-                CASE
-                    WHEN ra.rfq_no IS NULL THEN 0
-                    WHEN STR_TO_DATE(CONCAT(ra.auction_date,' ', ra.auction_start_time), '%Y-%m-%d %H:%i:%s') <= NOW()
-                         AND STR_TO_DATE(CONCAT(ra.auction_date,' ', ra.auction_end_time),   '%Y-%m-%d %H:%i:%s') >= NOW()
-                        THEN 2
-                    WHEN STR_TO_DATE(CONCAT(ra.auction_date,' ', ra.auction_end_time), '%Y-%m-%d %H:%i:%s') < NOW()
-                        THEN 3
-                    ELSE 1
-                END as auction_status
-            ")
-            ->where('rfqs.buyer_id', getParentUserId())
-            ->whereNotIn('rfqs.buyer_rfq_status', [2, 5, 8, 10])
-            ->where('rfqs.record_type', 2)
-            ->with([
-                'rfqVendorQuotations' => function ($q) {
-                    $q->where('status', 1);
-                },
-                'rfqProducts.masterProduct',
-                'buyerUser',
-                'buyerBranch' => function ($q) {
-                    $q->where('user_type', 1);
-                },
-            ])
-            ->addSelect([
-                'rfq_response_received' => function ($q) {
-                    $q->selectRaw('COUNT(DISTINCT vendor_id)')
-                      ->from('rfq_vendor_quotations')
-                      ->whereColumn('rfq_id', 'rfqs.rfq_id')
-                      ->where('status', 1);
-                }
-            ]);
+        $sql = "SELECT r.rfq_id, r.created_at, r.prn_no,
+                       GROUP_CONCAT(DISTINCT p.product_name ORDER BY p.product_name SEPARATOR ', ') as product_names,
+                       ra.auction_date, ra.auction_start_time, ra.auction_end_time,
+                       CASE
+                           WHEN ra.rfq_no IS NULL THEN 0
+                           WHEN CONCAT(ra.auction_date,' ',ra.auction_start_time) <= NOW()
+                                AND CONCAT(ra.auction_date,' ',ra.auction_end_time) >= NOW() THEN 2
+                           WHEN CONCAT(ra.auction_date,' ',ra.auction_end_time) < NOW() THEN 3
+                           ELSE 1
+                       END AS auction_status
+                FROM rfqs r
+                LEFT JOIN rfq_auctions ra ON ra.rfq_no = r.rfq_id
+                LEFT JOIN rfq_products rp ON rp.rfq_id = r.rfq_id
+                LEFT JOIN products p ON p.id = rp.product_id
+                WHERE r.buyer_id = ?
+                  AND r.buyer_rfq_status NOT IN (2,5,8,10)
+                  AND r.record_type = 2";
 
-        // Limit by user's branches
         if (!empty($user_branch_id_only)) {
-            $query->whereIn('buyer_branch', $user_branch_id_only);
+            $sql .= " AND r.buyer_branch IN (" . implode(',', array_fill(0, count($user_branch_id_only), '?')) . ")";
+            $params = array_merge($params, $user_branch_id_only);
         }
 
-        // === Filter: RFQ No. (partial match) ===
         if ($request->filled('rfq_no')) {
-            $query->where('rfqs.rfq_id', 'like', '%' . trim($request->rfq_no) . '%');
+            $sql .= " AND r.rfq_id LIKE ?";
+            $params[] = '%' . trim($request->rfq_no) . '%';
         }
 
-        // === Filter: Product Name (via relation) ===
         if ($request->filled('product_name')) {
-            $name = trim($request->product_name);
-            $query->whereHas('rfqProducts.masterProduct', function ($q) use ($name) {
-                $q->where('product_name', 'like', '%' . $name . '%');
-            });
+            $sql .= " AND p.product_name LIKE ?";
+            $params[] = '%' . trim($request->product_name) . '%';
         }
 
-        // === Filter: Auction Date (supports d/m/Y or Y-m-d) ===
-        // === Filter: Auction Date (DB saves as YYYY-MM-DD) ===
         if ($request->filled('auction_date')) {
             $raw = trim($request->auction_date);
             $auctionDateYmd = null;
-
-            // Try d/m/Y first
             try {
                 $auctionDateYmd = \Carbon\Carbon::createFromFormat('d/m/Y', $raw)->format('Y-m-d');
             } catch (\Exception $e) {
-                // Fallback: parse (works for YYYY-MM-DD)
                 try {
                     $auctionDateYmd = \Carbon\Carbon::parse(str_replace('/', '-', $raw))->format('Y-m-d');
-                } catch (\Exception $e2) {}
+                } catch (\Exception $e2) {
+                }
             }
-
             if ($auctionDateYmd) {
-                $query->where('ra.auction_date', $auctionDateYmd);
+                $sql .= " AND ra.auction_date = ?";
+                $params[] = $auctionDateYmd;
             }
         }
 
+        $sql .= " GROUP BY r.rfq_id, r.created_at, r.prn_no, ra.rfq_no, ra.auction_date, ra.auction_start_time, ra.auction_end_time
+                  ORDER BY r.updated_at DESC";
 
-        $results = $query
-            ->orderBy('rfqs.updated_at', 'DESC')
-            ->paginate($request->input('per_page', 25))
-            ->appends($request->all());
+        $results = collect(DB::select($sql, $params));
+
+        $page    = $request->input('page', 1);
+        $perPage = $request->input('per_page', 25);
+        $paginated = new LengthAwarePaginator(
+            $results->forPage($page, $perPage)->values(),
+            $results->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
 
         if ($request->ajax()) {
-            return view('buyer.auction.partials.table', compact('results'))->render();
+            return view('buyer.auction.partials.table', ['results' => $paginated])->render();
         }
 
-        // Only these three filters are in use now
-        return view('buyer.auction.index', compact('results'));
+        return view('buyer.auction.index', ['results' => $paginated]);
     }
 
 
