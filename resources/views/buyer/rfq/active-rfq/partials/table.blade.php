@@ -76,7 +76,9 @@
                 <td>
                     <div class="rfq-table-btn-group">
                         <a class="ra-btn small-btn ra-btn-primary text-white d-inline-block {{ $result->buyer_rfq_status == 1 ? 'disabled' : ''}}" href="{{ route("buyer.rfq.cis-sheet", ['rfq_id'=>$result->rfq_id]) }}">CIS</a>
-                        <button class="ra-btn small-btn ra-btn-outline-primary-light {{ ($is_auction || in_array($result->buyer_rfq_status, array(5, 9, 10))) ? 'disabled' : 'edit-rfq'}}" data-rfq-id="{{ $result->rfq_id }}">Edit</button>
+                        @if(checkPermission('EDIT_RFQ','edit','1'))
+                            <button class="ra-btn small-btn ra-btn-outline-primary-light {{ ($is_auction || in_array($result->buyer_rfq_status, array(5, 9, 10))) ? 'disabled' : 'edit-rfq'}}" data-rfq-id="{{ $result->rfq_id }}">Edit</button>
+                        @endif
                         <button class="ra-btn small-btn ra-btn-outline-danger {{ $is_auction ? 'disabled' : 'close-rfq'}}" data-rfq-id="{{ $result->rfq_id }}" >Close</button>
                     </div>
                 </td>
