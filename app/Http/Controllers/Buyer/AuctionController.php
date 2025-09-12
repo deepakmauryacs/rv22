@@ -15,9 +15,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 use DateTime;
+use App\Traits\HasModulePermission;
 
 class AuctionController extends Controller
 {
+    use HasModulePermission;
+
     public function __construct()
     {
         date_default_timezone_set('Asia/Kolkata');
@@ -25,6 +28,7 @@ class AuctionController extends Controller
 
     public function index(Request $request)
     {
+        $this->ensurePermission('AUCTION', 'view', '1');
         $user_branch_id_only = getBuyerUserBranchIdOnly();
 
         $query = Rfq::query()
@@ -131,6 +135,7 @@ class AuctionController extends Controller
     # -------------------------------------------------------------------------
     public function createAuction(Request $request)
     {
+        $this->ensurePermission('AUCTION', 'add', '1');
         // 1) Validate incoming payload (matches your posted form)
         $validator = Validator::make($request->all(), [
             'vendor_ids'                  => ['required','array','min:1'],
@@ -627,6 +632,7 @@ class AuctionController extends Controller
     # -------------------------------------------------------------------------
     public function closeAuction(Request $request)
     {
+        $this->ensurePermission('AUCTION', 'edit', '1');
         // 1) Validate input
         $request->validate([
             'rfq_no' => 'required|string|max:100',
@@ -711,6 +717,7 @@ class AuctionController extends Controller
     # -------------------------------------------------------------------------
     public function forceStop(Request $request)
     {
+        $this->ensurePermission('AUCTION', 'edit', '1');
         $rfqNo = $request->post('rfq_no');
         if (!$rfqNo) {
             return response()->json(['status'=>'error','message'=>'Invalid auction ID.']);
