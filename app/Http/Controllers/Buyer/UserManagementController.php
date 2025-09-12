@@ -56,9 +56,11 @@ class UserManagementController extends Controller
      * Show the form for creating a new user.
      *
      * @return \Illuminate\View\View Returns the user creation form with roles and countries
-     */
+    */
     public function create()
     {
+        $this->ensurePermission('MANAGE_USERS', 'add', '1');
+
         $branches = BranchDetail::where('user_id', getParentUserId())->where('user_type', 1)->where('status', 1)->get();
         $roles = UserRole::where('role_name_for',1)->where('user_master_id', getParentUserId())->get();
         $countries=Country::select('name','phonecode')->where('status',1)->get();
@@ -72,6 +74,8 @@ class UserManagementController extends Controller
      */
     public function store(Request $request)
     {
+        $this->ensurePermission('MANAGE_USERS', 'add', '1');
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users',
@@ -137,6 +141,8 @@ class UserManagementController extends Controller
      */
     public function edit($id)
     {
+        $this->ensurePermission('MANAGE_USERS', 'edit', '1');
+
         $user=User::find($id);
 
         $branches = BranchDetail::where('user_id', getParentUserId())->where('user_type', 1)->where('status', 1)->get();
@@ -154,6 +160,8 @@ class UserManagementController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $this->ensurePermission('MANAGE_USERS', 'edit', '1');
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email,' . $id,

@@ -38,9 +38,10 @@ class RolePermissionController extends Controller
      * Show the form for creating a new user role.
      *
      * @return \Illuminate\View\View Returns the user role creation form with modules and their permissions
-     */
+    */
     public function create()
     {
+        $this->ensurePermission('MANAGE_ROLE', 'add', '1');
         $modules = Module::where('module_for', 1)
             ->where('is_active', 1)
             ->orderBy('is_order')
@@ -131,6 +132,8 @@ class RolePermissionController extends Controller
      */
     public function store(Request $request)
     {
+        $this->ensurePermission('MANAGE_ROLE', 'add', '1');
+
         // Validation
         $validator = Validator::make($request->all(), [
             'role_name' => 'required|string|max:255',
@@ -218,6 +221,7 @@ class RolePermissionController extends Controller
      */
     public function edit($id)
     {
+        $this->ensurePermission('MANAGE_ROLE', 'edit', '1');
         $userRole = UserRole::with('permissions')->findOrFail($id);
         // Get all active modules for role management (module_for = 3)
         $modules = Module::where('module_for', 1)
@@ -322,6 +326,8 @@ class RolePermissionController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $this->ensurePermission('MANAGE_ROLE', 'edit', '1');
+
         // Validation
         $validator = Validator::make($request->all(), [
             'role_name' => 'required|string|max:255',
@@ -413,6 +419,7 @@ class RolePermissionController extends Controller
      */
     public function destroy($id)
     {
+        $this->ensurePermission('MANAGE_ROLE', 'delete', '1');
         DB::beginTransaction();
 
         try {
@@ -444,6 +451,7 @@ class RolePermissionController extends Controller
      */
     public function updateStatus(Request $request, $id)
     {
+        $this->ensurePermission('MANAGE_ROLE', 'edit', '1');
         try {
             $role = UserRole::findOrFail($id);
             $role->is_active = $request->is_active;
