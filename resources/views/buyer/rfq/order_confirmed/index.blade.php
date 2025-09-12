@@ -17,6 +17,12 @@
                 <form id="filter-rfq" action="{{ route('buyer.rfq.order-confirmed') }}" method="GET">
                     <h3 class="card-head-line px-2">Orders Confirmed</h3>
                     <div class="px-2">
+                        <div id="export-progress" style="display:none;">
+                            <p>Export Progress: <span id="progress-text">0%</span></p>
+                            <div id="progress-bar" style="width: 100%; background: #f3f3f3;">
+                                <div id="progress" style="height: 20px; width: 0%; background: green;"></div>
+                            </div>
+                        </div>
                         <div class="row g-3 rfq-filter-button">
                             <div class="col-12 col-sm-4 col-md-4 col-lg-auto mb-3">
                                 <div class="input-group">
@@ -138,6 +144,10 @@
                                         <span class="bi bi-arrow-clockwise"></span>
                                         Reset
                                     </button>
+                                    <button type="button" class="ra-btn small-btn ra-btn-outline-info" id="export-btn">
+                                        <span class="bi bi-download"></span>
+                                        Export
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -154,6 +164,7 @@
 
 @section('scripts')
     <script src="{{ asset('public/assets/library/datetimepicker/jquery.datetimepicker.full.min.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     <script>
     $(document).ready(function () {
         $(".clickable-td").click(function() {
@@ -192,6 +203,116 @@
                 }
             });
         }
-    }); 
-    </script>  
+
+        $('#export-progress').hide();
+        let exporting = false;
+
+        $('#export-btn').on('click', function(e) {
+            e.preventDefault();
+            if (exporting) return;
+            exporting = true;
+
+            const chunkSize = 10000;
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('Sheet1');
+            worksheet.addRow(["ORDER NO", "BUYER ORDER NUMBER", "RFQ No", "ORDER DATE", "RFQ DATE", "BRANCH/UNIT", "PRODUCT", "USER", "VENDOR", "ORDER VALUE", "STATUS"]);
+
+            $('#export-progress').show();
+            $('#progress').css('width', '0%');
+            $('#progress-text').text('0%');
+
+            const filters = {
+                order_no: $('input[name="order_no"]').val(),
+                rfq_no: $('input[name="rfq_no"]').val(),
+                division: $('#division').val(),
+                category: $('#category').val(),
+                branch: $('#branch').val(),
+                from_date: $('#from-date').val(),
+                to_date: $('#to-date').val(),
+                product_name: $('input[name="product_name"]').val(),
+                vendor_name: $('input[name="vendor_name"]').val(),
+                status: $('#status').val()
+            };
+
+            $('#filter-rfq').find('input, select, button').prop('disabled', true);
+
+            function resetExport() {
+                $('#export-progress').hide();
+                $('#progress').css('width', '0%');
+                $('#progress-text').text('0%');
+                $('#filter-rfq').find('input, select, button').prop('disabled', false);
+                exporting = false;
+            }
+
+            $.ajax({
+                url: "{{ route('buyer.rfq.order-confirmed.exportTotal') }}",
+                method: 'GET',
+                data: filters,
+                success: function(res) {
+                    const total = res.total;
+                    if (!total) {
+                        alert('No data found');
+                        resetExport();
+                        return;
+                    }
+
+                    let fetched = 0;
+                    let lastId = null;
+
+                    const fetchBatch = () => {
+                        const params = Object.assign({}, filters, { limit: chunkSize });
+                        if (lastId) {
+                            params.last_id = lastId;
+                        }
+
+                        $.ajax({
+                            url: "{{ route('buyer.rfq.order-confirmed.exportBatch') }}",
+                            method: 'GET',
+                            data: params,
+                            success: function(batch) {
+                                batch.data.forEach(row => worksheet.addRow(row));
+                                fetched += batch.data.length;
+                                lastId = batch.last_id;
+
+                                const percent = Math.round((fetched / total) * 100);
+                                $('#progress').css('width', percent + '%');
+                                $('#progress-text').text(percent + '%');
+
+                                if (fetched < total && batch.data.length > 0) {
+                                    fetchBatch();
+                                } else {
+                                    workbook.xlsx.writeBuffer().then(buffer => {
+                                        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                                        const url = URL.createObjectURL(blob);
+                                        const a = document.createElement('a');
+                                        a.href = url;
+                                        a.download = 'order-confirmed_' + Date.now() + '.xlsx';
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        document.body.removeChild(a);
+                                        URL.revokeObjectURL(url);
+                                    }).catch(() => {
+                                        alert('Error generating file');
+                                    }).finally(() => {
+                                        resetExport();
+                                    });
+                                }
+                            },
+                            error: function() {
+                                alert('Error fetching data');
+                                resetExport();
+                            }
+                        });
+                    };
+
+                    fetchBatch();
+                },
+                error: function() {
+                    alert('Error fetching total count');
+                    resetExport();
+                }
+            });
+        });
+    });
+    </script>
 @endsection
