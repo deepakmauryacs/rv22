@@ -80,7 +80,7 @@ class CommonController extends Controller
                                         <span>'.$notification->sender_name.'</span>
                                     </div>
                                     <p class="message-body-line">
-                                        '.date('Y-m-d h:i A', strtotime($notification->created_at)).'
+                                        '.date('M, d, Y h:i A', strtotime($notification->created_at)).'
                                     </p>
                                 </div>
                                 <p class="message-body-line">

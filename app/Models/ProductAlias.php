@@ -35,9 +35,7 @@ class ProductAlias extends Model
             $query->where('vendor_id', $vendorId);
         }
 
-        $aliases = $query->pluck('alias');
-
-        return $aliases ? $aliases->implode(', ') : '';
+        return $query->pluck('alias')->implode(', ');
     }
 }
 

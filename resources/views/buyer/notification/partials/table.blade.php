@@ -17,7 +17,7 @@
                     <span>{{ $notification->sender_name ?? '' }}</span>
                 </div>
                 <p class="message-body-line">
-                    {{ $notification->created_at ?? '' }}
+                    {{ date('M, d, Y h:i A', strtotime($notification->created_at))}}
                 </p>
             </div>
             <p class="message-body-line">

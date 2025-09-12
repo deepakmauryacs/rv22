@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Traits\HasModulePermission;
+use Illuminate\Support\Facades\Validator;
 
 
 class RFQUnapprovedOrderController extends Controller
@@ -558,5 +559,204 @@ class RFQUnapprovedOrderController extends Controller
         }
 
         return view('buyer.unapproved-orders.approve', compact('orders', 'rfq_data'));
+    }
+    public function approve(Request $request)
+    {
+        $rules = [
+            'po_number'            => 'required|string',
+            'order_quantity'       => 'required|array',
+            'order_quantity.*'     => 'required|array',
+            'order_quantity.*.*'   => 'required|numeric|min:0.1',
+
+            'order_rate'           => 'required|array',
+            'order_rate.*'         => 'required|array',
+            'order_rate.*.*'       => 'required|numeric|min:1',
+
+            'order_price_basis'    => 'required|string',
+            'order_payment_term'   => 'required|string',
+            'order_delivery_period'=> 'required|integer|min:1|max:999',
+        ];
+        $messages = [
+            'order_quantity.*.*.required' => 'Quantity for each variant is required.',
+            'order_quantity.*.*.numeric'  => 'Quantity must be a numeric value.',
+            'order_rate.*.*.min'          => 'Rate must be at least 1.',
+            'po_number.required'          => 'Purchase Order number is mandatory.',
+        ];
+
+        $validator = Validator::make($request->all(), $rules, $messages);
+
+        if ($validator->fails()) {
+            // Get all error messages as array
+            $errors = $validator->errors()->all();
+
+            // Concatenate or pick the first error message
+            $message = implode(' ', $errors);
+
+            return response()->json([
+                'status' => false,
+                'message' => $message,
+            ]);
+        }
+
+        $parent_user_id = getParentUserId();
+        $po_number = $request->po_number;
+
+        $order_quantity = $request->order_quantity;
+        $order_rate = $request->order_rate;
+        $order_price_basis = $request->order_price_basis;
+        $order_payment_term = $request->order_payment_term;
+        $order_delivery_period = $request->order_delivery_period;
+
+        $is_order_exists = DB::table('orders')->where('po_number', $po_number)->where('buyer_id', $parent_user_id)->where('order_status', 3)->first();
+        $order_variants = DB::table('order_variants')->where('po_number', $po_number)->get()->keyBy('rfq_product_variant_id')->toArray();
+        if (empty($is_order_exists) || empty($order_variants)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unapproved Order not found',
+            ]);
+        }
+
+        $errors = $this->validateOrderQty($order_variants, $order_quantity);
+        $requested_order = $this->requestedOrder($request);
+        
+        echo "<pre>";
+        print_r($requested_order);
+        print_r($order_variants);
+        print_r($_POST);
+        die;
+
+        if (!empty($errors)) {
+            // return response()->json(['status' => false, 'message' => implode(' ', $errors)], 422);
+            return response()->json(['status' => false, 'message' => "Some of the product quantity is exceeded, Please refresh the page and try again"], 422);
+        }
+
+        DB::beginTransaction();
+
+        try {
+
+            $errors = $this->updateToPO($request, $is_order_exists, $order_variants, $requested_order);
+
+
+
+            DB::commit();
+
+            return response()->json([
+                'status' => true,
+                'redirect_url' => route("buyer.rfq.compose-rfq-success", [$edit_rfq_id]),
+                'message' => 'Purchase Order Generated Successfully'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            // Handle the error
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to Generate Purchase Order, Please try again later. '.$e->getMessage(),
+                'complete_message' => [
+                    // 'exception' => get_class($e),
+                    // 'message' => $e->getMessage(),
+                    // 'code'    => $e->getCode(),
+                    // 'file'    => $e->getFile(),
+                    // 'line'    => $e->getLine(),
+                    // 'trace'   => $e->getTraceAsString(),
+                ],
+            ]);
+        }
+
+        echo "<pre>";
+        print_r($order_variants);
+        print_r($_POST);
+        die;
+
+    }
+    private function validateOrderQty($order_variants, $order_quantity)
+    {
+        // Validation errors collector
+        $errors = [];
+
+        // Check if all DB variant IDs exist in post
+        foreach ($order_variants as $variant_id => $variantData) {
+            if (!isset($order_quantity[$variant_id])) {
+                $errors[] = "Variant ID $variant_id is missing in the posted quantities.";
+                continue;
+            }
+            // Extract posted quantity (assuming first index [0])
+            $postedQuantity = floatval($order_quantity[$variant_id][0] ?? 0);
+            $dbQuantity = floatval($variantData->order_quantity);
+            
+            if ($postedQuantity > $dbQuantity) {
+                $errors[] = "Quantity for variant ID $variant_id exceeds allowed order quantity ($dbQuantity).";
+            }
+        }
+
+        return $errors;
+    }
+    private function requestedOrder($request)
+    {
+        $order_quantity = $request->order_quantity;
+        $order_mrp      = $request->order_mrp;
+        $order_discount = $request->order_discount;
+        $order_rate     = $request->order_rate;
+
+        $requesting_order_id_wise_qty = [];
+
+        foreach ($order_quantity as $variant_id => $qArr) {
+            $quantity = isset($qArr[0]) ? $qArr[0] : 0;
+            $mrp      = isset($order_mrp[$variant_id][0]) ? $order_mrp[$variant_id][0] : 0;
+            $discount = isset($order_discount[$variant_id][0]) ? $order_discount[$variant_id][0] : 0;
+            $price    = isset($order_rate[$variant_id][0]) ? $order_rate[$variant_id][0] : 0;
+
+            $requesting_order_id_wise_qty[$variant_id] = [
+                'quantity' => number_format((float)$quantity, 2, '.', ''),
+                'mrp'      => number_format((float)$mrp, 2, '.', ''),
+                'discount' => number_format((float)$discount, 2, '.', ''),
+                'price'    => number_format((float)$price, 2, '.', ''),
+            ];
+        }
+        return $requesting_order_id_wise_qty;
+    }
+    private function generatePONumber($rfq_id, $parent_user_id)
+    {
+        $orderCount = DB::table('orders')
+            ->where('rfq_id', $rfq_id)
+            ->where('buyer_id', $parent_user_id)
+            ->count();
+
+        $po_number = "O-" . $rfq_id . "/0" . ($orderCount + 1);
+    }
+    private function updateToPO($request, $is_order_exists, $order_variants, $requested_order)
+    {
+        $parent_user_id = getParentUserId();
+        $po_number = $request->po_number;
+
+        $po_variants = array();
+        foreach ($order_variants as $variant_id => $value) {
+            $p_quantity = $requested_order[$variant_id]['quantity'];
+            $p_mrp = $requested_order[$variant_id]['mrp'];
+            $p_discount = $requested_order[$variant_id]['discount'];
+            $p_price = $requested_order[$variant_id]['price'];
+            
+            $gst = $value->product_gst;
+            $amount = $p_price * $p_quantity;
+            $gst_amount = ($amount * $gst) / 100;
+            $t_amount = $amount + $gst_amount;
+            $total_amount += $t_amount;
+
+            if($p_quantity < $value->order_quantity) {
+                $left_qty = $value->order_quantity - $p_quantity;
+                DB::table('order_variants')->where('po_number', $po_number)
+                    ->where('id', $value->id)
+                    ->update([
+                        'order_quantity' => $left_qty,
+                    ]);
+            }else{
+                DB::table('order_variants')->where('po_number', $po_number)
+                    ->where('id', $value->id)
+                    ->update([
+                        'order_quantity' => $left_qty,
+                    ]);
+            }
+
+        }
+
     }
 }

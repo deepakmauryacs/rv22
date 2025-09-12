@@ -1,4 +1,4 @@
-@extends('buyer.layouts.app', ['title'=>'Draft RFQ'])
+@extends('buyer.layouts.app', ['title'=>'Notifications'])
 
 @section('css')
 @endsection
@@ -6,7 +6,7 @@
 @section('content')
     <div class="bg-white">
         <!---Sidebar-->
-        @include('buyer.layouts.sidebar')
+        @include('buyer.layouts.sidebar-menu')
     </div>
     <main class="main flex-grow-1">
             <div class="container-fluid">

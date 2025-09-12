@@ -81,11 +81,11 @@ $(document).ready(function() {
 
     $(document).on('change', '.product-status-toggle', function() {
         const id = $(this).data('id');
-        const status = $(this).is(':checked') ? 1 : 2;
+        const status = $(this).is(':checked') ? 1 : 0;
         const checkbox = $(this);
 
         $.ajax({
-            url: "{{ url('super-admin/verified-products') }}/" + id + "/status",
+            url: "{{ url('admin/verified-products') }}/" + id + "/status",
             type: "PUT",
             data: { _token: "{{ csrf_token() }}", status: status },
             success: function(res) {
@@ -103,7 +103,7 @@ $(document).ready(function() {
         const id = $(this).data('id');
 
         $.ajax({
-            url: "{{ url('super-admin/verified-products') }}/" + id,
+            url: "{{ url('admin/verified-products') }}/" + id,
             type: "DELETE",
             data: { _token: "{{ csrf_token() }}" },
             success: function(res) {

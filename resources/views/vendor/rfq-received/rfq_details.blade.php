@@ -10,8 +10,36 @@
     .form-select.form-select-currency {
         width: 100% !important;
     }
+    .h-35{
+        height: 35px;
+    }
 </style>
-
+<style>
+  /* —— Upload UI (match screenshot) —— */
+  .upload-field .upload-label {
+    font-size:.8rem; letter-spacing:.06em; text-transform:uppercase;
+    color:#0d6efd; font-weight:600; cursor:pointer; user-select:none;
+  }
+  .upload-field .input-group {
+    border:1px solid #dee2e6; border-radius:.375rem; overflow:hidden;
+    background:#fff;
+  }
+  .upload-field .input-group-text {
+    background:#fff; border:0; color:#6c757d;
+  }
+  .upload-field .file-display {
+    border:0; background:#fff; color:#6c757d; cursor:pointer;
+  }
+  .upload-field .file-display:focus { box-shadow:none; }
+  .upload-field .file-preview {
+    margin-top:.35rem; font-size:.9rem;
+  }
+  .upload-field .file-preview a { text-decoration:none; }
+  .upload-field .file-remove {
+    margin-left:.35rem; cursor:pointer; vertical-align:middle;
+  }
+  .upload-field .help-icon { color:#dc3545; }
+</style>
 @php
 $is_international_vendor = is_national();
 $is_international_buyer_check = is_national_buyer($rfq->buyer_id);
@@ -103,7 +131,7 @@ function IND_amount_format($amount) {
     </section>
 
     <!-- RFQ Counter Form -->
-    <form id="rfq-counter-form">
+    <form id="rfq-counter-form" enctype="multipart/form-data">
         <!-- Product Table -->
         <section class="rfq-vendor-listing-product-form">
             <div class="card shadow-none mb-3">
@@ -126,7 +154,6 @@ function IND_amount_format($amount) {
                                     Click Here
                                 </a>
                                 to add this product so that you can Quote.)
-                                {{-- data-bs-toggle="modal" data-bs-target="#addProductModal" --}}
                             </span>
                         </p>
                         @endif
@@ -260,7 +287,7 @@ function IND_amount_format($amount) {
                                     })->implode('');
                                     @endphp
                                     <td data-th="Counter Offer" class="counter-offer">
-                                        <span class="form-control h-30 d-inline-flex align-items-center">
+                                        <span class="form-control h-35 d-inline-flex align-items-center">
                                             @if ($coItems->isNotEmpty())
                                             <span class="buyer-old-price" data-bs-toggle="tooltip"
                                                 data-bs-placement="top" data-bs-original-title="{{ $coContent }}">
@@ -292,7 +319,7 @@ function IND_amount_format($amount) {
                                     })->implode('');
                                     @endphp
                                     <td data-th="Historical Price">
-                                        <span class="form-control h-30 d-inline-flex align-items-center">
+                                        <span class="form-control h-35 d-inline-flex align-items-center">
                                             @if ($hpItems->isNotEmpty())
                                             <span class="vendor-old-price" data-bs-toggle="tooltip"
                                                 data-bs-placement="top" data-bs-original-title="{{ $hpContent }}">
@@ -346,50 +373,70 @@ function IND_amount_format($amount) {
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4 mb-4">
+
+
+                        <div class="col-md-4 mb-3">
+                          <div class="upload-field" data-variant="{{ $productVariants[0]->id }}">
+                           <!--  <div class="d-flex justify-content-end mb-1">
+                              <span class="upload-label js-upload-trigger">UPLOAD FILE</span>
+                            </div> -->
+
                             <div class="input-group">
-                                <span class="input-group-text">
-                                    <span class="bi bi-paperclip" aria-hidden="true"></span>
-                                </span>
-                                <div class="form-floating">
-                                    <div class="form-floating-tooltip">
-                                        <button type="button"
-                                            class="ra-btn ra-btn-link height-inherit text-danger font-size-18"
-                                            data-bs-toggle="tooltip" data-placement="top"
-                                            data-bs-original-title="(Maximum allowed file size 1MB, PDF, DOC, Excel, Image)">
-                                            <span class="bi bi-question-circle font-size-18"></span>
-                                        </button>
-                                    </div>
-                                    <span class="form-floating-label"
-                                        for="uploadFile_{{ $productVariants[0]->id }}">Upload File</span>
-                                    <div class="simple-file-upload d-flex align-items-center">
-                                        <input type="file" id="uploadFile_{{ $productVariants[0]->id }}"
-                                            name="vendor_attachment[{{ $productVariants[0]->id }}]"
-                                            class="real-file-input vendor-attachment" style="display: none;"
-                                            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" {{ $product->is_product
-                                        == 'no' ? 'disabled' : '' }}>
-                                        <div class="file-display-box form-control text-start font-size-12 text-dark flex-grow-1"
-                                            role="button" data-bs-toggle="tooltip" data-bs-placement="top">
-                                            Attach file
-                                        </div>
-                                        <span class="text-danger ms-2 remove-attachment" style="display:none; cursor:pointer;">
-                                            <i class="bi bi-x-circle"></i>
-                                        </span>
-                                    </div>
-                                </div>
+                              <!-- Left icon -->
+                              <span class="input-group-text border-end-0">
+                                <i class="bi bi-paperclip"></i>
+                              </span>
+
+                              <!-- Clickable display that triggers hidden input -->
+                              <input type="text" class="form-control file-display border-start-0"
+                                     value="Attach file" readonly />
+
+                              <!-- Hidden real file input -->
+                              <input type="file"
+                                     id="uploadFile_{{ $productVariants[0]->id }}"
+                                     name="vendor_attachment[{{ $productVariants[0]->id }}]"
+                                     class="d-none vendor-attachment"
+                                     accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                                     {{ $product->is_product == 'no' ? 'disabled' : '' }} />
+
+                              <!-- Right help icon -->
+                              <span class="input-group-text border-start-0">
+                                <i class="bi bi-question-circle help-icon"
+                                   data-bs-toggle="tooltip"
+                                   data-bs-placement="top"
+                                   title="Maximum allowed file size 1MB, PDF, DOC, Excel, Image"></i>
+                              </span>
                             </div>
+
+                            {{-- Existing file preview (if any) --}}
                             @php
-                            $existingFile = optional($productVariants[0]->vendor_quotation)->vendor_attachment_file ??
-                            null;
-                            $fileName = $existingFile ? basename($existingFile) : 'Attach file';
+                              $existingFile = optional($productVariants[0]->vendor_quotation)->vendor_attachment_file ?? null;
                             @endphp
-                            @if ($existingFile)
-                            <a href="{{ asset('public/uploads/rfq-attachment/' . $existingFile) }}"
-                                target="_blank" class="btn btn-link btn-sm ms-2" title="View file">
-                                {{ $existingFile }}
-                            </a>
-                            @endif
+
+                            <div class="file-preview">
+                              @if ($existingFile)
+                                <a href="{{ asset('public/uploads/rfq-attachment/' . $existingFile) }}" target="_blank">
+                                  {{ basename($existingFile) }}
+                                </a>
+                                <i class="bi bi-x-circle text-danger file-remove js-remove-existing"
+                                   title="Remove"></i>
+                                <input type="hidden"
+                                       name="existing_vendor_attachment[{{ $productVariants[0]->id }}]"
+                                       value="{{ $existingFile }}">
+                              @endif
+                              <!-- new selection will appear here -->
+                              <span class="js-new-file"></span>
+                            </div>
+                          </div>
                         </div>
+
+
+                  
+
+
+
+         
+
                         <div class="col-md-4 mb-4">
                             <div class="input-group">
                                 <span class="input-group-text">
@@ -649,33 +696,6 @@ function IND_amount_format($amount) {
                             </tr>
                         </tbody>
                     </table>
-
-
-                    {{-- <div class="mb-3">
-                        <label class="form-label">Product Name</label>
-                        <input type="text" id="modal_product_name" name="product_name" class="form-control" readonly>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Product Description *</label>
-                        <input type="text" name="product_description" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Dealer Type *</label>
-                        <select name="dealer_type" class="form-select" required>
-                            <option value="">Select Dealer Type</option>
-                            <option value="Manufacturer">Manufacturer</option>
-                            <option value="Dealer">Dealer</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">GST/Sales Tax Rate *</label>
-                        <input type="text" name="gst_rate" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">HSN Code *</label>
-                        <input type="text" name="hsn_code" class="form-control" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Submit</button> --}}
                 </form>
             </div>
         </div>
@@ -710,55 +730,16 @@ function IND_amount_format($amount) {
     </div>
 </div>
 
-<!-- Modal: Send Message -->
-{{-- <div class="modal fade" id="sendMessage" tabindex="-1" aria-labelledby="sendMessageLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header justify-content-between bg-graident text-white px-4">
-                <h2 class="modal-title font-size-13" id="sendMessageLabel">
-                    <span class="bi bi-pencil" aria-hidden="true"></span> Send Message
-                </h2>
-                <button type="button" class="btn btn-link p-0 font-size-14 text-white" data-bs-dismiss="modal"
-                    aria-label="Close">
-                    <span class="bi bi-x-lg" aria-hidden="true"></span>
-                </button>
-            </div>
-            <div class="modal-body p-4">
-                <div class="mb-3">
-                    <input type="text" value="RONI-25-00043" name="subject" class="form-control" readonly
-                        placeholder="Subject">
-                </div>
-                <div class="mb-3">
-                    <textarea name="send-msg" class="form-control specifications-textarea" rows="8"
-                        placeholder="Write your message here..."></textarea>
-                </div>
-                <div class="mb-3">
-                    <div class="simple-file-upload">
-                        <input type="file" class="real-file-input" style="display: none;">
-                        <div class="file-display-box form-control text-start font-size-12 text-dark" role="button"
-                            data-bs-toggle="tooltip" data-bs-placement="top">
-                            Upload file
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <div class="text-end">
-                    <button type="button"
-                        class="ra-btn btn-primary ra-btn-primary text-uppercase text-nowrap font-size-11">Send</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div> --}}
-
 <script>
-    // Fill product name when clicking "Click Here"
-// document.addEventListener('click', function (e) {
-//     if (e.target.matches('[data-product-name]')) {
-//         document.getElementById('modal_product_name').value = e.target.dataset.productName;
-//     }
-// });
+// Fill product name when clicking "Click Here"
+$(document).on('click', '.add-this-product', function(){
+    let product_id = $(this).data("product-id");
+    let product_name = $(this).data("product-name");
+    $("#new-product-name").html(product_name);
+    $("#product-id").val(product_id);
+    $("#product-description").val(product_name);
+    $("#addProductModal").modal("show");
+});
 
 // Price input logic
 $(document).on("blur", ".price-change", function () {
@@ -828,7 +809,7 @@ function IND_amount_format(amount) {
     let otherNumbers = amount.substring(0, amount.length - 3);
     if (otherNumbers != '') lastThree = ',' + lastThree;
     const res = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + lastThree;
-    return main_amount.length > 1 ? res + '.' + main_amount[1] : res + '.00';
+    return main_amount.length > 1 ? res + '.' . main_amount[1] : res + '.00';
 }
 
 let currentSpecInputId = null;
@@ -912,8 +893,7 @@ function rfq_counter_submit_data(_this, action) {
         contentType: false,
         success: function (response) {
             if (response.status) {
-                // alert(response.message || "Submitted successfully.");
-                window.location.href = response.redirect_url;// || window.location.href;
+                window.location.href = response.redirect_url;
             } else {
                 alert(response.message || "Something went wrong.");
             }
@@ -927,61 +907,8 @@ function rfq_counter_submit_data(_this, action) {
     });
 }
 
-$(document).on('change', '.vendor-attachment', function () {
-    const fileInput = this;
-    const maxSize = 1 * 1024 * 1024; // 1MB
-    const allowedTypes = [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.ms-excel',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'image/jpeg',
-        'image/png'
-    ];
 
-    const $wrapper = $(this).closest('.simple-file-upload');
-    const $displayBox = $wrapper.find('.file-display-box');
-    const $removeIcon = $wrapper.find('.remove-attachment');
 
-    if (fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        if (file.size > maxSize) {
-            alert('File size exceeds 1MB limit');
-            fileInput.value = '';
-            $displayBox.text('Attach file');
-            $removeIcon.hide();
-            return;
-        }
-        if (!allowedTypes.includes(file.type)) {
-            alert('Only PDF, DOC, Excel, and Image files are allowed');
-            fileInput.value = '';
-            $displayBox.text('Attach file');
-            $removeIcon.hide();
-            return;
-        }
-        $displayBox.text(file.name);
-        $removeIcon.show();
-    } else {
-        $displayBox.text('Attach file');
-        $removeIcon.hide();
-    }
-});
-
-$(document).on('click', '.remove-attachment', function (e) {
-    e.stopPropagation();
-    const $wrapper = $(this).closest('.simple-file-upload');
-    $wrapper.find('.vendor-attachment').val('');
-    $wrapper.find('.file-display-box').text('Attach file');
-    $(this).hide();
-});
-
-$(document).on('click', '.file-display-box', function () {
-    const $fileInput = $(this).siblings('.vendor-attachment');
-    if (!$fileInput.val()) {
-        $fileInput.trigger('click');
-    }
-});
 
 document.addEventListener('DOMContentLoaded', function () {
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
@@ -990,16 +917,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-$(document).on("click", ".add-this-product", function(){
-    let product_id = $(this).data("product-id");
-    let product_name = $(this).data("product-name");
-    $("#new-product-name").html(product_name);
-    $("#product-id").val(product_id);
-    $("#product-description").val(product_name);
-    $("#addProductModal").modal("show");
-});
 $("#add-product-to-vendor-profile").submit(function(){
-    // console.log("Validating...");
     let productId = $('[name="product_id"]').val();
     let rfqId = $('[name="rfq_id"]').val();
     let productDescription = ($('[name="product_description"]').val()).trim();
@@ -1008,6 +926,7 @@ $("#add-product-to-vendor-profile").submit(function(){
     let taxClass = $('[name="tax_class"]').val();
     @endif
     let hsnCode = $('[name="hsn_code"]').val();
+    
     // validate
     if(productId=='' || rfqId==''){
         alert("Something went wrong...");
@@ -1035,8 +954,6 @@ $("#add-product-to-vendor-profile").submit(function(){
         alert(error_msg+" Manadatory field is required.");
         return false;
     }
-    // submit by ajax
-    // console.log("Submitting...");
 
     $("#add-product-to-vendor-profile").addClass("disabled");
 
@@ -1067,5 +984,82 @@ $("#add-product-to-vendor-profile").submit(function(){
     });
 });
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  // Enable Bootstrap tooltips
+  [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    .map(function (el) { return new bootstrap.Tooltip(el); });
 
+  // Bind all upload fields
+  document.querySelectorAll('.upload-field').forEach(function (wrap) {
+    const hiddenInput = wrap.querySelector('input[type="file"]');
+    const displayBox  = wrap.querySelector('.file-display');
+    const newFileSpan = wrap.querySelector('.js-new-file');
+
+    // Helper: toggle placeholder style
+    const setPlaceholder = (isEmpty) => {
+      if (!displayBox) return;
+      displayBox.value = isEmpty ? "Attach file" : displayBox.value;
+      displayBox.classList.toggle('is-placeholder', isEmpty);
+    };
+    setPlaceholder(!displayBox || !displayBox.value || displayBox.value === "Attach file");
+
+    // Clicking label or pseudo-input opens chooser
+    wrap.querySelectorAll('.js-upload-trigger, .file-display').forEach(function (el) {
+      el.addEventListener('click', function () {
+        if (!hiddenInput.disabled) hiddenInput.click();
+      });
+    });
+
+    // Remove existing saved file (manual click on red X)
+    const removeExisting = wrap.querySelector('.js-remove-existing');
+    if (removeExisting) {
+      removeExisting.addEventListener('click', function () {
+        const hiddenExisting = wrap.querySelector('input[type="hidden"][name^="existing_vendor_attachment"]');
+        if (hiddenExisting) hiddenExisting.value = "";
+        // remove the <a> and the X icon
+        this.previousElementSibling?.remove();
+        this.remove();
+      });
+    }
+
+    // On NEW selection
+    hiddenInput.addEventListener('change', function () {
+      // 1) If there was an existing server file, hide/clear it immediately
+      const existingLink   = wrap.querySelector('.file-preview > a'); // the <a> link for old file
+      const existingRemove = wrap.querySelector('.js-remove-existing'); // old red X
+      const hiddenExisting = wrap.querySelector('input[type="hidden"][name^="existing_vendor_attachment"]');
+      if (existingLink)   existingLink.remove();
+      if (existingRemove) existingRemove.remove();
+      if (hiddenExisting) hiddenExisting.value = ""; // ensure backend treats it as removed
+
+      // 2) Clear any previous "new file" chip and update display
+      newFileSpan.innerHTML = '';
+
+      if (this.files && this.files.length) {
+        const name = this.files[0].name;
+        displayBox.value = name;
+        displayBox.classList.remove('is-placeholder');
+
+        // show a small removable chip for the newly selected file
+        const chip = document.createElement('span');
+        chip.className = 'file-block';
+        chip.innerHTML =
+          `<span class="text-secondary">${name}</span>
+           <i class="bi bi-x-circle text-warning file-remove js-remove-new" title="Remove"></i>`;
+        newFileSpan.appendChild(chip);
+
+        // Remove the selected NEW file
+        chip.querySelector('.js-remove-new').addEventListener('click', function () {
+          hiddenInput.value = "";
+          newFileSpan.innerHTML = "";
+          setPlaceholder(true);
+        });
+      } else {
+        setPlaceholder(true);
+      }
+    });
+  });
+});
+</script>
 @endsection

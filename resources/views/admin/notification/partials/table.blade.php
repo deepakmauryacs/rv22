@@ -16,7 +16,7 @@
                 <div class="person_name">
                     <span>{{ $notification->sender_name ?? '' }}</span>
                 </div>
-                <p class="message-body-line">{{ $notification->created_at ?? '' }}</p>
+                <p class="message-body-line">{{ date('M, d, Y h:i A', strtotime($notification->created_at))}}</p>
             </div>
             <div class="message-body-line">
                 <a href="{{ $notification->link }}" target="_blank">{!! $notification->message ?? '' !!}

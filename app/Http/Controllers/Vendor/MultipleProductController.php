@@ -27,7 +27,7 @@ class MultipleProductController extends Controller
         $dealertypes = DB::table('dealer_types')
             ->where('status', '1')
             ->get();
-        $uoms = DB::table('uom')
+        $uoms = DB::table('uoms')
             ->where('status', '1')
             ->get();
         $taxes = DB::table('taxes')
@@ -40,7 +40,7 @@ class MultipleProductController extends Controller
     {
         $search = $request->get('term');
         $vendorId =  getParentUserId();
-        
+
         if (empty($vendorId)) {
             return response()->json([]);
         }

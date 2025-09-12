@@ -382,6 +382,15 @@ class RfqReceivedController extends Controller
 
                 $attachmentPath = $existingQuotation->vendor_attachment_file ?? null;
 
+                // Agar user ne explicitly delete kar diya (existing_vendor_attachment blank bheja)
+                if ($request->input("existing_vendor_attachment.$variantId") == ""  && !empty($attachmentPath)) {
+                    // Purani file delete kar do
+                    if ($attachmentPath && file_exists(public_path('uploads/rfq-attachment/' . $attachmentPath))) {
+                        @unlink(public_path('uploads/rfq-attachment/' . $attachmentPath));
+                    }
+                    $attachmentPath = null; // db me bhi null save hoga
+                }
+
                 // Handle file upload (expects input name: vendor_attachment[<variantId>])
                 if ($request->hasFile("vendor_attachment.$variantId")) {
                     $file = $request->file("vendor_attachment.$variantId");

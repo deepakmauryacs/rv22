@@ -97,28 +97,28 @@
                                                         @if($module->available_permissions['add'])
                                                             <input type="checkbox" name="permissions[{{ $module->id }}][can_add]" value="1" class="add-checkbox" {{ $rolePermissions && $rolePermissions->can_add ? 'checked' : '' }}>
                                                         @else
-                                                            <span>-</span>
+                                                            <span>X</span>
                                                         @endif
                                                     </td>
                                                     <td>
                                                         @if($module->available_permissions['edit'])
                                                             <input type="checkbox" name="permissions[{{ $module->id }}][can_edit]" value="1" class="edit-checkbox" {{ $rolePermissions && $rolePermissions->can_edit ? 'checked' : '' }}>
                                                         @else
-                                                            <span>-</span>
+                                                            <span>X</span>
                                                         @endif
                                                     </td>
                                                     <td>
                                                         @if($module->available_permissions['delete'])
                                                             <input type="checkbox" name="permissions[{{ $module->id }}][can_delete]" value="1" class="delete-checkbox" {{ $rolePermissions && $rolePermissions->can_delete ? 'checked' : '' }}>
                                                         @else
-                                                            <span>-</span>
+                                                            <span>X</span>
                                                         @endif
                                                     </td>
                                                     <td>
                                                         @if($module->available_permissions['view'])
                                                             <input type="checkbox" name="permissions[{{ $module->id }}][can_view]" value="1" class="view-checkbox" {{ $rolePermissions && $rolePermissions->can_view ? 'checked' : '' }}>
                                                         @else
-                                                            <span>-</span>
+                                                            <span>X</span>
                                                         @endif
                                                     </td>
                                                 </tr>

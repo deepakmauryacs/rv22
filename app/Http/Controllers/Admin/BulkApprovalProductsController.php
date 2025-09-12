@@ -49,7 +49,7 @@ class BulkApprovalProductsController extends Controller
             ->whereIn('id', $groupedIds);
 
         $perPage = $request->input('per_page', 25);
-        $products = $query->paginate($perPage)->appends($request->all());
+        $products = $query->orderBy('id', 'desc')->paginate($perPage)->appends($request->all());
 
         if ($request->ajax()) {
             return view('admin.bulk-approval-products.partials.table', compact('products'))->render();
@@ -67,7 +67,7 @@ class BulkApprovalProductsController extends Controller
             ->get();
 
         $divisions = Division::where('status', 1)->orderBy('division_name')->get();
-        
+
         $dealertypes = DB::table('dealer_types')
             ->where('status', '1')
             ->get();
@@ -206,10 +206,10 @@ class BulkApprovalProductsController extends Controller
     {
         try {
             $ids = $request->input('ids');
-            
+
             // Delete the products (adjust this based on your model)
             VendorProduct::whereIn('id', $ids)->delete();
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Products deleted successfully'
@@ -222,5 +222,5 @@ class BulkApprovalProductsController extends Controller
         }
     }
 
-  
+
 }

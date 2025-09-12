@@ -517,12 +517,12 @@ class ComposeRFQController extends Controller
                 'status' => false,
                 'message' => 'Failed to Update RFQ. '.$e->getMessage(),
                 'complete_message' => [
-                    'exception' => get_class($e),
-                    'message' => $e->getMessage(),
-                    'code'    => $e->getCode(),
-                    'file'    => $e->getFile(),
-                    'line'    => $e->getLine(),
-                    'trace'   => $e->getTraceAsString(),
+                    // 'exception' => get_class($e),
+                    // 'message' => $e->getMessage(),
+                    // 'code'    => $e->getCode(),
+                    // 'file'    => $e->getFile(),
+                    // 'line'    => $e->getLine(),
+                    // 'trace'   => $e->getTraceAsString(),
                 ],
             ]);
         }

@@ -47,7 +47,7 @@ class VerifiedProductsExport implements FromQuery, WithHeadings, WithChunkReadin
         }
 
         if (!empty($this->filters['status'])) {
-            $query->where('vendor_products.vendor_status', $this->filters['status']);
+            $query->where('users.status', $this->filters['status']);
         }
         // Get product+vendor pairs to preload aliases
         $productVendorPairs = $query->clone()

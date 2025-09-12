@@ -60,7 +60,7 @@
     </style>
 </head>
 
-<body>
+<body onload="window.print()">
     <div class="table-border">
         <table style="table-layout: fixed; width: 100%; border-bottom: 1px solid #000;">
             <tr>

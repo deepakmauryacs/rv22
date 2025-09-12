@@ -42,7 +42,7 @@ class ProductApprovalController extends Controller
         }
 
         $perPage = $request->input('per_page', 25);
-        $products = $query->paginate($perPage)->appends($request->all());
+        $products = $query->orderBy('id', 'desc')->paginate($perPage)->appends($request->all());
 
         if ($request->ajax()) {
             return view('admin.products-for-approval.partials.table', compact('products'))->render();
@@ -76,7 +76,7 @@ class ProductApprovalController extends Controller
     }
 
     public function update(Request $request)
-    {   
+    {
 
 
         $validator = Validator::make($request->all(), [
@@ -86,7 +86,7 @@ class ProductApprovalController extends Controller
             'product_dealer_type' => 'required',
             'product_uom' => 'required',
             'product_gst' => 'required',
-           
+
         ]);
 
         if ($validator->fails()) {
@@ -199,12 +199,12 @@ class ProductApprovalController extends Controller
                     $productData[$column] = $fileName;
                 }
             }
-           
-           
+
+
             $productData['edit_status'] = 0;
             $productData['verified_by'] = auth()->id();
             $productData['approval_status'] = 1;
-            
+
 
             // Update product
             DB::table('vendor_products')
@@ -305,7 +305,7 @@ class ProductApprovalController extends Controller
     }
 
 
-    
 
- 
+
+
 }

@@ -36,7 +36,7 @@ class NotificationController extends Controller
         if ($request->filled('status')) {
             $query->where('status', $request->input('status'));
         }
-        $query->where('user_id',getParentUserId());
+        $query->where('user_id',getParentUserId())->orderBy('id', 'desc');
 
         $perPage = $request->input('per_page', 25); // default to 25 if not present
         $notifications = $query->paginate($perPage)->appends($request->all());
