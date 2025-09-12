@@ -8,11 +8,15 @@ use App\Models\Rfq;
 use App\Models\Category;
 use Carbon\Carbon;
 use DB;
+use App\Traits\HasModulePermission;
 
 class AuctionCISController extends Controller
 {
+    use HasModulePermission;
+
     public function index($rfq_id)
     {
+        $this->ensurePermission('AUCTION', 'view', '1');
         // 1) Ensure RFQ is in live auctions
         $auctionExists = DB::table('rfq_auctions')->where('rfq_no', $rfq_id)->exists();
         if (!$auctionExists) {

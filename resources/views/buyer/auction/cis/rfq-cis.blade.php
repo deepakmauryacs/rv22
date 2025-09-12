@@ -917,12 +917,14 @@
             <!-- Floating CIS options-->
             <section class="floting-product-options cis-floating-button d-none d-sm-block">
                 <div class="d-flex flex-wrap flex-md-nowrap align-items-center justify-content-center gap-3">
+                    @if(checkPermission('AUCTION','add','1') || checkPermission('AUCTION','edit','1'))
                     <button type="button"
                         class="ra-btn btn-outline-primary ra-btn-outline-primary text-uppercase text-nowrap font-size-10"
                         data-bs-toggle="modal" data-bs-target="#createAuctionModal"
                         @if(isset($current_status) && $current_status == 1) disabled @endif><span
                         class="bi bi-calendar-date font-size-12" aria-hidden="true"></span> VIEW/EDIT AUCTION
                     </button>
+                    @endif
 
 
                     <a type="button"

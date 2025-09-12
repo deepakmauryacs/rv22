@@ -142,17 +142,21 @@
 
                 <td>
                     <div class="rfq-table-btn-group">
+                        @if(checkPermission('AUCTION','view','1'))
                         <a class="ra-btn small-btn ra-btn-primary text-white d-inline-block {{ $result->buyer_rfq_status == 1 ? 'disabled' : ''}}"
                            href="{{ $cis_url }}">
                             {{ $rfq_button[$current_status] ?? 'View' }}
                         </a>
+                        @endif
 
+                        @if(checkPermission('AUCTION','edit','1'))
                         <a href="javascript:void(0)"
                            class="ra-btn small-btn ra-btn-outline-danger close-auction {{ $show_close ? '' : 'disabled' }}"
                            @unless($show_close) aria-disabled="true" @endunless
                            data-rfq="{{ $result->rfq_id }}">
                            Close
                         </a>
+                        @endif
                     </div>
                 </td>
             </tr>
