@@ -246,13 +246,17 @@ function IND_amount_format($amount) {
                                         <input type="number" name="price[{{ $variant->id }}]"
                                             class="form-control form-control-sm variant-price price-change"
                                             value="{{ optional($variant->vendor_quotation)->price ?? '' }}" {{
-                                            $product->is_product == 'no' ? 'disabled' : '' }}>
+                                            $product->is_product == 'no' ? 'disabled' : '' }}
+                                            data-check-rfq="{{ $variant->is_fully_ordered ? 1 : 0 }}"
+                                            onclick="checkQuantity(this)">
                                     </td>
                                     <td>
                                         <input type="number" name="mrp[{{ $variant->id }}]"
                                             class="form-control form-control-sm variant-mrp price-change"
                                             value="{{ optional($variant->vendor_quotation)->mrp ?? '' }}" {{
-                                            $product->is_product == 'no' ? 'disabled' : '' }}>
+                                            $product->is_product == 'no' ? 'disabled' : '' }}
+                                            data-check-rfq="{{ $variant->is_fully_ordered ? 1 : 0 }}"
+                                            onclick="checkQuantity(this)">
                                     </td>
                                     <td>
                                         <input type="number" name="disc[{{ $variant->id }}]"
@@ -1066,5 +1070,13 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 });
+</script>
+<script type="text/javascript">
+function checkQuantity(inputElement) {
+    var checkRfq = inputElement.getAttribute('data-check-rfq');
+    if (checkRfq == '1') {
+        alert("This item's full order has already been placed.");
+    }
+}
 </script>
 @endsection
