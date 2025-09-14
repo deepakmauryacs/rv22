@@ -60,6 +60,7 @@ Route::name('vendor.')->group(function() {
                 Route::get('/direct-order/print/{id}', [OrderController::class, 'directOrderPrint'])->name('direct_order.print');
 
                 Route::post('upload/pi-attachment', [OrderController::class, 'uploadPiAttachment'])->name('upload.pi.attachment');
+                Route::post('delete/pi-attachment', [OrderController::class, 'deletePiAttachment'])->name('delete.pi.attachment');
             });
             Route::prefix('rfq')->group(function() {
                 Route::get('/rfq-received', [RfqReceivedController::class, 'index'])->name('rfq.received.index');

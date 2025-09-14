@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Vendor;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Rfq;
+use App\Models\Buyer;
 use App\Models\RfqProductVariant; // Assuming this model exists
 use App\Models\RfqVendorQuotation; // Assuming this model exists
 use App\Models\RfqBuyerCounter; // Assuming this model exists
 use Illuminate\Support\Facades\Validator; // Import the Validator facade
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Helpers\EmailHelper;
 
 class RfqReceivedController extends Controller
 {
@@ -456,9 +458,16 @@ class RfqReceivedController extends Controller
 
             // Get current statuses
             $buyerSide = DB::table('rfqs')
-                ->select('buyer_id', 'buyer_user_id', 'buyer_rfq_status')
+                ->select('rfq_id', 'buyer_id', 'buyer_user_id', 'buyer_rfq_status', 'created_at')
                 ->where('rfq_id', $rfq_id)
                 ->first();
+
+            $rfq_quoted_vendors = DB::table('rfq_vendors')
+                ->select('vendor_user_id')
+                ->where('rfq_id', $rfq_id)
+                ->whereNotIn('vendor_status', [1, 2])
+                ->pluck('vendor_user_id')
+                ->toArray();
 
             $vendorSide = DB::table('rfq_vendors')
                 ->select('vendor_status')
@@ -519,12 +528,12 @@ class RfqReceivedController extends Controller
                 }
 
                 // send mail if this is 3rd vendor
-                // $mail_data = getSystemEmail('CIS-prepared');
-                // if (($vendor_price_count == 2) && ($rfq->buyer_rfq_status != 7 || $rfq->vend_rfq_status != 9)) {
-                //     if (!in_array($vend_id, $quoted_vendors_id)) {
-                //         $this->send_mail_to_buyer_for_3_vendor($_POST['rfq_number']);
-                //     }
-                // }
+                if(count($rfq_quoted_vendors) == 2){
+                    if (!in_array($vendor_user_id, $rfq_quoted_vendors)) {
+                        $this->send_mail_to_buyer_for_3_vendor($buyerSide);
+                    }
+                }
+                unset($rfq_quoted_vendors);
             }
 
             setSessionWithExpiry('counter_offer_rfq_number', ['rfq_id'=> $rfq_id, 'page' => ($vend_rfq_status==1 ? 'quotation' : 'counter-offer')]);
@@ -548,6 +557,30 @@ class RfqReceivedController extends Controller
                 'message' => 'Something went wrong while processing your quotation.',
             ], 500);
         }
+    }
+
+    
+    private function send_mail_to_buyer_for_3_vendor($buyer_data)
+    {
+        $rfq_id = $buyer_data->rfq_id;
+
+        $buyer = Buyer::with('users:id,email')
+                ->select('user_id','legal_name')
+                ->where('user_id', $buyer_data->buyer_id)
+                ->first()->toArray();
+
+        $rfq_date = date('d/m/Y', strtotime($buyer_data->created_at));
+        $subject = "CIS is Ready for RFQ No. " . $rfq_id;
+
+        $mail_data = buyerEmailTemplet('CIS-prepared');
+        $admin_msg = $mail_data->mail_message;
+
+        $admin_msg = str_replace('$name', $buyer['legal_name'], $admin_msg);
+        $admin_msg = str_replace('$link', route("login"), $admin_msg);
+        $admin_msg = str_replace('$rfq_number', $rfq_id, $admin_msg);
+        $admin_msg = str_replace('$rfq_date', $rfq_date, $admin_msg);
+        
+        EmailHelper::sendMail($buyer['users']['email'], $subject, $admin_msg);
     }
 
     

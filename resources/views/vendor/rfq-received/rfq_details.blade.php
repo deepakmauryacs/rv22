@@ -206,6 +206,11 @@ function IND_amount_format($amount) {
                             </thead>
                             <tbody>
                                 @foreach ($productVariants as $vIndex => $variant)
+                                @php
+                                 echo "<pre>";
+                                 print_r($variant); die;
+                                @endphp
+
                                 <tr>
                                     <td>{{ $vIndex + 1 }}</td>
                                     <td>{{ $variant->specification }}</td>
@@ -431,11 +436,11 @@ function IND_amount_format($amount) {
                         </div>
 
 
-                  
 
 
 
-         
+
+
 
                         <div class="col-md-4 mb-4">
                             <div class="input-group">
@@ -644,7 +649,7 @@ function IND_amount_format($amount) {
             <div class="modal-body">
                 <form id="add-product-to-vendor-profile" method="POST" action="javascript:void(0);">
                     @csrf
-                    
+
                     <table class="table table-striped table-responsive">
                         <thead>
                             <tr>
@@ -926,7 +931,7 @@ $("#add-product-to-vendor-profile").submit(function(){
     let taxClass = $('[name="tax_class"]').val();
     @endif
     let hsnCode = $('[name="hsn_code"]').val();
-    
+
     // validate
     if(productId=='' || rfqId==''){
         alert("Something went wrong...");

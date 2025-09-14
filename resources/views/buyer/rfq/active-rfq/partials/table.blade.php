@@ -64,10 +64,10 @@
                 </td>
                 <td>{{ $result->prn_no}}</td>
                 <td>{{ $result->buyerUser->name}}</td>
-                <td>{{ $result->buyerBranch?->name}}</td>
+                <td>{{ $branches ? $branches[$result->buyer_branch] : ''}}</td>
                 <td>{{ $result->rfq_response_received}}</td>
                 <td>
-                    @if ($is_auction)
+                    @if ($is_auction && !in_array($result->buyer_rfq_status, [5, 9]))
                         {!! $auction_statue !!}
                     @else
                         {!! $rfq_status[$result->buyer_rfq_status] !!}

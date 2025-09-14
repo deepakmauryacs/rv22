@@ -133,7 +133,9 @@
 
                 <td>{{ $result->prn_no }}</td>
                 <td>{{ $result->buyerUser->name }}</td>
-                <td>{{ $result->buyerBranch->name }}</td>
+                <td>
+                    {{getbuyerBranchById($result->buyer_branch)->name}}
+                </td>
 
                 {{-- Auction columns --}}
                 <td>{{ $auctionDate }}</td>

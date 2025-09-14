@@ -35,7 +35,7 @@
             <td>{{ $result->rfq_id ?? '-' }}</td>
             <td>{{ $result->order_variants->pluck('product.product_name')->filter()->unique()->join(', ') ?? '-' }}</td>
             <td>{{ $result->buyer->legal_name ?? '-' }}</td>
-            <td>{{ $result->order_total_amount ?? '-' }}</td>
+            <td>{{ $result->vendor_currency ?? '₹' }}{{ $result->order_total_amount }}</td>
             <td>{!! $order_status[$result->order_status] !!}</td>
             <td>
                 <a class="ra-btn ra-btn-outline-primary-light height-inherit btn-sm {{$cancelled_class}}" href="{{ $redirect_url }}"><span><i class="bi bi-eye"></i></span></a>
@@ -43,9 +43,8 @@
             <td>
                 @if($result->order_status == 1)
                     @php 
-                        $piData=orderPi($result->po_number,getParentUserId());
+                        $piData = orderPi($result->po_number, getParentUserId());
                     @endphp
-                    @if(empty($piData))
                     <div class="custom-file">
                         <div class="file-browse">
                             <span class="button button-browse">
@@ -54,12 +53,22 @@
                             </span>
                         </div>
                         <div class="pi-file-name-div">
-                            <span class="pi-file-name d-none" title=""></span>
+                            @if(!empty($piData))
+                            <span class="pi-file-name" title="{{$piData->pi_attachment}}">                                
+                                <a class="btn-sm btn-rfq-secondary" href="{{asset('public/uploads/pi-order/'.$piData->pi_attachment)}}" download="PI Invoice for {{ $result->po_number ?? '-' }}">
+                                    {!!
+                                        strlen($piData->pi_attachment) > 11
+                                        ? substr($piData->pi_attachment, 0, 11).'...'
+                                        : $piData->pi_attachment
+                                    !!}
+                                </a>
+                            </span>
+                            <span class="remove-pi-file btn-rfq btn-rfq-sm"><i class="bi bi-trash text-danger"></i></span>
+                            @else
+                            <span class="pi-file-name d-none" title="">    
+                            @endif
                         </div>
                     </div>
-                    @else
-                    <a class="btn-sm btn-rfq-secondary" href="{{asset('public/uploads/pi-order/'.$piData->pi_attachment)}}" download="PI Invoice for {{ $result->po_number ?? '-' }}"><span><i class="bi bi-download"></i></span></a>
-                    @endif
                 @endif
             </td>
         </tr>

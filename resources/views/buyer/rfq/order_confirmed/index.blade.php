@@ -144,7 +144,7 @@
                                         <span class="bi bi-arrow-clockwise"></span>
                                         Reset
                                     </button>
-                                    <button type="button" class="ra-btn small-btn ra-btn-outline-info" id="export-btn">
+                                    <button type="button" class="ra-btn small-btn ra-btn-outline-primary" id="export-btn">
                                         <span class="bi bi-download"></span>
                                         Export
                                     </button>

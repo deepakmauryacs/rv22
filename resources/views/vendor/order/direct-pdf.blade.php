@@ -112,7 +112,7 @@
                                     <td style="width: 50%;">
                                         <?php
                                         $branch_state_code = substr($vendor->gstin, 0, 2); ?>
-                                        <p class="fc1"><b>City : </b><?php echo $vendor->vendor_city->city_name; ?></p>
+                                        <p class="fc1"><b>City : </b><?php echo $vendor->vendor_city?->city_name; ?></p>
                                     </td>
                                     <td style="width: 50%;">
                                         <p class="fc1"><b>Pincode : </b><?php echo $vendor->pincode; ?></p>
@@ -120,7 +120,7 @@
                                 </tr>
                                 <tr>
                                     <td style="width: 50%;">
-                                        <p class="fc1"><b>State : </b><?php echo $vendor->vendor_state->name; ?></p>
+                                        <p class="fc1"><b>State : </b><?php echo $vendor->vendor_state?->name; ?></p>
                                     </td>
                                     <td style="width: 50%;">
                                         <p class="fc1"><b>State Code : </b><?php echo $branch_state_code; ?></p>
@@ -212,7 +212,7 @@
                             <tbody>
                                 <tr>
                                     <td style="width: 60%;">
-                                        <p class="fc1"><b>City : </b><?php echo $order->buyer->buyer_city->city_name; ?>
+                                        <p class="fc1"><b>City : </b><?php echo $order->buyer->buyer_city?->city_name; ?>
                                         </p>
                                     </td>
                                     <td style="width: 40%;">
@@ -221,7 +221,7 @@
                                 </tr>
                                 <tr>
                                     <td style="width: 60%;">
-                                        <p class="fc1"><b>State : </b><?php echo $order->buyer->buyer_state->name; ?>
+                                        <p class="fc1"><b>State : </b><?php echo $order->buyer->buyer_state?->name; ?>
                                         </p>
                                     </td>
                                     <td style="width: 40%;">
@@ -265,7 +265,7 @@
                                 <tr>
                                     <td style="width: 50%;">
                                         <p class="fc1"><b>City :
-                                            </b><?php echo $order->order_products[0]->inventory->branch->branch_city->city_name; ?>
+                                            </b><?php echo $order->order_products[0]->inventory->branch->branch_city?->city_name; ?>
                                         </p>
                                     </td>
                                     <td style="width: 50%;">
@@ -280,7 +280,7 @@
                                             $starting_state_code_c = substr($order->order_products[0]->inventory->branch->gstin, 0, 2);
                                         ?>
                                         <p class="fc1"><b>State :
-                                            </b><?php echo $order->order_products[0]->inventory->branch->branch_state->name; ?>
+                                            </b><?php echo $order->order_products[0]->inventory->branch->branch_state?->name; ?>
                                         </p>
                                     </td>
                                     <td style="width: 40%;" colspan="5">

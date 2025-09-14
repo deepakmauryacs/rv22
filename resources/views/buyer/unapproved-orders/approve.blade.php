@@ -39,7 +39,7 @@ $isIndian=$orders->vendor->country==101;
                 <button type="button" class="ra-btn btn-outline-primary ra-btn-outline-primary small-btn text-uppercase text-nowrap" id="approve-po">
                     <span class="bi bi-check-lg" aria-hidden="true"></span> Approve PO
                 </button>
-                <button type="button"
+                <button type="button" onclick="printdiv();"
                     class="ra-btn btn-outline-primary ra-btn-outline-primary small-btn text-uppercase text-nowrap">
                     <span class="bi bi-download" aria-hidden="true"></span> Download
                 </button>
@@ -67,6 +67,7 @@ $isIndian=$orders->vendor->country==101;
                             @csrf
                             <input type="hidden" name="vendor_currency" class="current-vendor-currency-symbol" value="{{ $orders->vendor_currency }}" >
                             <input type="hidden" name="po_number" class="current-vendor-currency-symbol" value="{{ $orders->po_number }}" >
+                            <input type="hidden" name="order_id" class="current-vendor-currency-symbol" value="{{ $orders->id }}" >
                             <div class="table-responsive">
                                 <table class="product-listing-table w-100">
                                     <thead>
@@ -117,21 +118,21 @@ $isIndian=$orders->vendor->country==101;
                                             <td class="text-center">{{ $item->frq_variant->size }}</td>
 
                                             <td>
-                                                <input type="text" value="{{ $orderQuantity }}" name="order_quantity[{{ $item->rfq_product_variant_id }}][]"
-                                                    data-gst="{{$productTax}}" data-price="{{ $orderPrice }}" data-pro-qty="{{ $orderQuantity }}"     
+                                                <input type="text" value="{{ $orderQuantity }}" name="order_quantity[{{ $item->rfq_product_variant_id }}]"
+                                                    data-gst="{{$productTax}}" data-price="{{ $orderPrice }}" data-pro-qty="{{ $orderQuantity }}"
                                                     class="form-control text-center bg-white product-quantity-field price-field mx-auto">
                                             </td>
                                             <td class="text-center">{{ optional($item->frq_variant->uoms)->uom_name }}</td>
                                             <td>
-                                                <input type="text" value="{{ $orderMRP }}" name="order_mrp[{{ $item->rfq_product_variant_id }}][]"
+                                                <input type="text" value="{{ $orderMRP }}" name="order_mrp[{{ $item->rfq_product_variant_id }}]"
                                                     class="form-control text-center bg-white product-mrp-field price-field mx-auto">
                                             </td>
                                             <td>
-                                                <input type="text" value="{{ $orderDiscount }}" name="order_discount[{{ $item->rfq_product_variant_id }}][]"
+                                                <input type="text" value="{{ $orderDiscount }}" name="order_discount[{{ $item->rfq_product_variant_id }}]"
                                                     class="form-control text-center bg-white product-discount-field price-field mx-auto">
                                             </td>
                                             <td>
-                                                <input type="text" value="{{ $orderPrice }}" name="order_rate[{{ $item->rfq_product_variant_id }}][]"
+                                                <input type="text" value="{{ $orderPrice }}" name="order_rate[{{ $item->rfq_product_variant_id }}]"
                                                     class="form-control text-center bg-white product-rate-field price-field mx-auto">
                                             </td>
                                             @if($isIndian)
@@ -162,7 +163,7 @@ $isIndian=$orders->vendor->country==101;
                                                     </span>
                                                     <div class="form-floating">
                                                         <input type="text" class="form-control required" id="priceBasis"
-                                                            placeholder="Price Basis" name="order_price_basis"
+                                                            placeholder="Price Basis" name="order_price_basis" maxlength="200"
                                                             value="{{ $orders->order_price_basis }}">
                                                         <label for="priceBasis">Price Basis <span class="text-danger">*</span></label>
                                                     </div>
@@ -175,7 +176,7 @@ $isIndian=$orders->vendor->country==101;
                                                     </span>
                                                     <div class="form-floating">
                                                         <input type="text" class="form-control required" id="paymentTerm"
-                                                            placeholder="Payment Term" name="order_payment_term"
+                                                            placeholder="Payment Term" name="order_payment_term" maxlength="200"
                                                             value="{{ $orders->order_payment_term }}">
                                                         <label for="paymentTerm">Payment Term <span
                                                                 class="text-danger">*</span></label>
@@ -203,7 +204,7 @@ $isIndian=$orders->vendor->country==101;
                                                     </span>
                                                     <div class="form-floating">
                                                         <input type="text" class="form-control" id="guranteeWarranty" name="order_gurantee_warranty"
-                                                            placeholder="Gurantee/Warranty">
+                                                            placeholder="Gurantee/Warranty" maxlength="255">
                                                         <label for="guranteeWarranty">Gurantee/Warranty</label>
                                                     </div>
                                                 </div>
@@ -215,7 +216,7 @@ $isIndian=$orders->vendor->country==101;
                                                     </span>
                                                     <div class="form-floating">
                                                         <input type="text" class="form-control" id="order_remarks" name="order_remarks"
-                                                            placeholder="Remarks" value="{{ $orders->order_remarks }}"
+                                                            placeholder="Remarks" value="{{ $orders->order_remarks }}" maxlength="2000"
                                                             name="order_remarks">
                                                         <label for="order_remarks">Remarks</label>
                                                     </div>
@@ -228,7 +229,7 @@ $isIndian=$orders->vendor->country==101;
                                                     </span>
                                                     <div class="form-floating">
                                                         <input type="text" class="form-control" id="order_add_remarks" name="order_add_remarks"
-                                                            placeholder="Additional Remarks"
+                                                            placeholder="Additional Remarks" maxlength="2000"
                                                             value="{{ $orders->order_add_remarks }}">
                                                         <label for="order_add_remarks">Additional Remarks</label>
                                                     </div>
@@ -241,7 +242,7 @@ $isIndian=$orders->vendor->country==101;
                                                     </span>
                                                     <div class="form-floating">
                                                         <input type="text" class="form-control" id="buyer_order_number" name="buyer_order_number"
-                                                            placeholder="Gurantee/Warranty" name="buyer_order_number"
+                                                            placeholder="Gurantee/Warranty" name="buyer_order_number" maxlength="255"
                                                             value="{{ $orders->buyer_order_number }}">
                                                         <label for="buyer_order_number">Buyer Order Number</label>
                                                     </div>
@@ -258,6 +259,21 @@ $isIndian=$orders->vendor->country==101;
         </div>
     </div>
 </main>
+<div class="modal fade" id="generate-po-loader-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="compose-rfq-loader-label" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-12 text-center">
+                        <img src="{{ asset('public/assets/images/raprocure-fevicon.png') }}" style="width: 7%;" class="img img-fluid">
+                        <h4 class="po-generate-status">Purchase Order Generated Successfully</h4>
+                        <button data-href="" class="center-block ra-btn small-btn ra-btn-primary po-success-button">OK</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('scripts')
@@ -320,12 +336,12 @@ $isIndian=$orders->vendor->country==101;
                 $('.cancelPOBtn').removeClass("disabled");
             }
         }
-        
+
         $(document).on('blur', ".product-quantity-field", function() {
             let p_qty = $(this).val();
             let actual_p_qty = $(this).data('pro-qty');
             let gst = $(this).data('gst');
-            
+
             if($.isNumeric(p_qty)==false){
                 $(this).val(actual_p_qty);
                 p_qty = actual_p_qty;
@@ -333,8 +349,8 @@ $isIndian=$orders->vendor->country==101;
 
             if(parseFloat(actual_p_qty)<parseFloat(p_qty)){
                 toastr.error("Product Quantity can not be greater that Unapproved Order Product Quantity");
-                // $(this).val(actual_p_qty);
-                // p_qty = actual_p_qty;
+                $(this).val(actual_p_qty);
+                p_qty = actual_p_qty;
             }
             let p_price  =  $(this).parents('tr').find(".product-rate-field").val();
 
@@ -343,16 +359,16 @@ $isIndian=$orders->vendor->country==101;
                 total1=total1 + (total1 * gst / 100);
             }
             let total = parseFloat(total1).toFixed(2);
-            let vendor_currency_symbol = $(".current-vendor-currency-symbol").val();            
+            let vendor_currency_symbol = $(".current-vendor-currency-symbol").val();
 
-            $(this).parents('tr').find(".product-subtotal-price").html(vendor_currency_symbol + IND_amount_format(total));            
+            $(this).parents('tr').find(".product-subtotal-price").html(vendor_currency_symbol + IND_amount_format(total));
 
             rewiseGrandTotalPrice(this);
             qty_focous = setTimeout(update_qty_focous, 1000);
         });
         $(document).on('blur change', ".price-field", function () {
             const row = $(this).closest('tr'); // Get the parent row
-            
+
             // Get values from the respective fields
             let p_qty = parseFloat(row.find(".product-quantity-field").val()) || 0;
             let p_mrp = parseFloat(row.find(".product-mrp-field").val()) || 0;
@@ -393,7 +409,7 @@ $isIndian=$orders->vendor->country==101;
             $(_this).parents("tbody").find(".product-quantity-field").each(function() {
                 let gst  =  $(this).parents('tr').find(".product-quantity-field").data('gst');
                 grand_total1 =$(this).parents("tr").find(".product-rate-field").val() * $(this).parents("tr").find(".product-quantity-field").val();
-                
+
                 if(gst!=''){
                     grand_total1+= (grand_total1 * gst / 100);
                     t +=grand_total1;
@@ -401,7 +417,7 @@ $isIndian=$orders->vendor->country==101;
                     t +=grand_total1;
                 }
             });
-            let grand_total = parseFloat(t).toFixed(2);            
+            let grand_total = parseFloat(t).toFixed(2);
             let vendor_currency_symbol = $(".current-vendor-currency-symbol").val();
             $(_this).parents("tbody").find(".grand-total-price").html(vendor_currency_symbol + IND_amount_format(grand_total)).attr("data-total-amount", grand_total);
         }
@@ -441,45 +457,33 @@ $isIndian=$orders->vendor->country==101;
                 $("#order-confirmation-form").submit();
             }
         });
-        
+
         $(document).on('submit', "#order-confirmation-form", function(event) {
-            event.preventDefault();            
+            event.preventDefault();
             $.ajax({
                 type: 'POST',
-                url: "{{ route('buyer.unapproved-orders.approve') }}",
+                url: "{{ route('buyer.rfq.unapproved-order.approve') }}",
                 data: new FormData(this),
                 dataType: 'json',
                 contentType: false,
                 cache: false,
                 processData: false,
                 beforeSend: function(response) {},
-                success: function(response) {
-                    if(response.message ==='You are not Authorized'){
-                        alert("You are not authorized to access this page");
+                success: function(response) {                    
+                    if (response.status==true) {
+                        $(".po-success-button").data("href", response.redirect_url);
+                        $("#generate-po-loader-modal").modal('show');
+                        
                         disableSubmitButton(false, "#approve-po");
-                        return false;
-                    }else{
-                        if (response.status==true) {
-                            // let redirect_url = '('Order/po_details')/' + response.order_id;
-
-                            $("#generate-po-loader-modal").modal({
-                                backdrop: 'static',
-                                keyboard: false
-                            }, 'show');
-                            // console.log("redirect_url", redirect_url);
-                            $(".po-success-button").data("href", redirect_url);
-                            
-                            disableSubmitButton(false, "#approve-po");
-                        } else {
-                            toastr.error(response.message);
-                        }
-                    }
+                    } else {
+                        toastr.error(response.message);
+                    } 
                 },
                 error: function(error) {
                     console.log(error);
                     disableSubmitButton(false, "#approve-po");
                 },
-                complete: function() {                
+                complete: function() {
                 }
             });
         });
@@ -506,10 +510,36 @@ $isIndian=$orders->vendor->country==101;
                 $(obj).parent().append('<span class="text-danger error-message">' + msg + '</span>');
             }
         }
-
-
-
     });
+    function printdiv() {
+        $.ajax({
+            url: "{{ route('buyer.unapproved-orders.print') }}",
+            method: "POST",
+            processData: false,
+            contentType: false,
+            data: new FormData($('#order-confirmation-form')[0]),
+            success: function(response) {
+                // Open a new window
+                var printWindow = window.open('', '_blank', 'width=800,height=600');
+                // Write the HTML content
+                printWindow.document.open();
+                printWindow.document.write(response);
+                printWindow.document.close();
+                // Wait for content to load, then print
+                printWindow.onload = function () {
+                    printWindow.focus();
+                    printWindow.print();
+                    // Optional: Close after printing
+                    printWindow.onafterprint = function () {
+                        printWindow.close();
+                    };
+                };
+            },
+            error: function(xhr) {
+                alert("Failed to fetch print content.");
+            }
+        });
+    }
 
 </script>
 @endsection

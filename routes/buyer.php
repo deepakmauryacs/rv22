@@ -131,8 +131,12 @@ Route::name('buyer.')->group(function () {
                 Route::get('order-confirmed/view/{id}', [OrderConfirmedController::class, 'view'])->name('rfq.order-confirmed.view');
                 Route::get('order-confirmed/print/{id}', [OrderConfirmedController::class, 'print'])->name('rfq.order-confirmed.print');
                 Route::post('order-confirmed/cancel/{id}', [OrderConfirmedController::class, 'cancel'])->name('rfq.order-confirmed.cancel');
+
+                Route::post('approve', [OrderConfirmedController::class, 'approve'])->name('rfq.unapproved-order.approve');
+
                 Route::get('order-confirmed/export/total', [OrderConfirmedController::class, 'exportTotal'])->name('rfq.order-confirmed.exportTotal');
                 Route::get('order-confirmed/export/batch', [OrderConfirmedController::class, 'exportBatch'])->name('rfq.order-confirmed.exportBatch');
+
             });
 
 
@@ -141,10 +145,10 @@ Route::name('buyer.')->group(function () {
                 Route::get('create/{rfq_id}', [RFQUnapprovedOrderController::class, 'create'])->name('unapproved-orders.create');
                 Route::post('generate-po', [RFQUnapprovedOrderController::class, 'generatePO'])->name('unapproved-orders.generatePO');
                 Route::get('approve-po/{rfq_id}', [RFQUnapprovedOrderController::class, 'approvePO'])->name('unapproved-orders.approvePO');
-                Route::post('approve', [RFQUnapprovedOrderController::class, 'approve'])->name('unapproved-orders.approve');
                 Route::post('export-po', [RFQUnapprovedOrderController::class, 'exportPOData'])->name('unapproved-orders.exportPOData');
                 Route::post('delete-po', [RFQUnapprovedOrderController::class, 'deletePO'])->name('unapproved-orders.deletePO');
                 Route::post('download-po/{rfq_id}', [RFQUnapprovedOrderController::class, 'downloadPOPdf'])->name('unapproved-orders.downloadPOPdf');
+                Route::post('print', [RFQUnapprovedOrderController::class, 'print'])->name('unapproved-orders.print');
             });
 
             Route::prefix('user-management')->group(function () {

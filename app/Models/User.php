@@ -150,10 +150,14 @@ class User extends Authenticatable
     {
         return $this->hasOne(Vendor::class, 'user_id', 'id');
     }
+
+    
     public function branchDetails()
     {
         return $this->hasMany(BranchDetail::class, 'user_id', 'id')->where('record_type', 1)->where('is_regd_address', 2);
     }
+
+
     public function vendorRegisteredBranch()
     {
         return $this->hasOne(BranchDetail::class, 'user_id', 'id')->where('record_type', 1)->where('is_regd_address', 1);

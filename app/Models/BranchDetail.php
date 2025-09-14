@@ -51,7 +51,7 @@ class BranchDetail extends Model
                         (
                             SELECT branch_id, MIN(name) AS name
                             FROM branch_details
-                            WHERE record_type = 1 AND status = 1
+                            WHERE record_type = 1 AND user_type = 1 AND status = 1
                             GROUP BY branch_id
                         ) as bd2
                     '), function ($join) {
@@ -64,6 +64,7 @@ class BranchDetail extends Model
             });
         });
     }
+    
      public function branch_country()
     {
         return $this->hasOne(Country::class, 'id', 'country');

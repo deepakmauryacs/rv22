@@ -1,4 +1,4 @@
-@extends('vendor.layouts.app_second',['title'=>'Help and Support','sub_title'=>''])
+@extends('vendor.layouts.app_second',['title'=>'Direct Order Details','sub_title'=>''])
 @section('css')
  
 @endsection
@@ -20,18 +20,18 @@
 @section('content')
 <section class="container-fluid">
     <!-- Start Breadcrumb Here -->
-    <nav aria-label="breadcrumb">
+    {{-- <nav aria-label="breadcrumb">
         <ol class="breadcrumb breadcrumb-global py-2 mb-0">
             <li class="breadcrumb-item"><a href="{{ route('vendor.dashboard') }}">Dashboard</a></li>
             <li class="breadcrumb-item">Direct Order</li>
             <li class="breadcrumb-item active" aria-current="page">Order Details</li>
         </ol>
-    </nav>
+    </nav> --}}
     <!-- Start Content Here -->
     <section class="manage-product">
         <div class="card">
             <div class="card-header d-flex align-items-center justify-content-between bg-white py-3">
-                <h1 class="card-title font-size-18 mb-0">Order Details</h1>
+                <h1 class="card-title font-size-18 mb-0">Direct Order Details</h1>
                 <div class="row g-3">
                     <div class="col-auto">
                         <button type="button" onclick="window.open(`{{ route('vendor.direct_order.print', $order->id) }}`, '_blank', 'width=800,height=600,resizable=yes,scrollbars=yes'); return false;"

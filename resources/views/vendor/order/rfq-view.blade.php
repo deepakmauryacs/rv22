@@ -20,13 +20,13 @@
 @section('content')
 <section class="container-fluid">
     <!-- Start Breadcrumb Here -->
-    <nav aria-label="breadcrumb">
+    {{-- <nav aria-label="breadcrumb">
         <ol class="breadcrumb breadcrumb-global py-2 mb-0">
             <li class="breadcrumb-item"><a href="{{ route('vendor.dashboard') }}">Dashboard</a></li>
             <li class="breadcrumb-item">RFQ Received</li>
             <li class="breadcrumb-item active" aria-current="page">Order Details</li>
         </ol>
-    </nav>
+    </nav> --}}
     <!-- Start Content Here -->
     <section class="manage-product">
         <div class="card">
@@ -56,11 +56,11 @@
                     <ul>
                         <li>Order No: {{ $order->po_number }}</li>
                         <li>Order Date: {{ date('d/m/Y', strtotime($order->created_at)) }}</li>
-                        <li>Buyer Order Number: {{ $order->buyer_order_number ?? '-' }}</li>
+                        <li>Buyer Order Number: {{ $order->buyer_order_number }}</li>
                         <li>Buyer Name: {{ $order->buyer->legal_name ?? '-' }}</li>
                         <li>RFQ No: {{ $order->rfq_id ?? '-' }}</li>
-                        <li>PRN Number: </li>
-                        <li>Branch/Unit: </li>
+                        <li>PRN Number: {{$order->rfq->prn_no}}</li>
+                        <li>Branch/Unit: {{!empty($order->rfq->buyer_branch)?getbuyerBranchById($order->rfq->buyer_branch)->name:''}}</li>
                     </ul>
                 </div>
                 <div class="rfq-order-details">
@@ -87,28 +87,40 @@
                                         UOM
                                     </th>
                                     <th scope="col" class="text-uppercase">
-                                        MRP(₹)
+                                        MRP({{$order->vendor_currency ?? '₹'}})
                                     </th>
                                     <th scope="col" class="text-uppercase">
                                         DISCOUNT(%)
                                     </th>
                                     <th scope="col" class="text-uppercase">
-                                        Rate(₹)
+                                        Rate({{$order->vendor_currency ?? '₹'}})
                                     </th>
+                                    @if($order->int_buyer_vendor==2)
                                     <th scope="col" class="text-uppercase">
                                         GST
                                     </th>
+                                    @endif
                                     <th scope="col" class="text-uppercase">
-                                        Amount(₹)
+                                        Amount({{$order->vendor_currency ?? '₹'}})
                                     </th>
                                 </tr>
                             </thead>
                             
                             <tbody>
                                 @php 
-                                $total=0;$gtotal=0; 
+                                    $total=0;
+                                    $gtotal=0; 
                                 @endphp
                                 @foreach ($order->order_variants as $key => $value)
+                                    @php
+                                        $total = $value->order_price * $value->order_quantity;
+                                        $gst = 0;
+                                        if($order->int_buyer_vendor==2){
+                                            $gst = ($total*$value->product_gst)/100;
+                                        }
+                                        $total = number_format((float)($total + $gst), 2, '.', '');
+                                        $gtotal += $total;
+                                    @endphp
                                 <tr>
                                     <td class="fw-bold text-start">{{++$key}}</td>
                                     <td class="fw-bold">{{$value->product->product_name}}</td>
@@ -119,22 +131,20 @@
                                     <td>{{$value->order_mrp}}</td>
                                     <td>{{$value->order_discount}}</td>
                                     <td>{{$value->order_price}}</td>
-                                    <td>0%</td>
-                                    <td class="text-end">
-                                        @php
-                                        $total=$value->order_price*$value->order_quantity;
-                                        $gtotal+=$total;
-                                        @endphp
-                                        ₹{{$total}}
+                                    @if($order->int_buyer_vendor==2)
+                                    <td>{{$value->product_gst}}%</td>
+                                    @endif
+                                    <td class="text-end">                                        
+                                        {{$order->vendor_currency ?? '₹'}}{{$total}}
                                     </td>
                                 </tr>
                                 @endforeach
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <td colspan="10" class="fw-bold text-start">Total</td>
+                                    <td colspan="{{ $order->int_buyer_vendor==2 ? '10' : '9' }}" class="fw-bold text-start">Total</td>
                                     <td class="text-end">
-                                        ₹{{$gtotal}}
+                                        {{$order->vendor_currency ?? '₹'}}{{$gtotal}}
                                     </td>
                                 </tr>
                             </tfoot>

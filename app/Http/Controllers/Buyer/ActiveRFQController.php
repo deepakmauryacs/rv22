@@ -51,9 +51,9 @@ class ActiveRFQController extends Controller
                         },
                         'rfqProducts.masterProduct',
                         'buyerUser',
-                        'buyerBranch' => function ($q) {
-                            $q->where('user_type', 1);
-                        },
+                        // 'buyerBranch' => function ($q) {
+                        //     $q->where('user_type', 1);
+                        // },
                         'rfq_auction'=> function ($query) {
                             $query->select('rfq_no', 'auction_date', 'auction_start_time', 'auction_end_time');
                         }
@@ -127,7 +127,9 @@ class ActiveRFQController extends Controller
         }
         ksort($unique_category);
 
-        return view('buyer.rfq.active-rfq.index', compact('divisions', 'unique_category', 'results'));
+        $branches = getbuyerAllBranch(getParentUserId());
+
+        return view('buyer.rfq.active-rfq.index', compact('divisions', 'unique_category', 'results', 'branches'));
     }
 
     public function rfq_details(Request $request, $rfq_id)

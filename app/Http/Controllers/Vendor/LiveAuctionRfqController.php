@@ -65,10 +65,10 @@ class LiveAuctionRfqController extends Controller
     // Get auction details and related buyer/user info
     // Compose auction status and meta info
     // Prepare data for the auction offer view
-    {
+    {   
         $vendId   =  getParentUserId();
         if (empty($rfqId)) {
-            return Redirect::to(route('sysadmin.orders.index'));
+            return Redirect::to(route('vendor.rfq.live-auction.index'));
         }
         if (!$vendId) {
             return Redirect::to(route('login'));
@@ -79,7 +79,7 @@ class LiveAuctionRfqController extends Controller
             ->where('vendor_id', $vendId)
             ->exists();
         if (!$vendorAllowed) {
-            return Redirect::to(route('sysadmin.auction.live_auction_offer'));
+            return Redirect::to(route('vendor.rfq.live-auction.index'));
         }
         // Parent user id (kept from your CI logic)
         $parentUserId =  getParentUserId();
@@ -89,7 +89,9 @@ class LiveAuctionRfqController extends Controller
             ->orderByDesc('id')
             ->first();
         if (!$auction) {
-            return Redirect::to(route('sysadmin.orders.index'));
+
+            echo "Hello"; die();
+            return Redirect::to(route('vendor.rfq.live-auction.index'));
         }
         $rfqData = DB::table('rfqs as r')
             ->join('rfq_vendors as rv', function ($j) use ($vendId) {

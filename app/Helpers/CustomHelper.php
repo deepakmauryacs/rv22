@@ -374,6 +374,9 @@ if(!function_exists('sendNotifications')){
             'Order Cancelled' => (function () use ($notification_data) {
                 return "Order - No ".$notification_data['po_number']." has been cancelled ";
             })(),
+            'Order Confirmed' => (function () use ($notification_data) {
+                return "Congratulations! You have received an Order. Order No.: ".$notification_data['po_number'].".";
+            })(),
             'RFQ Closed' => (function () use ($notification_data, $sender_name) {
                 return "<b>".$sender_name."</b> has closed RFQ No. ".$notification_data['rfq_id'].". You will no longer be able to quote.";
             })(),
@@ -975,6 +978,17 @@ if (!function_exists('getbuyerBranchById')) {
             ->first();
     }
 }
+if (!function_exists('getbuyerAllBranch')) {
+    function getbuyerAllBranch($user_id)
+    {
+        return DB::table('branch_details')
+            ->select('branch_id', 'name')
+            ->where('user_id', $user_id)
+            ->where('user_type', 1)
+            ->where('record_type', '1')
+            ->pluck('name', 'branch_id')->toArray();
+    }
+}
 if (!function_exists('getVendorBranchById')) {
     function getVendorBranchById($branchId)
     {
@@ -1104,6 +1118,21 @@ if (!function_exists('get_currency_symbol')) {
 
         // Check if input is a currency symbol or code
         return $currency_symbols[$currency] ?? '₹';
+    }
+}
+if (!function_exists('get_currency_str')) {
+    function get_currency_str($currency)
+    {
+        // Define currency symbols with symbols as keys and currency codes as values
+        $currency_symbols = [
+            '₹' => 'INR', // Indian Rupee
+            '$' => 'USD', // US Dollar
+            'रु' => 'NPR', // Nepali Rupee
+            'NPR' => 'NPR', // Nepali Rupee
+            // You can add more currency symbols here
+        ];
+        // Check if input is a currency symbol
+        return isset($currency_symbols[$currency]) ? $currency_symbols[$currency] : 'INR'; // Default to INR if not found
     }
 }
 if (!function_exists('log_peak_memory_usage')) {

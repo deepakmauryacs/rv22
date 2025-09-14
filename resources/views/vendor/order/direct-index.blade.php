@@ -1,5 +1,10 @@
-@extends('vendor.layouts.app_second',['title'=>'Orders Confirmed','sub_title'=>'Direct Orders Confirmed'])
+@extends('vendor.layouts.app_second',['title'=>'Direct Orders Confirmed','sub_title'=>''])
 @section('css')
+    <style>
+        .remove-pi-file {
+            cursor: pointer;
+        }
+    </style>
 
 @endsection
  
@@ -240,6 +245,7 @@ function uploadPIFile(obj) {
                     '</a>';
                 $(obj).closest('.custom-file').children('.pi-file-name-div').find(".pi-file-name")
                     .removeClass('d-none').html(btn_html).attr('title', response.file_name);
+                $(obj).closest('.custom-file').children('.pi-file-name-div').find(".remove-pi-file").remove();
                 $(obj).closest('.custom-file').children('.pi-file-name-div').append(
                     '<span class="remove-pi-file btn-rfq btn-rfq-sm"><i class="bi bi-trash text-danger"></i></span>'
                     );
@@ -257,11 +263,12 @@ $(document).on("click", ".remove-pi-file", function() {
         let _this = this;
         let formData = new FormData();
         formData.append("order_number", order_number);
-        formData.append("order_type", "rfq_order");
+        formData.append("order_type", "manual_order");
+        formData.append("_token", "{{ csrf_token() }}");
 
         $.ajax({
             type: "POST",
-            url: 'https://tech.guruworkwithit.online/sysadmin/orders/deleteVendorOrderPI',
+            url: "{{route('vendor.delete.pi.attachment')}}",
             dataType: 'json',
             data: formData,
             contentType: false,
@@ -281,6 +288,9 @@ $(document).on("click", ".remove-pi-file", function() {
             }
         });
     }
+});
+$(document).on('click','.cancelled-order', function(){
+    alert('This order is cancelled');
 });
 </script>
 @endsection

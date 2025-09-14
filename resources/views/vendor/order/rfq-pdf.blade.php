@@ -90,7 +90,7 @@
                                 <tr>
                                     <td style="width: 70%;">
                                         <?php  $branch_state_code = substr($order->vendor->gstin, 0, 2); ?>
-                                        <p class="fc1"><b>City : </b><?php echo $order->vendor->vendor_city->city_name; ?></p>
+                                        <p class="fc1"><b>City : </b><?php echo $order->vendor->vendor_city?->city_name; ?></p>
                                     </td>
                                     <td style="width: 30%;">
                                         <p class="fc1"><b>Pincode : </b><?php echo  $order->vendor->pincode; ?></p>
@@ -103,7 +103,7 @@
                                 ?>
                                 <tr>
                                     <td style="width: 70%;">
-                                        <p class="fc1"><b>State : </b><?php echo $order->vendor->vendor_state->name; ?></p>
+                                        <p class="fc1"><b>State : </b><?php echo $order->vendor->vendor_state?->name; ?></p>
                                     </td>
                                     <?php
                                        if($is_international == 101){
@@ -221,7 +221,7 @@
                             <tbody>
                                 <tr>
                                     <td style="width: 60%;">
-                                        <p class="fc1"><b>City : </b><?php echo $order->buyer->buyer_city->city_name; ?></p>
+                                        <p class="fc1"><b>City : </b><?php echo $order->buyer->buyer_city?->city_name; ?></p>
                                     </td>
                                     <td style="width: 40%;">
                                         <p class="fc1"><b>Pincode : </b><?php echo $order->buyer->pincode; ?></p>
@@ -229,7 +229,7 @@
                                 </tr>
                                 <tr>
                                     <td style="width: 60%;">
-                                         <p class="fc1"><b>State : </b><?php echo $order->buyer->buyer_state->name; ?></p>
+                                         <p class="fc1"><b>State : </b><?php echo $order->buyer->buyer_state?->name; ?></p>
                                     </td>
                                     <?php
                                      if($order->buyer->country == '101'){
@@ -280,7 +280,7 @@
                             <tbody>
                                 <tr>
                                     <td style="width: 60%;">
-                                        <p class="fc1"><b>City : </b><?php echo $order->rfq->buyer_branchs->branch_city->city_name; ?></p>
+                                        <p class="fc1"><b>City : </b><?php echo $order->rfq->buyer_branchs->branch_city?->city_name; ?></p>
                                     </td>
                                     <td style="width: 40%;">
                                         <p class="fc1"><b>Pincode : </b><?php echo $order->rfq->buyer_branchs->pincode; ?></p>
@@ -291,7 +291,7 @@
                                         <?php
                                             $starting_state_code_c = substr($order->rfq->buyer_branchs->gstin, 0, 2);
                                         ?>
-                                        <p class="fc1"><b>State : </b><?php echo $order->rfq->buyer_branchs->branch_state->name; ?></p>
+                                        <p class="fc1"><b>State : </b><?php echo $order->rfq->buyer_branchs->branch_state?->name; ?></p>
                                     </td>
                                     <?php if($order->rfq->buyer_branchs->country == '101'){ ?>
                                      <td style="width: 40%;" colspan="5">

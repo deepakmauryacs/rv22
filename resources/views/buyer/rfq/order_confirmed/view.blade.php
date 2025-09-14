@@ -52,6 +52,7 @@
                     <li>Vendor Name: {{ $order->vendor->legal_name ?? '-' }}</li>
                     <li>RFQ No: {{ $order->rfq_id ?? '-' }}</li>
                     <li>PRN Number: {{$order->rfq->prn_no}}</li>
+                    <li>Gurantee/Warranty: {{$order->guranty_warranty}}</li>
                     <li>Branch/Unit: {{!empty($order->rfq->buyer_branch)?getbuyerBranchById($order->rfq->buyer_branch)->name:''}}</li>
                 </ul>
                 

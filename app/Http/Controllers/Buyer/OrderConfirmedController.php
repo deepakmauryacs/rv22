@@ -5,11 +5,15 @@ namespace App\Http\Controllers\Buyer;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Order;
+use App\Models\OrderVariant;
 use App\Models\Division;
 use App\Models\Category;
 use App\Models\Rfq;
+use App\Models\Vendor;
 use DB;
 use App\Traits\HasModulePermission;
+use Illuminate\Support\Facades\Validator;
+use App\Helpers\EmailHelper;
 class OrderConfirmedController extends Controller
 {
     use HasModulePermission;
@@ -259,6 +263,376 @@ class OrderConfirmedController extends Controller
         }
     }
 
+    public function approve(Request $request)
+    {
+        $rules = [
+            'po_number'            => 'required|string',
+            'order_quantity'       => 'required|array',
+            'order_quantity.*'     => 'required|array',
+            'order_quantity.*.*'   => 'required|numeric|min:0.1',
+
+            'order_rate'           => 'required|array',
+            'order_rate.*'         => 'required|array',
+            'order_rate.*.*'       => 'required|numeric|min:1',
+
+            'order_price_basis'    => 'required|string|max:200',
+            'order_payment_term'   => 'required|string|max:200',
+            'order_delivery_period'=> 'required|integer|min:1|max:999',
+        ];
+        $messages = [
+            'order_quantity.*.*.required' => 'Quantity for each variant is required.',
+            'order_quantity.*.*.numeric'  => 'Quantity must be a numeric value.',
+            'order_rate.*.*.min'          => 'Rate must be at least 1.',
+            'po_number.required'          => 'Purchase Order number is mandatory.',
+        ];
+
+        $validator = Validator::make($request->all(), $rules, $messages);
+
+        if ($validator->fails()) {
+            // Get all error messages as array
+            $errors = $validator->errors()->all();
+
+            // Concatenate or pick the first error message
+            $message = implode(' ', $errors);
+
+            return response()->json([
+                'status' => false,
+                'message' => $message,
+            ]);
+        }
+
+        $parent_user_id = getParentUserId();
+        $po_number = $request->po_number;
+
+        $order_quantity = $request->order_quantity;
+        $order_rate = $request->order_rate;
+        $order_price_basis = $request->order_price_basis;
+        $order_payment_term = $request->order_payment_term;
+        $order_delivery_period = $request->order_delivery_period;
+
+        $is_order_exists = DB::table('orders')->where('po_number', $po_number)->where('buyer_id', $parent_user_id)->where('order_status', 3)->first();
+        $order_variants = DB::table('order_variants')->where('po_number', $po_number)->get()->keyBy('rfq_product_variant_id')->toArray();
+        if (empty($is_order_exists) || empty($order_variants)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unapproved Order not found',
+            ]);
+        }
+
+        $errors = $this->validateOrderQty($order_variants, $order_quantity);
+        $requested_order = $this->requestedOrder($request);
+        
+        // echo "<pre>";
+        // print_r($order_variants);
+        // die;
+
+        if (!empty($errors)) {
+            // return response()->json(['status' => false, 'message' => implode(' ', $errors)], 422);
+            return response()->json(['status' => false, 'message' => "Some of the product quantity is exceeded, Please refresh the page and try again"], 422);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $new_po_number = $this->generatePONumber($is_order_exists->rfq_id, $parent_user_id);
+            $po_insert_id = $this->updateToPO($request, $is_order_exists, $order_variants, $requested_order, $new_po_number);
+            $evaluated_vendors_status = $this->reEvaluateRFQVendorsStatus($is_order_exists->rfq_id);
+            
+            $is_rfq_qty_left = $evaluated_vendors_status['is_rfq_qty_left'];
+            $buyer_rfq_status = 5;
+            if ($is_rfq_qty_left == "yes") {
+                $buyer_rfq_status = 9;
+            }
+            DB::table('rfqs')
+                ->where('rfq_id', $is_order_exists->rfq_id)
+                ->update([
+                    'buyer_rfq_status' => $buyer_rfq_status
+                ]);
+
+            if(!empty($evaluated_vendors_status['update_vendor_rfq_status_wise'])){
+                foreach ($evaluated_vendors_status['update_vendor_rfq_status_wise'] as $vend_rfq_status => $vendor_ids) {
+                    DB::table("rfq_vendors")
+                        ->where('rfq_id', $is_order_exists->rfq_id)
+                        ->whereIn('vendor_user_id', array_values($vendor_ids))
+                        ->update(['vendor_status' => $vend_rfq_status]);
+                }
+            }
+            
+            $notification_data = array();
+            $notification_data['po_number'] = $new_po_number;
+            $notification_data['message_type'] = 'Order Confirmed';
+            $notification_data['notification_link'] = route('vendor.rfq_order.show', $po_insert_id);
+            $notification_data['to_user_id'] = $is_order_exists->vendor_id;
+            sendNotifications($notification_data);
+                        
+            DB::commit();
+
+            $order = DB::table('orders')->where('po_number', $new_po_number)->where('buyer_id', $parent_user_id)->where('order_status', 1)->first();
+            $this->sendPOEmail($order);
+
+            return response()->json([
+                'status' => true,
+                'redirect_url' => route('buyer.rfq.order-confirmed.view', $po_insert_id),
+                'message' => 'Purchase Order Generated Successfully'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            // Handle the error
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to Generate Purchase Order, Please try again later. '.$e->getMessage(),
+                'complete_message' => [
+                    // 'exception' => get_class($e),
+                    // 'message' => $e->getMessage(),
+                    // 'code'    => $e->getCode(),
+                    // 'file'    => $e->getFile(),
+                    // 'line'    => $e->getLine(),
+                    // 'trace'   => $e->getTraceAsString(),
+                ],
+            ]);
+        }
+    }
+    private function validateOrderQty($order_variants, $order_quantity)
+    {
+        // Validation errors collector
+        $errors = [];
+
+        // Check if all DB variant IDs exist in post
+        foreach ($order_variants as $variant_id => $variantData) {
+            if (!isset($order_quantity[$variant_id])) {
+                $errors[] = "Variant ID $variant_id is missing in the posted quantities.";
+                continue;
+            }
+            // Extract posted quantity (assuming first index [0])
+            $postedQuantity = floatval($order_quantity[$variant_id][0] ?? 0);
+            $dbQuantity = floatval($variantData->order_quantity);
+            
+            if ($postedQuantity > $dbQuantity) {
+                $errors[] = "Quantity for variant ID $variant_id exceeds allowed order quantity ($dbQuantity).";
+            }
+        }
+
+        return $errors;
+    }
+    private function requestedOrder($request)
+    {
+        $order_quantity = $request->order_quantity;
+        $order_mrp      = $request->order_mrp;
+        $order_discount = $request->order_discount;
+        $order_rate     = $request->order_rate;
+
+        $requesting_order_id_wise_qty = [];
+
+        foreach ($order_quantity as $variant_id => $qArr) {
+            $quantity = isset($qArr[0]) ? $qArr[0] : 0;
+            $mrp      = isset($order_mrp[$variant_id][0]) ? $order_mrp[$variant_id][0] : 0;
+            $discount = isset($order_discount[$variant_id][0]) ? $order_discount[$variant_id][0] : 0;
+            $price    = isset($order_rate[$variant_id][0]) ? $order_rate[$variant_id][0] : 0;
+
+            $requesting_order_id_wise_qty[$variant_id] = [
+                'quantity' => number_format((float)$quantity, 2, '.', ''),
+                'mrp'      => number_format((float)$mrp, 2, '.', ''),
+                'discount' => number_format((float)$discount, 2, '.', ''),
+                'price'    => number_format((float)$price, 2, '.', ''),
+            ];
+        }
+        return $requesting_order_id_wise_qty;
+    }
+    private function generatePONumber($rfq_id, $parent_user_id)
+    {
+        $orderCount = DB::table('orders')
+            ->where('rfq_id', $rfq_id)
+            ->where('buyer_id', $parent_user_id)
+            ->whereIn('order_status', [1, 2])
+            ->count();
+        
+        return "O-" . $rfq_id . "/" . str_pad($orderCount + 1, 2, '0', STR_PAD_LEFT);
+    }
+    private function updateToPO($request, $is_order_exists, $order_variants, $requested_order, $new_po_number)
+    {
+        $parent_user_id = getParentUserId();
+        $po_number = $request->po_number;
+
+        $po_insert_id = DB::table('orders')->insertGetId([
+            'rfq_id' => $is_order_exists->rfq_id,
+            'vendor_id' => $is_order_exists->vendor_id,
+            'po_number' => $new_po_number,
+            'buyer_order_number' => $request->buyer_order_number,
+            'order_total_amount' => 0,
+            'order_status' => 1,
+            'buyer_id' => $parent_user_id,
+            'buyer_user_id' => auth()->user()->id,
+            'unapprove_by_user_id' => $is_order_exists->buyer_user_id,
+            'order_price_basis' => $request->order_price_basis,
+            'order_payment_term' => $request->order_payment_term,
+            'order_delivery_period' => $request->order_delivery_period,
+            'order_remarks' => $request->order_remarks,
+            'order_add_remarks' => $request->order_add_remarks,
+            'guranty_warranty' => $request->order_gurantee_warranty,
+            'vendor_currency' => $is_order_exists->vendor_currency,
+            'int_buyer_vendor' => $is_order_exists->int_buyer_vendor
+        ]);
+
+        $po_variants = array();
+        $total_amount = 0;
+        $unapproved_po_total_amount = 0;
+        $is_complete_order = true;
+        foreach ($order_variants as $variant_id => $value) {
+            $quantity = $requested_order[$variant_id]['quantity'];
+            $mrp = $requested_order[$variant_id]['mrp'];
+            $discount = $requested_order[$variant_id]['discount'];
+            $price = $requested_order[$variant_id]['price'];
+            
+            $gst = $value->product_gst;
+            $amount = $price * $quantity;
+            $gst_amount = ($amount * $gst) / 100;
+            $t_amount = $amount + $gst_amount;
+            $total_amount += $t_amount;
+
+            if($quantity < $value->order_quantity) {
+                $is_complete_order = false;
+                $left_qty = $value->order_quantity - $quantity;
+                DB::table('order_variants')->where('po_number', $po_number)
+                    ->where('id', $value->id)
+                    ->update([
+                        'order_quantity' => $left_qty,
+                    ]);
+
+                $po_variants[] = [
+                    'po_number' => $new_po_number,
+                    'rfq_id' => $value->rfq_id,
+                    'product_id' => $value->product_id,
+                    'rfq_product_variant_id' => $value->rfq_product_variant_id,
+                    'rfq_quotation_variant_id' => $value->rfq_quotation_variant_id,
+                    'order_quantity' => $quantity,
+                    'order_mrp' => $mrp,
+                    'order_discount' => $discount,
+                    'order_price' => $price,
+                    'product_hsn_code' => $value->product_hsn_code,
+                    'product_gst' => $value->product_gst
+                ];
+
+                $u_amount = $value->order_price * $left_qty;
+                $u_gst_amount = ($u_amount * $gst) / 100;
+                $u_t_amount = $u_amount + $u_gst_amount;
+                $unapproved_po_total_amount += $u_t_amount;
+            }else{
+                DB::table('order_variants')->where('po_number', $po_number)
+                    ->where('id', $value->id)
+                    ->update([
+                        'po_number' => $new_po_number,
+                        'order_mrp' => $mrp,
+                        'order_discount' => $discount,
+                        'order_price' => $price,
+                        'created_at' => \Carbon\Carbon::now(),
+                    ]);
+            }
+        }
+
+        if(!empty($po_variants)){
+            DB::table('order_variants')->insert($po_variants);
+        }
+
+        $total_amount = number_format((float)$total_amount, 2, '.', '');
+        DB::table('orders')->where('po_number', $new_po_number)
+            ->where('order_status', 1)
+            ->update([
+                'order_total_amount' => $total_amount,
+            ]);
+
+        if($is_complete_order==false) {
+            $unapproved_po_total_amount = number_format((float)$unapproved_po_total_amount, 2, '.', '');
+            DB::table('orders')->where('po_number', $po_number)
+                ->where('order_status', 3)
+                ->update([
+                    'order_total_amount' => $unapproved_po_total_amount,
+                ]);
+        }else{
+            DB::table('orders')->where('po_number', $po_number)
+                ->where('order_status', 3)
+                ->delete();
+        }
+        return $po_insert_id;
+    }
+    private function sendPOEmail($order)
+    {
+        $vendor_data = Vendor::with(
+                'user:id,email'
+            )
+            ->select('id', 'user_id', 'legal_name')
+            ->where('user_id', $order->vendor_id)
+            ->first()->toArray();
+        //
+        
+        $subject = "Order Confirmed (Order No. " . $order->po_number . " )";
+
+        $mail_data = vendorEmailTemplet('order-confirmation-email');
+        $admin_msg = $mail_data->mail_message;
+
+        $product_data = $this->getPOVariantHTMLForMail($order->po_number, get_currency_str($order->vendor_currency));
+
+        $admin_msg = str_replace('$rfq_date_formate', now()->format('d/m/Y'), $admin_msg);
+        $admin_msg = str_replace('$rfq_number', $order->rfq_id, $admin_msg);
+        $admin_msg = str_replace('$buyer_name', session('legal_name'), $admin_msg);
+        $admin_msg = str_replace('$vendor_name', $vendor_data['legal_name'], $admin_msg);
+        $admin_msg = str_replace('$product_details', $product_data, $admin_msg);
+        $admin_msg = str_replace('$dispatch_address', '', $admin_msg);
+        $admin_msg = str_replace('$delivery_address', '', $admin_msg);
+        $admin_msg = str_replace('$order_id', $order->po_number, $admin_msg);
+        $admin_msg = str_replace('$order_date', now()->format('d/m/Y'), $admin_msg);
+        $admin_msg = str_replace('$website_url', route("login"), $admin_msg);
+
+        EmailHelper::sendMail($vendor_data['user']['email'], $subject, $admin_msg);
+    }
+
+    private function getPOVariantHTMLForMail($po_number, $currency_symbol){
+
+        $po_variants = OrderVariant::with([
+                            'product:id,product_name', 
+                            'frq_variant:id,rfq_id,product_id,uom',
+                            'frq_variant.uoms:id,uom_name',
+                        ])
+                        ->select('id', 'po_number', 'rfq_id', 'product_id', 'rfq_product_variant_id', 'order_quantity', 'order_price', 'product_gst')
+                        ->where('po_number', $po_number)
+                        ->get()->toArray();
+        // 
+        $mail_html = '';
+        $total_price = 0;
+        if(!empty($po_variants)){
+            foreach ($po_variants as $key => $value) {
+                $sub_total_price = $value['order_price'] * $value['order_quantity'];
+                /*if ($value['product_gst'] != '') {
+                    $sub_total_price = $sub_total_price + ($sub_total_price * $value['product_gst'] / 100);
+                }*/
+                $total_price += $sub_total_price;
+                $sub_total_price = number_format((float)$sub_total_price, 2, '.', '');
+
+                $mail_html.= '<tr class="td_class">
+                                <td class="td_class">
+                                  ' . $value['product']['product_name'] . '
+                                </td>
+                                <td class="td_class" style="text-align: center;">
+                                  ' . $value['order_quantity'] . '
+                                </td>
+                                <td class="td_class" style="text-align: center;">
+                                  '. $value['frq_variant']['uoms']['uom_name'] .'
+                                </td>
+                                <td class="td_class" style="text-align: center;">
+                                ' . $currency_symbol .' '. IND_money_format($sub_total_price) . '
+                                </td>
+                            </tr>';
+            }
+            $po_total_amout = number_format((float)$total_price, 2, '.', '');
+            $mail_html.='<tr>
+                            <td colspan="3" class="td_class">Total</td>
+                            <td class="td_class" style="text-align: center;">
+                            ' . $currency_symbol .' '. IND_money_format($po_total_amout) . '
+                            </td>
+                        </tr>';
+        }
+        return $mail_html;
+    }
+    
     private function reEvaluateRFQVendorsStatus($rfq_id){
 
         $latestIds = DB::table('rfq_vendor_quotations')
@@ -451,74 +825,4 @@ class OrderConfirmedController extends Controller
     }
 
     
-    // private function reEvaluateRFQVendorsStatusRaw($rfq_id)
-    // {
-    //     $cis = DB::table('rfqs')
-    //         ->select([
-    //             'rfqs.id',
-    //             'rfqs.rfq_id',
-    //             'rfqs.buyer_id',
-    //             'rfqs.buyer_rfq_status',
-    //             'rfqs.created_at',
-    //             'rfqs.updated_at',
-
-    //             // rfqVendorQuotations
-    //             // 'rfq_vendor_quotations.id as quotation_id',
-    //             // 'rfq_vendor_quotations.rfq_id as quotation_rfq_id',
-    //             'rfq_vendor_quotations.vendor_id as quotation_vendor_id',
-    //             'rfq_vendor_quotations.rfq_product_variant_id as quotation_variant_id',
-    //             'rfq_vendor_quotations.price',
-    //             'rfq_vendor_quotations.buyer_price',
-    //             'rfq_vendor_quotations.created_at as quotation_created_at',
-    //             'rfq_vendor_quotations.updated_at as quotation_updated_at',
-
-    //             // rfqVendors
-    //             // 'rfq_vendors.id as rfq_vendor_id',
-    //             // 'rfq_vendors.rfq_id as vendor_rfq_id',
-    //             'rfq_vendors.vendor_user_id',
-    //             'rfq_vendors.product_id as vendor_product_id',
-    //             'rfq_vendors.vendor_status',
-
-    //             // rfqProducts
-    //             // 'rfq_products.id as product_id',
-    //             // 'rfq_products.rfq_id as product_rfq_id',
-    //             'rfq_products.product_id as product_product_id',
-
-    //             // rfqProducts.productVariants
-    //             'rfq_product_variants.id as variant_id',
-    //             'rfq_product_variants.product_id as variant_product_id',
-    //             'rfq_product_variants.quantity as variant_quantity',
-
-    //             // rfqOrders
-    //             // 'orders.id as order_id',
-    //             // 'orders.rfq_id as order_rfq_id',
-    //             'orders.vendor_id as order_vendor_id',
-    //             'orders.po_number',
-
-    //             // rfqOrders.order_variants
-    //             // 'order_variants.id as order_variant_id',
-    //             'order_variants.po_number as order_variant_po_number',
-    //             'order_variants.rfq_product_variant_id',
-    //             'order_variants.order_quantity',
-    //         ])
-    //         ->leftJoin('rfq_vendor_quotations', function($join) {
-    //             $join->on('rfqs.rfq_id', '=', 'rfq_vendor_quotations.rfq_id')
-    //                 ->where('rfq_vendor_quotations.status', 1);
-    //         })
-    //         ->leftJoin('rfq_vendors', 'rfqs.rfq_id', '=', 'rfq_vendors.rfq_id')
-    //         ->leftJoin('rfq_products', 'rfqs.rfq_id', '=', 'rfq_products.rfq_id')
-    //         ->leftJoin('rfq_product_variants', function($join) use ($rfq_id) {
-    //             $join->on('rfq_products.id', '=', 'rfq_product_variants.product_id')
-    //                 ->where('rfq_product_variants.rfq_id', $rfq_id);
-    //         })
-    //         ->leftJoin('orders', function($join) {
-    //             $join->on('rfqs.rfq_id', '=', 'orders.rfq_id')
-    //                 ->where('orders.order_status', 1);
-    //         })
-    //         ->leftJoin('order_variants', 'orders.po_number', '=', 'order_variants.po_number')
-    //         ->where('rfqs.rfq_id', $rfq_id)
-    //         ->get();
-
-    //     return $cis;
-    // }
 }

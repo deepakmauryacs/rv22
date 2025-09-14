@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Purchase Order for <?php echo $order->po_number;?></title>
+    <title>Unapproved PO <?php echo $order->po_number;?></title>
 
     <style>
         * {
@@ -68,7 +68,7 @@
                     <div class="row" style="margin-bottom: -22px;">
                         <img height="30" width="150" src="{{ asset('public/assets/images/rfq-logo.png') }}" style="margin-top: 8px;" />
                         <div class="col-md-12" style="position: relative;top: -30px;">
-                            <h4 style="text-align: right;padding-right: 12px;">PURCHASE ORDER /ORDER CONFIRMATION</h4>
+                            <h4 style="text-align: right;padding-right: 12px;">UNAPPROVED PURCHASE ORDER</h4>
                         </div>
                     </div>
                 </td>
@@ -155,26 +155,31 @@
                             <tbody>
                                 <tr>
                                     <td colspan="2">
-                                        <p class="fc1"><b>Buyer Order Number : </b><?php echo $order->buyer_order_number; ?></p>
+                                        <p class="fc1"><b>Buyer Order Number : </b><?php echo !empty($buyer_order_number)?$buyer_order_number:$order->buyer_order_number; ?></p>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td style="width: 65%;">
-                                        <p class="fc1"><b>Order No : </b><?php echo $order->po_number; ?></p>
+                                    <td colspan="2">
+                                        <p class="fc1"><b>Unapproved Order No : </b><?php echo $order->po_number; ?></p>
                                     </td>
-
-                                    <td style="width: 35%;">
-                                        <p class="fc1"><b>Order Date : </b><?php echo date('d/m/Y', strtotime($order->created_at)); ?></p>
+                                </tr>
+                                <tr>
+                                    <td colspan="2">
+                                        <p class="fc1"><b>Unapproved Order Date : </b><?php echo date('d/m/Y', strtotime($order->created_at)); ?></p>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td style="width: 50%;">
-                                    <?php
-                                        $delivery_date = '';
-                                        if($order->order_delivery_period != ''){
-                                            $delivery_date = $order->order_delivery_period.' Days';
-                                        }
-                                    ?>
+                                        <?php
+                                            $delivery_date = '';
+                                            if($order->order_delivery_period != ''){
+                                                $delivery_date = $order->order_delivery_period.' Days';
+                                            }
+                                            if(!empty($order_delivery_period))
+                                            {
+                                                $delivery_date = $order_delivery_period.' Days';
+                                            }
+                                        ?>
                                         <p class="fc1"><b>Delivery Period : </b><?php echo $delivery_date; ?></p>
                                     </td>
                                     <td style="width: 50%;">
@@ -183,12 +188,33 @@
                                 </tr>
                                 <tr>
                                     <td colspan="2">
-                                        <p class="fc1"><b>Price Basis : </b><span style="font-size: 12px !important;line-height: 1.1; word-spacing: 0.2px;"><?php echo $order->order_price_basis; ?></span></p>
+                                        <p class="fc1"><b>Price Basis : </b>
+                                            <span style="font-size: 12px !important;line-height: 1.1; word-spacing: 0.2px;">
+                                                <?php
+                                                    if(!empty($order_price_basis))
+                                                    {
+                                                        echo $order_price_basis;
+                                                    }else{
+                                                        echo $order->order_price_basis;
+                                                    }
+                                                ?>
+                                            </span>
+                                        </p>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td colspan="2">
-                                        <p class="fc1"><b>Payment Term : </b><span style="font-size: 12px !important;line-height: 1.1; word-spacing: 0.2px;"><?php echo $order->order_payment_term; ?></span></p>
+                                        <p class="fc1"><b>Payment Term : </b>
+                                            <span style="font-size: 12px !important;line-height: 1.1; word-spacing: 0.2px;">
+                                                <?php
+                                                    if(!empty($order_payment_term)){
+                                                        echo $order_payment_term;
+                                                    }else{
+                                                        echo $order->order_payment_term;
+                                                    }
+                                                ?>
+                                            </span>
+                                        </p>
                                     </td>
                                 </tr>
                                 <tr>
@@ -405,12 +431,20 @@
                 <?php
                 $i = 1;
                  $grand_total=0;
+                 $isIndian=$order->vendor->country==101;
                 foreach ($order->order_variants as $key => $val) {
-                    $gst_class = '';
-                    $tax_class = $val->product_gst;
-                    $amount = ($val->order_price * $val->order_quantity);
-                    $gst = ($amount * $tax_class) / 100;
-                    $amount = $amount + $gst;
+
+                    $order_quantity= !empty($order_quantity[$val->rfq_product_variant_id])?$order_quantity[$val->rfq_product_variant_id]: $val->order_quantity;
+                    $order_mrp = !empty($order_mrp[$val->rfq_product_variant_id])?$order_mrp[$val->rfq_product_variant_id]: (float)$val->order_mrp;
+                    $order_discount =!empty($order_discount[$val->rfq_product_variant_id])?$order_discount[$val->rfq_product_variant_id]: (float)$val->order_discount;
+                    $order_price = !empty($order_rate[$val->rfq_product_variant_id])?$order_rate[$val->rfq_product_variant_id]: (float)$val->order_price;
+                    $productGST = $val->product_gst;
+
+                    $productTax = $isIndian ? $productGST : 0;
+                    $itemTotal = $order_price * $order_quantity;
+                    $taxAmount = $isIndian ? (($itemTotal * $productTax) / 100) : 0;
+                    $amount = $itemTotal + $taxAmount;
+
                     $grand_total += $amount;
 
                     $grand_total=  number_format((float)$grand_total, 2, '.', '');
@@ -421,45 +455,53 @@
                     <td>
                         <?php echo '&nbsp;'.$val->product->product_name; ?>
                         <span style="font-size: 10px !important; ">
-                        <?php echo $val->frq_variant->specification; ?>
-                        <?php echo $val->frq_variant->size; ?>
+                            <?php echo $val->frq_variant->specification; ?>
+                            <?php echo $val->frq_variant->size; ?>
                         </span>
                     </td>
-                    <td style="text-align:center;"><?php echo $val->order_quantity; ?> </td>
-                    <td style="text-align:center;"><?php echo $val->frq_variant->uom; ?> </td>
+                    <td style="text-align:center;">
+                        <?php echo $order_quantity; ?>
+                    </td>
+                    <td style="text-align:center;">
+                        <?php echo getUOMName($val->frq_variant->uom); ?>
+                    </td>
                     <td style="text-align:center;">
                         <?php
-                            $order_mrp = number_format((float)$val->order_mrp, 2, '.', '');
-                            echo !empty($val->order_mrp) ? IND_money_format($order_mrp) : '';
+                            $order_mrps = number_format($order_mrp, 2, '.', '');
+                            echo !empty($order_mrp) ? IND_money_format($order_mrps) : '';
                         ?>
                     </td>
-                    <td style="text-align:center;"><?php echo !empty($val->order_discount) ? $val->order_discount : ''; ?></td>
                     <td style="text-align:center;">
-                        <span style="font-family: DejaVu Sans; sans-serif;"><?php
-                    ?></span>
+                        <?php echo !empty($order_discount) ? $order_discount : ''; ?>
+                    </td>
+                    <td style="text-align:center;">
+                        <span style="font-family: DejaVu Sans; sans-serif;">
+                            <?php ?>
+                        </span>
                         <?php
-                            $rate_amount = number_format((float)$val->order_price, 2, '.', '');
+                            $rate_amount = number_format($order_price, 2, '.', '');
                             echo IND_money_format($rate_amount);
                         ?>
                     </td>
-                    <td style="text-align:center;"><?php echo !empty($val->vend_product_hsn_code) ? $val->vend_product_hsn_code : '' ?>
+                    <td style="text-align:center;">
+                        <?php echo !empty($val->vend_product_hsn_code) ? $val->vend_product_hsn_code : '' ?>
                     </td>
                     <?php
                     if($order->int_buyer_vendor==2){
 
-                        if($tax_class != ''){
-                            $gst_class = $tax_class.'%';
+                        if($productGST != ''){
+                            $productGST = $productGST.'%';
                         }
                     ?>
-                    <td style="text-align:center;"><?php echo $gst_class ?> </td>
+                    <td style="text-align:center;"><?php echo $productGST ?> </td>
                     <?php
                         }
                     ?>
                     <td style="text-align:right; padding-right:5px;">
                         <span style="font-family: DejaVu Sans; sans-serif;">
-                    <?php
-                    ?></span><?php echo IND_money_format($amount); ?>
-
+                        <?php ?>
+                        </span>
+                        <?php echo IND_money_format($amount); ?>
                     </td>
                 </tr>
                 <?php
@@ -470,10 +512,8 @@
                         style="background-color:rgb(242,220,219); padding-left:5px ;">
                         Total
                     </td>
-                    <td
-                        style="background-color:rgb(242,220,219);text-align:right;">
+                    <td style="background-color:rgb(242,220,219);text-align:right;">
                         <span style="font-family: DejaVu Sans; sans-serif;">
-
                         <?php
                             // Check if 'vend_currency' is set and not empty
                             if (isset($order->vendor_currency) && !empty($order->vendor_currency)) {
@@ -517,12 +557,34 @@
             <tbody>
                 <tr>
                     <td style="padding: 5px;" colspan="13">
-                        <p style="margin-top: 3px; margin-bottom: 1px;" class="fc"><b>Remarks : </b><span style="font-size:9px;letter-spacing: 0px; text-align: left; line-height: normal;"><?php echo $order->order_remarks ?> </span> </p>
+                        <p style="margin-top: 3px; margin-bottom: 1px;" class="fc">
+                            <b>Remarks : </b>
+                                <span style="font-size:9px;letter-spacing: 0px; text-align: left; line-height: normal;">
+                                <?php
+                                    if(!empty($order_remarks)){
+                                        echo $order_remarks;
+                                    }else{
+                                        echo $order->order_remarks;
+                                    }
+                                ?>
+                            </span>
+                        </p>
                     </td>
                 </tr>
                 <tr>
                     <td style="padding: 5px;" colspan="13">
-                        <p style="margin-top: 3px; margin-bottom: 1px;" class="fc"><b>Additional Remarks : </b><span style="font-size:9px;letter-spacing: 0px; text-align: left; line-height: normal;"><?php echo $order->order_add_remarks ?> </span> </p>
+                        <p style="margin-top: 3px; margin-bottom: 1px;" class="fc">
+                            <b>Additional Remarks : </b>
+                            <span style="font-size:9px;letter-spacing: 0px; text-align: left; line-height: normal;">
+                                <?php
+                                    if(!empty($order_add_remarks)){
+                                        echo $order_add_remarks;
+                                    }else{
+                                        echo $order->order_add_remarks;
+                                    }
+                                ?>
+                            </span>
+                        </p>
                     </td>
                 </tr>
                 <tr>
@@ -530,7 +592,7 @@
                         <!-- <p class="fc"><b>Checked By : </b><?php //echo 'Checked'; ?></p> -->
                         <p class="fc"><b>RFQ Generated By : </b><?php echo $order->rfq->rfq_generated_by?->name; ?></p>
                         <p class="fc"><b>PO Generated By : </b><?php echo $order->po_generated_by?->name; ?></p>
-                        <p style="margin-bottom: 3px;" class="fc"><b>Order Confirmed By : </b><?php echo $order->order_confirmed_by?->name; ?></p>
+                        {{-- <p style="margin-bottom: 3px;" class="fc"><b>Order Confirmed By : </b><?php echo $order->order_confirmed_by?->name; ?></p> --}}
                     </td>
                     <td style="padding: 5px;width: 50%;text-align:right;"
                         colspan="8"> <b>For <?php echo $order->buyer->legal_name; ?> </b>
