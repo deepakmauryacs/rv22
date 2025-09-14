@@ -287,15 +287,26 @@ class RfqReceivedController extends Controller
         ->where('rfq_id', $rfqId)
         ->get();
 
-        // Attach latest (first) entries for easy Blade usage (optional)
-        $variants->each(function ($v) {
-            $v->latest_vendor_price   = optional($v->vendor_quotation)->price;
-            $v->latest_vendor_mrp     = optional($v->vendor_quotation)->mrp;
-            $v->latest_vendor_discount= optional($v->vendor_quotation)->discount;
-            $v->latest_vendor_specs   = optional($v->vendor_quotation)->specification;
+        // Sum of ordered quantities for each variant
+        $orderedQty = DB::table('order_variants')
+            ->where('rfq_id', $rfqId)
+            ->groupBy('rfq_product_variant_id')
+            ->select('rfq_product_variant_id', DB::raw('SUM(order_quantity) as total_qty'))
+            ->pluck('total_qty', 'rfq_product_variant_id');
 
-            $v->latest_buyer_counter  = optional(collect($v->buyer_counter_offers)->first())->buyer_price;
-            $v->latest_hist_price     = optional(collect($v->vendor_price_history)->first())->price;
+        // Attach latest (first) entries for easy Blade usage (optional)
+        $variants->each(function ($v) use ($orderedQty) {
+            $v->latest_vendor_price    = optional($v->vendor_quotation)->price;
+            $v->latest_vendor_mrp      = optional($v->vendor_quotation)->mrp;
+            $v->latest_vendor_discount = optional($v->vendor_quotation)->discount;
+            $v->latest_vendor_specs    = optional($v->vendor_quotation)->specification;
+
+            $v->latest_buyer_counter   = optional(collect($v->buyer_counter_offers)->first())->buyer_price;
+            $v->latest_hist_price      = optional(collect($v->vendor_price_history)->first())->price;
+
+            $ordered = $orderedQty[$v->id] ?? 0;
+            $v->ordered_qty       = $ordered;
+            $v->is_fully_ordered  = $ordered >= ($v->quantity ?? 0);
         });
 
         return $variants->groupBy('product_id');
