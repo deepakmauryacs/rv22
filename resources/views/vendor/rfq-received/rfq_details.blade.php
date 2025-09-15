@@ -206,11 +206,6 @@ function IND_amount_format($amount) {
                             </thead>
                             <tbody>
                                 @foreach ($productVariants as $vIndex => $variant)
-                                @php
-                                 echo "<pre>";
-                                 print_r($variant); die;
-                                @endphp
-
                                 <tr>
                                     <td>{{ $vIndex + 1 }}</td>
                                     <td>{{ $variant->specification }}</td>
@@ -385,7 +380,7 @@ function IND_amount_format($amount) {
 
 
                         <div class="col-md-4 mb-3">
-                          <div class="upload-field" data-variant="{{ $productVariants[0]->id }}">
+                          <div class="upload-field" data-product="{{ $product->product_id }}">
                            <!--  <div class="d-flex justify-content-end mb-1">
                               <span class="upload-label js-upload-trigger">UPLOAD FILE</span>
                             </div> -->
@@ -402,8 +397,8 @@ function IND_amount_format($amount) {
 
                               <!-- Hidden real file input -->
                               <input type="file"
-                                     id="uploadFile_{{ $productVariants[0]->id }}"
-                                     name="vendor_attachment[{{ $productVariants[0]->id }}]"
+                                     id="uploadFile_{{ $product->product_id }}"
+                                     name="vendor_attachment[{{ $product->product_id }}]"
                                      class="d-none vendor-attachment"
                                      accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
                                      {{ $product->is_product == 'no' ? 'disabled' : '' }} />
@@ -430,7 +425,7 @@ function IND_amount_format($amount) {
                                 <i class="bi bi-x-circle text-danger file-remove js-remove-existing"
                                    title="Remove"></i>
                                 <input type="hidden"
-                                       name="existing_vendor_attachment[{{ $productVariants[0]->id }}]"
+                                       name="existing_vendor_attachment[{{ $product->product_id }}]"
                                        value="{{ $existingFile }}">
                               @endif
                               <!-- new selection will appear here -->
@@ -453,7 +448,7 @@ function IND_amount_format($amount) {
                                 </span>
                                 <div class="form-floating">
                                     <input type="text" class="form-control" id="sellerBrand"
-                                        name="sellerbrand[{{ $productVariants[0]->id }}]"
+                                        name="sellerbrand[{{ $product->product_id }}]"
                                         value="{{ optional($productVariants[0]->vendor_quotation)->vendor_brand ?? '' }}"
                                         placeholder="Seller Brand" {{ $product->is_product == 'no' ? 'disabled' : '' }}>
                                     <label for="sellerBrand">Seller Brand</label>
