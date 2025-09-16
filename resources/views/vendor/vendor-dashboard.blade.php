@@ -19,46 +19,25 @@
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td><span>APRON GUIDE WITH COOLING SYSTEM</span></td>
-                <td><span>CCM</span> </td>
-                <td><span>EQUIPMENT</span></td>
-              </tr>
-              <tr>
-                <td><span>CNC FLOOR TYPE RAM STYLE HORIZONTAL BOR...</span></td>
-                <td><span>GENERAL</span> </td>
-                <td><span>EQUIPMENT</span></td>
-              </tr>
-              <tr>
-                <td><span>LEAF SPRINGS FOR STEAM GLANDS</span></td>
-                <td><span>POWER</span> </td>
-                <td><span>MECHANICAL</span></td>
-              </tr>
-              <tr>
-                <td><span>HYDRAULIC CYLINDER FOR SLIDE GATE SYSTEM</span></td>
-                <td><span>CCM</span> </td>
-                <td><span>CYLINDER</span></td>
-              </tr>
-              <tr>
-                <td><span>AMMONIA BUFFER SOLUTION</span></td>
-                <td><span>GENERAL</span> </td>
-                <td><span>LABORATORY</span></td>
-              </tr>
-              <tr>
-                <td><span>AIRCRAFT LANDING GEAR</span></td>
-                <td><span>CCM</span> </td>
-                <td><span>SWITCHES</span></td>
-              </tr>
-              <tr>
-                <td><span>BICYCLE FRAMES</span></td>
-                <td><span>POWER</span> </td>
-                <td><span>ELECTRICAL</span></td>
-              </tr>
-              <tr>
-                <td><span>DP TEST MATERIALS</span></td>
-                <td><span>GENERAL</span> </td>
-                <td><span>CONSUMABLE</span></td>
-              </tr>
+              @forelse($recentProducts as $vendorProduct)
+                @php
+                  $product = $vendorProduct->product;
+                  $productName = $vendorProduct->product_name ?? optional($product)->product_name;
+                  $divisionName = optional(optional($product)->division)->division_name;
+                  $categoryName = optional(optional($product)->category)->category_name;
+                @endphp
+                <tr>
+                  <td><span>{{ $productName ?? 'N/A' }}</span></td>
+                  <td><span>{{ $divisionName ?? 'N/A' }}</span> </td>
+                  <td><span>{{ $categoryName ?? 'N/A' }}</span></td>
+                </tr>
+              @empty
+                <tr>
+                  <td colspan="3" class="text-center py-4">
+                    <span>No products available.</span>
+                  </td>
+                </tr>
+              @endforelse
             </tbody>
           </table>
         </div>
@@ -68,25 +47,36 @@
       <div class="p-0">
         <div id="carouselExampleInterval" class="carousel slide carousel-dashboard" data-bs-ride="carousel">
           <div class="carousel-inner">
-            <div class="carousel-item active" data-bs-interval="10000">
-              <div class="ads-img">
-                <img src="{{ asset('public/assets/vendor/images/slider-1.jpg') }}" alt="" />
+            @forelse($advertisements as $index => $advertisement)
+              <div class="carousel-item {{ $index === 0 ? 'active' : '' }}" data-bs-interval="5000">
+                <div class="ads-img">
+                  @if(!empty($advertisement->ads_url))
+                    <a href="{{ $advertisement->ads_url }}" target="_blank" rel="noopener">
+                  @endif
+                    <img src="{{ asset('public/uploads/advertisment/' . $advertisement->images) }}" alt="{{ $advertisement->buyer_vendor_name ?? 'Advertisement' }}" />
+                  @if(!empty($advertisement->ads_url))
+                    </a>
+                  @endif
+                </div>
               </div>
-            </div>
-            <div class="carousel-item" data-bs-interval="2000">
-              <div class="ads-img">
-                <img src="{{ asset('public/assets/vendor/images/slider-2.png') }}" alt="" />
+            @empty
+              <div class="carousel-item active">
+                <div class="ads-img d-flex align-items-center justify-content-center p-4">
+                  <p class="mb-0 text-muted">No advertisements available.</p>
+                </div>
               </div>
-            </div>
+            @endforelse
           </div>
-          <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleInterval"
-            data-bs-slide="prev">
-            <span class="btn-prev-slider" aria-hidden="true"></span>
-          </button>
-          <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleInterval"
-            data-bs-slide="next">
-            <span class="btn-next-slider" aria-hidden="true"></span>
-          </button>
+          @if($advertisements->count() > 1)
+            <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleInterval"
+              data-bs-slide="prev">
+              <span class="btn-prev-slider" aria-hidden="true"></span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleInterval"
+              data-bs-slide="next">
+              <span class="btn-next-slider" aria-hidden="true"></span>
+            </button>
+          @endif
         </div>
       </div>
     </div>
