@@ -288,11 +288,19 @@ class RfqReceivedController extends Controller
         ->get();
 
         // Sum of ordered quantities for each variant
-        $orderedQty = DB::table('order_variants')
-            ->where('rfq_id', $rfqId)
-            ->groupBy('rfq_product_variant_id')
-            ->select('rfq_product_variant_id', DB::raw('SUM(order_quantity) as total_qty'))
-            ->pluck('total_qty', 'rfq_product_variant_id');
+        // $orderedQty = DB::table('order_variants')
+        //     ->where('rfq_id', $rfqId)
+        //     ->groupBy('rfq_product_variant_id')
+        //     ->select('rfq_product_variant_id', DB::raw('SUM(order_quantity) as total_qty'))
+        //     ->pluck('total_qty', 'rfq_product_variant_id');
+        $orderedQty = DB::table('order_variants as ov')
+                ->join('orders as o', 'o.po_number', '=', 'ov.po_number')
+                ->where('o.order_status', 1)
+                ->where('ov.rfq_id', $rfqId)
+                ->groupBy('ov.rfq_product_variant_id')
+                ->select('ov.rfq_product_variant_id', DB::raw('SUM(ov.order_quantity) as total_qty'))
+                ->pluck('total_qty', 'ov.rfq_product_variant_id');
+        //
 
         // Attach latest (first) entries for easy Blade usage (optional)
         $variants->each(function ($v) use ($orderedQty) {
@@ -372,12 +380,22 @@ class RfqReceivedController extends Controller
         $action = $request->input('action');            // 'save' or 'submit'
         $status = ($action === 'save') ? '2' : '1';     // 2 = draft, 1 = submitted
 
-        // Arrays from form (indexed by variantId)
+        // Arrays from form
+        // Price related fields remain indexed by variantId
         $prices      = $request->input('price', []);
         $mrps        = $request->input('mrp', []);
         $discounts   = $request->input('disc', []);
         $specs       = $request->input('vendor_spec', []);
-        $sellerbrand = $request->input('sellerbrand', []);
+
+        // Brand & attachment are submitted against product_id now
+        $sellerbrand = $request->input('sellerbrand', []); // keyed by productId
+
+        // Map variantId => productId for quick lookup
+        $variantProductMap = RfqProductVariant::whereIn('id', array_keys($prices))
+            ->pluck('product_id', 'id');
+
+        // Track uploaded attachment path per product
+        $productAttachmentMap = [];
 
          DB::beginTransaction();
          try {
@@ -386,42 +404,50 @@ class RfqReceivedController extends Controller
                     continue;
                 }
 
-                // Find latest existing quotation (to keep old attachment if not replaced)
+                $productId = $variantProductMap[$variantId] ?? null;
+
+                // Find latest existing quotation for this variant
                 $existingQuotation = RfqVendorQuotation::where([
                     'vendor_id'              => $vendor_id,
                     'rfq_id'                 => $rfq_id,
                     'rfq_product_variant_id' => $variantId,
                 ])->latest()->first();
 
-                $attachmentPath = $existingQuotation->vendor_attachment_file ?? null;
+                // Determine attachment path per product
+                if (!array_key_exists($productId, $productAttachmentMap)) {
+                    $attachmentPath = $existingQuotation->vendor_attachment_file ?? null;
 
-                // Agar user ne explicitly delete kar diya (existing_vendor_attachment blank bheja)
-                if ($request->input("existing_vendor_attachment.$variantId") == ""  && !empty($attachmentPath)) {
-                    // Purani file delete kar do
-                    if ($attachmentPath && file_exists(public_path('uploads/rfq-attachment/' . $attachmentPath))) {
-                        @unlink(public_path('uploads/rfq-attachment/' . $attachmentPath));
+                    // If user removed existing attachment
+                    if ($request->input("existing_vendor_attachment.$productId") === "" && !empty($attachmentPath)) {
+                        if ($attachmentPath && file_exists(public_path('uploads/rfq-attachment/' . $attachmentPath))) {
+                            @unlink(public_path('uploads/rfq-attachment/' . $attachmentPath));
+                        }
+                        $attachmentPath = null;
                     }
-                    $attachmentPath = null; // db me bhi null save hoga
+
+                    // Handle file upload (expects input name: vendor_attachment[<productId>])
+                    if ($request->hasFile("vendor_attachment.$productId")) {
+                        $file = $request->file("vendor_attachment.$productId");
+
+                        // Delete old file if exists
+                        if ($attachmentPath && file_exists(public_path('uploads/rfq-attachment/' . $attachmentPath))) {
+                            @unlink(public_path('uploads/rfq-attachment/' . $attachmentPath));
+                        }
+
+                        $uploadPath = public_path('uploads/rfq-attachment');
+                        if (!file_exists($uploadPath)) {
+                            mkdir($uploadPath, 0755, true);
+                        }
+
+                        $fileName = 'rfq_' . time() . '_' . $productId . '.' . $file->getClientOriginalExtension();
+                        $file->move($uploadPath, $fileName);
+                        $attachmentPath = $fileName;
+                    }
+
+                    $productAttachmentMap[$productId] = $attachmentPath;
                 }
 
-                // Handle file upload (expects input name: vendor_attachment[<variantId>])
-                if ($request->hasFile("vendor_attachment.$variantId")) {
-                    $file = $request->file("vendor_attachment.$variantId");
-
-                    // Delete old file if exists
-                    if ($attachmentPath && file_exists(public_path('uploads/rfq-attachment/' . $attachmentPath))) {
-                        @unlink(public_path('uploads/rfq-attachment/' . $attachmentPath));
-                    }
-
-                    $uploadPath = public_path('uploads/rfq-attachment');
-                    if (!file_exists($uploadPath)) {
-                        mkdir($uploadPath, 0755, true);
-                    }
-
-                    $fileName = 'rfq_' . time() . '_' . $variantId . '.' . $file->getClientOriginalExtension();
-                    $file->move($uploadPath, $fileName);
-                    $attachmentPath = $fileName;
-                }
+                $attachmentPath = $productAttachmentMap[$productId] ?? null;
 
                 // If saving draft, remove previous drafts for this variant (status = 2)
                 if ($action === 'save') {
@@ -445,7 +471,7 @@ class RfqReceivedController extends Controller
                     'buyer_price'            => 0,
                     'specification'          => $specs[$variantId] ?? null,
                     'vendor_attachment_file' => $attachmentPath,
-                    'vendor_brand'           => $sellerbrand[$variantId] ?? null,
+                    'vendor_brand'           => $sellerbrand[$productId] ?? null,
                     'vendor_remarks'         => $request->input('seller-remarks'),
                     'vendor_additional_remarks' => $request->input('Seller-Additional-Remarks'),
                     'vendor_price_basis'        => $request->input('vendor_price_basis'),
@@ -818,4 +844,3 @@ class RfqReceivedController extends Controller
     }
 
 }
-

@@ -264,24 +264,35 @@ class OrderConfirmedController extends Controller
     }
 
     public function approve(Request $request)
-    {
+    {   
+        $this->ensurePermission('TO_CONFIRM_ORDER', 'add', '1');
+        // $rules = [
+        //     'po_number'            => 'required|string',
+        //     'order_quantity'       => 'required|array',
+        //     'order_quantity.*'     => 'required|array',
+        //     // 'order_quantity.*.*'   => 'required|numeric|min:0.1',
+
+        //     'order_rate'           => 'required|array',
+        //     'order_rate.*'         => 'required|array',
+        //     // 'order_rate.*.*'       => 'required|numeric|min:1',
+
+        //     'order_price_basis'    => 'required|string|max:200',
+        //     'order_payment_term'   => 'required|string|max:200',
+        //     'order_delivery_period'=> 'required|integer|min:1|max:999',
+        // ];
         $rules = [
-            'po_number'            => 'required|string',
-            'order_quantity'       => 'required|array',
-            'order_quantity.*'     => 'required|array',
-            'order_quantity.*.*'   => 'required|numeric|min:0.1',
-
-            'order_rate'           => 'required|array',
-            'order_rate.*'         => 'required|array',
-            'order_rate.*.*'       => 'required|numeric|min:1',
-
-            'order_price_basis'    => 'required|string|max:200',
-            'order_payment_term'   => 'required|string|max:200',
+            'po_number'           => 'required|string',
+            'order_quantity'      => 'required|array',
+            'order_quantity.*'    => 'required|numeric|min:0.1',
+            'order_rate'          => 'required|array',
+            'order_rate.*'        => 'required|numeric|min:1',
+            'order_price_basis'   => 'required|string|max:200',
+            'order_payment_term'  => 'required|string|max:200',
             'order_delivery_period'=> 'required|integer|min:1|max:999',
         ];
         $messages = [
-            'order_quantity.*.*.required' => 'Quantity for each variant is required.',
-            'order_quantity.*.*.numeric'  => 'Quantity must be a numeric value.',
+            'order_quantity.*.required' => 'Quantity for each variant is required.',
+            'order_quantity.*.numeric'  => 'Quantity must be a numeric value.',
             'order_rate.*.*.min'          => 'Rate must be at least 1.',
             'po_number.required'          => 'Purchase Order number is mandatory.',
         ];
@@ -323,7 +334,7 @@ class OrderConfirmedController extends Controller
         $requested_order = $this->requestedOrder($request);
         
         // echo "<pre>";
-        // print_r($order_variants);
+        // print_r($_POST);
         // die;
 
         if (!empty($errors)) {
@@ -404,7 +415,7 @@ class OrderConfirmedController extends Controller
                 continue;
             }
             // Extract posted quantity (assuming first index [0])
-            $postedQuantity = floatval($order_quantity[$variant_id][0] ?? 0);
+            $postedQuantity = floatval($order_quantity[$variant_id] ?? 0);
             $dbQuantity = floatval($variantData->order_quantity);
             
             if ($postedQuantity > $dbQuantity) {
@@ -424,10 +435,10 @@ class OrderConfirmedController extends Controller
         $requesting_order_id_wise_qty = [];
 
         foreach ($order_quantity as $variant_id => $qArr) {
-            $quantity = isset($qArr[0]) ? $qArr[0] : 0;
-            $mrp      = isset($order_mrp[$variant_id][0]) ? $order_mrp[$variant_id][0] : 0;
-            $discount = isset($order_discount[$variant_id][0]) ? $order_discount[$variant_id][0] : 0;
-            $price    = isset($order_rate[$variant_id][0]) ? $order_rate[$variant_id][0] : 0;
+            $quantity = isset($qArr) ? $qArr : 0;
+            $mrp      = isset($order_mrp[$variant_id]) ? $order_mrp[$variant_id] : 0;
+            $discount = isset($order_discount[$variant_id]) ? $order_discount[$variant_id] : 0;
+            $price    = isset($order_rate[$variant_id]) ? $order_rate[$variant_id] : 0;
 
             $requesting_order_id_wise_qty[$variant_id] = [
                 'quantity' => number_format((float)$quantity, 2, '.', ''),

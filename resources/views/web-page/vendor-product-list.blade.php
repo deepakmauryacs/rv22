@@ -1,4 +1,4 @@
-@forelse ($collection as $item)
+@forelse ($products as $item)
 <div class="col-lg-4 col-md-4 col-sm-12">
     <div class="product-items bg-white position-relative">
 
@@ -27,7 +27,10 @@
             </h5>
 
             <h4 class="font-size-12 mb-3">
+                @if ($item->description)
+
                 {!! htmlEntityDecodeWithLimit($item->description,10) !!}
+                @endif
             </h4>
 
 
@@ -53,6 +56,4 @@
     </div>
 </div>
 @endforelse
-
-
 @include('web-page.product-details-js')

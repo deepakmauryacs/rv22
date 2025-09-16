@@ -311,6 +311,16 @@ class ForwardAuctionController extends Controller
                 }
             }
 
+            // send notification to vendors
+            $notification_data = array();
+            $notification_data['message_type'] = 'Forward Auction Created';
+            $notification_data['notification_link'] =  route('vendor.forward-auction.view', $auction->auction_id);
+            $notification_data['auction_id'] = $auction_id;
+            $notification_data['auction_date'] = date('d/m/Y', strtotime($schedule_date));
+            $notification_data['auction_time'] = date('h:i A', strtotime($schedule_start_time));
+            $notification_data['to_user_id'] = $request->vendor_id;
+            sendNotifications($notification_data);
+
             // 5. (Optional) Notification (implement using Laravel's Notification system or Events)
             // event(new ForwardAuctionCreated(...));
 
@@ -478,6 +488,16 @@ class ForwardAuctionController extends Controller
                     );
                 }
             }
+
+            // send notification to vendors
+            $notification_data = array();
+            $notification_data['message_type'] = 'Forward Auction Updated';
+            $notification_data['notification_link'] =  route('vendor.forward-auction.view', $auction->auction_id);
+            $notification_data['auction_id'] = $auction->auction_id;
+            $notification_data['auction_date'] = date('d/m/Y', strtotime($auction->schedule_date));
+            $notification_data['auction_time'] = date('h:i A', strtotime($auction->schedule_start_time));
+            $notification_data['to_user_id'] = $request->vendor_id;
+            sendNotifications($notification_data);
 
             DB::commit();
 

@@ -179,6 +179,14 @@
                                                         ? substr($variant->attachment, 0, 10)
                                                         : $variant->attachment
                                                 !!}
+                                                @if(strlen($variant->attachment) > 10)
+                                                <span role="button" type="button" class="p-0 infoIcon"
+                                                    data-bs-toggle="tooltip" data-bs-placement="top"
+                                                    title="{!! $variant->attachment !!}">
+                                                    <span class="bi bi-info-circle-fill text-dark font-size-14"
+                                                        aria-hidden="true"></span>
+                                                </span>
+                                                @endif
                                             </a>
                                             @endif
                                         </td>
@@ -224,8 +232,7 @@
                                             <span class="text-muted">
 
                                                 @php
-                                                $latestQuotation =
-                                                $variant->vendorQuotations->where('vendor_id',$vendor_id)->sortByDesc('created_at')->first();
+                                                $latestQuotation = $variant->vendorQuotations->where('vendor_id',$vendor_id)->sortByDesc('created_at')->first();
                                                 @endphp
 
                                                 @if ($latestQuotation)
@@ -286,8 +293,13 @@
                         </div>
                     </div>
                     <div class="col-md-4 mb-4">
+                        
                         <span class="form-control" readonly disabled>Attachment File...</span>
-                        {{$rfq->getLastRfqVendorQuotation->vendor_attachment_file}}
+                        @if($latestQuotation?->vendor_attachment_file)
+                        <a href="{{ asset('public/uploads/rfq-attachment/' . $latestQuotation?->vendor_attachment_file) }}" target="_blank">
+                            {{ basename($latestQuotation?->vendor_attachment_file) }}
+                        </a>
+                        @endif
                     </div>
                     <div class="col-md-4 mb-4">
                         <div class="input-group">
@@ -296,7 +308,7 @@
                             </span>
                             <div class="form-floating">
                                 <input type="text" class="form-control" id="sellerBrand" placeholder="Seller Brand"
-                                    value="{{$rfq->getLastRfqVendorQuotation->vendor_brand}}" readonly disabled>
+                                    value="{{$latestQuotation?->vendor_brand}}" readonly disabled>
                                 <label for="sellerBrand" class="font-size-13">Seller Brand</label>
                             </div>
                         </div>

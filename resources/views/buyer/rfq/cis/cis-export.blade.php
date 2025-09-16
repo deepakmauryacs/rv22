@@ -2,16 +2,13 @@
 $count=6;
 @endphp
 
-<table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;page-break-after: always;">
+<table border="0" cellpadding="0" cellspacing="0"
+    style="border-collapse: collapse;page-break-after: always; width: 100%;">
 
     @foreach($cis['vendors'] as $vendor_id => $vendor)
-    @php
-    if(!empty($cis['filter_vendors']) && !in_array($vendor_id,
-    $cis['filter_vendors'])) {
-    continue;
-    }
-    @endphp
+    @if ($cis['vendor_total_amount'][$vendor_id]>0)
     @php $count++; @endphp
+    @endif
     @endforeach
 
     <tbody>
@@ -53,13 +50,7 @@ $count=6;
 
             <!--  -->
             @foreach($cis['vendors'] as $vendor_id => $vendor)
-            @php
-            if(!empty($cis['filter_vendors']) && !in_array($vendor_id,
-            $cis['filter_vendors'])) {
-            continue;
-            }
-            @endphp
-
+            @if ($cis['vendor_total_amount'][$vendor_id]>0)
 
             <td
                 style="border: 1px dotted black;vertical-align: middle;text-align: left;padding-left: 0px;border-left: none #000000;border-right: none #000000;font-weight: bold;color: #000000;font-family: 'Calibri';background-color: white;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;">
@@ -67,8 +58,9 @@ $count=6;
 
             @if ($loop->last)
             <td
-                style="border: 1px dotted black;vertical-align: middle;text-align: left;padding-left: 0px;border-left: none #000000;font-weight: bold;color: #000000;font-family: 'Calibri';background-color: white;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-right: 1px solid #000000 !important;">
+                style="border: 1px solid black;vertical-align: middle;text-align: left;padding-left: 0px;border-left: none #000000;font-weight: bold;color: #000000;font-family: 'Calibri';background-color: white;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-right: 1px solid #000000 !important;">
             </td>
+            @endif
             @endif
             @endforeach
 
@@ -78,44 +70,15 @@ $count=6;
 
         <!-- Vendor name -->
         <tr style="height: 48.6pt;">
-
-            @if($rfq['is_auction'] == 1)
-            @if($rfq['is_rfq_price_map'] == 1)
-            <td colspan="6" style="border: 0px dotted black;text-align: center;">
-
-
-
-
-                <span style="color: red;font-weight: 700;font-size: 24px;">
-
-
-                    NOTE: These are updated Rates post AUCTION
-                    that was held on
-                    {{ date('d/m/Y', strtotime($rfq['auction_date'])) }}
-
-                </span>
-
-                &nbsp;
-            </td>
-            @endif
-            @else
-            <td colspan="6" style="border: none; text-align: center;"></td>
-            @endif
-
-
+            <td colspan="6" style="border: none;">&nbsp;</td>
 
             @foreach($cis['vendors'] as $vendor_id => $vendor)
-            @php
-            if(!empty($cis['filter_vendors']) && !in_array($vendor_id,
-            $cis['filter_vendors'])) {
-            continue;
-            }
-            @endphp
-
+            @if ($cis['vendor_total_amount'][$vendor_id]>0)
             <td
                 style="text-align: center;border: 1px dotted black;vertical-align: middle;font-weight: bold;color: #1F497D;font-family: 'Calibri';font-size: 12pt;background-color: #DBE5F1;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-left: 1px solid #000000 !important;border-right: 1px solid #000000 !important;">
                 {{ $vendor['legal_name'] }}
             </td>
+            @endif
             @endforeach
 
         </tr>
@@ -123,20 +86,31 @@ $count=6;
 
         <!-- Vendor Mobile Number:ROW -->
         <tr style="height: 31.2pt;">
-            <td colspan="6" style="border: none;">&nbsp;</td>
+            @if($rfq['is_auction'] == 1)
+            @if($rfq['is_rfq_price_map'] == 1)
+            <td colspan="6"
+                style="border: 0px dotted red;text-align: center; color: red;font-weight: 700;font-size: 14px;">
+                NOTE: These are updated Rates post AUCTION
+                that was held on
+                {{ date('d/m/Y', strtotime($rfq['auction_date'])) }}
+                &nbsp;
+            </td>
+            @else
+            <td colspan="6" style="border: none; text-align: center;">&nbsp;</td>
+            @endif
+            @else
+            <td colspan="6" style="border: none; text-align: center;">&nbsp;</td>
+            @endif
 
             @foreach($cis['vendors'] as $vendor_id => $vendor)
-            @php
-            if(!empty($cis['filter_vendors']) && !in_array($vendor_id,
-            $cis['filter_vendors'])) {
-            continue;
-            }
-            @endphp
+            @if ($cis['vendor_total_amount'][$vendor_id]>0)
+
             <td
                 style="text-align: center;border: 1px dotted black;vertical-align: middle;font-weight: bold;color: #1F497D;font-family: 'Calibri';font-size: 12pt;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-left: 1px solid #000000 !important;border-right: 1px solid #000000 !important;">
                 {{ $vendor['country_code'] ? '+'.$vendor['country_code'] : '' }}
                 {{$vendor['mobile']}}
             </td>
+            @endif
             @endforeach
         </tr>
 
@@ -148,57 +122,29 @@ $count=6;
             </td>
 
             @foreach($cis['vendors'] as $vendor_id => $vendor)
-            @php
-            if(!empty($cis['filter_vendors']) && !in_array($vendor_id,
-            $cis['filter_vendors'])) {
-            continue;
-            }
-            @endphp
+            @if ($cis['vendor_total_amount'][$vendor_id]>0)
 
             <td
                 style="text-align: center;border: 1px dotted black;vertical-align: bottom;font-weight: bold;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-left: 1px solid #000000 !important;border-right: 1px solid #000000 !important;">
                 Quoted {{ $vendor['vendor_quoted_product'] }}</td>
+            @endif
             @endforeach
-
-
         </tr>
 
 
         <tr style="height: 31.2pt;">
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: middle;border-right: none #000000;font-weight: bold;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-left: 1px solid #000000 !important;">
+            <td colspan="6"
+                style="text-align: left;border: 1px dotted black;vertical-align: middle;border-right: 1px solid #000000;font-weight: bold;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-left: 1px solid #000000 !important;">
                 {{$rfq['rfq_division']}} &gt; {{$rfq['rfq_category']}}</td>
 
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: middle;border-left: none #000000;border-right: none #000000;font-weight: bold;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: middle;border-left: none #000000;border-right: none #000000;font-weight: bold;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: middle;border-left: none #000000;border-right: none #000000;font-weight: bold;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: middle;border-left: none #000000;border-right: none #000000;font-weight: bold;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: middle;border-left: none #000000;border-right: none #000000;font-weight: bold;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;">
-            </td>
-
             @foreach($cis['vendors'] as $vendor_id => $vendor)
-            @php
-            if(!empty($cis['filter_vendors']) && !in_array($vendor_id,
-            $cis['filter_vendors'])) {
-            continue;
-            }
-            @endphp
+            @if ($cis['vendor_total_amount'][$vendor_id]>0)
             <td
                 style="text-align: center;border: 1px dotted black;vertical-align: middle;font-weight: bold;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-left: 1px solid #000000 !important;border-right: 1px solid #000000 !important;">
                 Last Offer Date {{ !empty($vendor['latest_quote']) ? date('d/m/Y',
                 strtotime($vendor['latest_quote']['created_at'])) : '' }}</td>
+            @endif
             @endforeach
-
-
         </tr>
 
 
@@ -223,12 +169,7 @@ $count=6;
                 Counter Offer</td>
 
             @foreach($cis['vendors'] as $vendor_id => $vendor)
-            @php
-            if(!empty($cis['filter_vendors']) && !in_array($vendor_id,
-            $cis['filter_vendors'])) {
-            continue;
-            }
-            @endphp
+            @if ($cis['vendor_total_amount'][$vendor_id]>0)
             <td
                 style="text-align: center;border: 1px dotted black;vertical-align: bottom;font-weight: bold;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #D2DAE4;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-left: 1px solid #000000 !important;border-right: 1px solid #000000 !important;">
                 Rate (@if (!empty($vendor['latest_quote']) &&
@@ -242,6 +183,7 @@ $count=6;
                 @endif
 
                 @endif)</td>
+            @endif
             @endforeach
         </tr>
 
@@ -309,12 +251,8 @@ $count=6;
 
             <!----vendor rate information--->
             @foreach($cis['vendors'] as $vendor_id => $vendor)
-            @php
-            if(!empty($cis['filter_vendors']) && !in_array($vendor_id,
-            $cis['filter_vendors'])) {
-            continue;
-            }
-            @endphp
+            @if ($cis['vendor_total_amount'][$vendor_id]>0)
+
             @if(isset($cis['is_vendor_product'][$vendor_id]) &&
             isset($cis['is_vendor_product'][$vendor_id][$variants['product_id']]))
             @php
@@ -372,11 +310,12 @@ $count=6;
             @else
             <td
                 style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-top: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;border-left: 1px solid #000000 !important;border-right: 1px solid #000000 !important;">
-                x
-                @endif
-                @endif
+                x</td>
+            @endif
+            @endif
+            @endif
 
-                @endforeach
+            @endforeach
 
 
 
@@ -389,30 +328,14 @@ $count=6;
             <td
                 style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-right: none #000000;font-weight: bold;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2DBDB;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-left: 1px solid #000000 !important;">
                 Total</td>
-            <td
+            <td colspan="5"
                 style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2DBDB;border-top: 1px solid #000000 !important;">
             </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2DBDB;border-top: 1px solid #000000 !important;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2DBDB;border-top: 1px solid #000000 !important;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2DBDB;border-top: 1px solid #000000 !important;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-left: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2DBDB;border-top: 1px solid #000000 !important;border-right: 1px solid #000000 !important;">
-            </td>
+
 
             <!--- Vendor Total --->
             @foreach($cis['vendors'] as $vendor_id => $vendor)
-            @php
-            if(!empty($cis['filter_vendors']) && !in_array($vendor_id,
-            $cis['filter_vendors'])) {
-            continue;
-            }
-            @endphp
+            @if ($cis['vendor_total_amount'][$vendor_id]>0)
 
             <td
                 style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-right: none #000000;font-weight: bold;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2DBDB;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-left: 1px solid #000000 !important;">
@@ -435,6 +358,7 @@ $count=6;
                     {{$cis['vendor_total_amount'][$vendor_id] ?
                     IND_money_format($cis['vendor_total_amount'][$vendor_id]) : 0}}</b>
             </td>
+            @endif
             @endforeach
         </tr>
 
@@ -448,7 +372,7 @@ $count=6;
 
             <!-- buyer_price_basis -->
             <td colspan="5"
-                style="border: 1px dotted black;vertical-align: bottom;border-bottom: 1px solid #000000;border-top: 1px solid #000000;border-right: 1px solid #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-left: 1px solid #000000 !important;">
+                style="border: 1px dotted black;vertical-align: bottom;border-bottom: 1px solid #000000;border-top: 1px solid #000000;border-right: 1px solid #000000;color: #000000; text-align:left; font-family: 'Calibri';font-size: 12pt;background-color: white;border-left: 1px solid #000000 !important;">
                 @php
                 $buyer_price_basis = !empty($rfq['buyer_price_basis']) ?
                 $rfq['buyer_price_basis'] : '';
@@ -461,6 +385,7 @@ $count=6;
             <!-- vendor price_basis -->
 
             @foreach($cis['vendors'] as $vendor_id => $vendor)
+            @if ($cis['vendor_total_amount'][$vendor_id]>0)
             @php
             if(!empty($cis['filter_vendors']) && !in_array($vendor_id,
             $cis['filter_vendors'])) {
@@ -474,6 +399,7 @@ $count=6;
             <td
                 style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-left: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-right: 1px solid #000000 !important;">
                 {!! $vendor_price_basis !!}</td>
+            @endif
             @endforeach
         </tr>
         <!--End Price Basis -->
@@ -485,8 +411,8 @@ $count=6;
                 style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-top: none #000000;border-right: none #000000;font-weight: bold;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-left: 1px solid #000000 !important;">
                 Payment Terms</td>
             <!----:- buyer_pay_term -:----->
-            <td
-                style="border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-top: 1px solid #000000 !important;border-left: 1px solid #000000 !important;">
+            <td colspan="5"
+                style="text-align: left;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-right: 1px solid #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-top: 1px solid #000000 !important;border-left: 1px solid #000000 !important;">
                 @php
                 $buyer_pay_term = !empty($rfq['buyer_pay_term']) ?
                 $rfq['buyer_pay_term'] : '';
@@ -494,44 +420,19 @@ $count=6;
                 {!! $buyer_pay_term !!}
             </td>
 
-
-
-
-
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-top: 1px solid #000000 !important;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-top: 1px solid #000000 !important;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-top: 1px solid #000000 !important;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-left: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-top: 1px solid #000000 !important;border-right: 1px solid #000000 !important;">
-            </td>
-
             <!----:- vendor_pay_term -:----->
             @foreach($cis['vendors'] as $vendor_id => $vendor)
-            @php
-            if(!empty($cis['filter_vendors']) && !in_array($vendor_id,
-            $cis['filter_vendors'])) {
-            continue;
-            }
-            @endphp
+            @if ($cis['vendor_total_amount'][$vendor_id]>0)
 
             @php
             $vendor_payment_terms = !empty($vendor['latest_quote']) ?
             $vendor['latest_quote']['vendor_payment_terms'] : '';
             @endphp
 
-
-
-
             <td
                 style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-left: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-right: 1px solid #000000 !important;">
                 {!! $vendor_payment_terms !!}</td>
-
+            @endif
             @endforeach
 
         </tr>
@@ -554,12 +455,8 @@ $count=6;
 
 
             @foreach($cis['vendors'] as $vendor_id => $vendor)
-            @php
-            if(!empty($cis['filter_vendors']) && !in_array($vendor_id,
-            $cis['filter_vendors'])) {
-            continue;
-            }
-            @endphp
+            @if ($cis['vendor_total_amount'][$vendor_id]>0)
+
 
 
             @php
@@ -569,9 +466,8 @@ $count=6;
             <td
                 style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-left: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2F2F2;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-right: 1px solid #000000 !important;">
                 {!! $vendor_delivery_period !!}</td>
-
+            @endif
             @endforeach
-
         </tr>
         <!-- End Delivery Period -->
 
@@ -586,16 +482,9 @@ $count=6;
             </td>
 
             <!-----: vend_wise_brand :------>
-
-
-
             @foreach($cis['vendors'] as $vendor_id => $vendor)
-            @php
-            if(!empty($cis['filter_vendors']) && !in_array($vendor_id,
-            $cis['filter_vendors'])) {
-            continue;
-            }
-            @endphp
+            @if ($cis['vendor_total_amount'][$vendor_id]>0)
+
             <td
                 style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-left: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2F2F2;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-right: 1px solid #000000 !important;">
                 @php
@@ -605,10 +494,8 @@ $count=6;
                 {{ $vendor_brand }}
 
             </td>
+            @endif
             @endforeach
-
-
-
         </tr>
         <!---:- End seller_brand -:--->
 
@@ -619,7 +506,7 @@ $count=6;
                 style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-right: none #000000;font-weight: bold;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2F2F2;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-left: 1px solid #000000 !important;">
                 Remarks</td>
             <td colspan="5"
-                style="border: 1px dotted black;vertical-align: bottom;border-bottom: 1px solid #000000;border-top: 1px solid #000000;border-right: 1px solid #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2F2F2;border-left: 1px solid #000000 !important;">
+                style="text-align: left;border: 1px dotted black;vertical-align: bottom;border-bottom: 1px solid #000000;border-top: 1px solid #000000;border-right: 1px solid #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2F2F2;border-left: 1px solid #000000 !important;">
             </td>
 
             <!----:-seller_remarks -:--->
@@ -627,12 +514,8 @@ $count=6;
 
 
             @foreach($cis['vendors'] as $vendor_id => $vendor)
-            @php
-            if(!empty($cis['filter_vendors']) && !in_array($vendor_id,
-            $cis['filter_vendors'])) {
-            continue;
-            }
-            @endphp
+            @if ($cis['vendor_total_amount'][$vendor_id]>0)
+
             <td
                 style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-left: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2F2F2;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-right: 1px solid #000000 !important;">
                 @php
@@ -642,6 +525,7 @@ $count=6;
 
                 {!! $vendor_remarks !!}
             </td>
+            @endif
             @endforeach
 
         </tr>
@@ -652,32 +536,17 @@ $count=6;
             <td
                 style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-right: none #000000;font-weight: bold;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-top: 1px solid #000000 !important;border-left: 1px solid #000000 !important;">
                 Additional Remarks</td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-top: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;border-left: 1px solid #000000 !important;">
+            <td colspan="5"
+                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-top: none #000000;border-right: 1px solid #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;border-left: 1px solid #000000 !important;">
             </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-top: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-top: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-top: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-top: none #000000;border-left: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;border-right: 1px solid #000000 !important;">
-            </td>
+
 
             <!---:-Vendor seller_add_remarks-:----->
 
 
             @foreach($cis['vendors'] as $vendor_id => $vendor)
-            @php
-            if(!empty($cis['filter_vendors']) && !in_array($vendor_id,
-            $cis['filter_vendors'])) {
-            continue;
-            }
-            @endphp
+            @if ($cis['vendor_total_amount'][$vendor_id]>0)
+
             <td
                 style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: 1px solid #000000;border-left: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-top: 1px solid #000000 !important;border-right: 1px solid #000000 !important;">
                 @php
@@ -686,6 +555,7 @@ $count=6;
                 @endphp
                 {{ $vendor_additional_remarks }}
             </td>
+            @endif
             @endforeach
         </tr>
         <!--:-END Additional Remarks -:--->
@@ -695,33 +565,17 @@ $count=6;
         <!---:- Company Information -:---->
         <tr style="height: 16.363636363636pt;">
             <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;font-weight: bold;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2DBDB;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-left: 1px solid #000000 !important;border-right: none #000000 !important;">
+                style="text-align: center;border: 1px solid black;vertical-align: bottom;font-weight: bold;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2DBDB;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-left: 1px solid #000000 !important;border-right: none #000000 !important;">
                 Company Information:</td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-top: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2DBDB;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-top: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2DBDB;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-top: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2DBDB;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-top: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2DBDB;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-top: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2DBDB;">
+            <td colspan="5"
+                style="text-align: center;border: 1px solid black;vertical-align: bottom;border-bottom: none #000000;border-top: none #000000;border-left: none #000000;border-right: 1px solid #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2DBDB;">
             </td>
 
 
             <!----:-It should be dynamic -:---->
             @foreach($cis['vendors'] as $vendor_id => $vendor)
-            @php
-            if(!empty($cis['filter_vendors']) && !in_array($vendor_id,
-            $cis['filter_vendors'])) {
-            continue;
-            }
-            @endphp
+            @if ($cis['vendor_total_amount'][$vendor_id]>0)
+
 
 
 
@@ -734,6 +588,7 @@ $count=6;
                 style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-top: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2DBDB;">
             </td>
             @endif
+            @endif
             @endforeach
 
         </tr>
@@ -744,39 +599,24 @@ $count=6;
             <td
                 style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-top: none #000000;border-right: none #000000;font-weight: bold;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;border-left: 1px solid #000000 !important;">
                 Vintage</td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-top: 1px solid #000000 !important;border-left: 1px solid #000000 !important;">
+            <td colspan="5"
+                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-right: 1px solid #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-top: 1px solid #000000 !important;border-left: 1px solid #000000 !important;">
             </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-top: 1px solid #000000 !important;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-top: 1px solid #000000 !important;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-top: 1px solid #000000 !important;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-left: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-top: 1px solid #000000 !important;border-right: 1px solid #000000 !important;">
-            </td>
+
 
             <!-----Vendor vintage ----->
 
 
             @foreach($cis['vendors'] as $vendor_id => $vendor)
-            @php
-            if(!empty($cis['filter_vendors']) && !in_array($vendor_id,
-            $cis['filter_vendors'])) {
-            continue;
-            }
-            @endphp
+            @if ($cis['vendor_total_amount'][$vendor_id]>0)
+
 
             <td
                 style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-top: 1px solid #000000;border-left: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;border-right: 1px solid #000000 !important;">
                 {{ $vendor['vintage'] }} Years
             </td>
+            @endif
             @endforeach
-
         </tr>
         <!-----END Vintage------>
 
@@ -786,40 +626,18 @@ $count=6;
             <td
                 style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-right: none #000000;font-weight: bold;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2F2F2;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-left: 1px solid #000000 !important;">
                 Business Type</td>
-
-
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-top: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2F2F2;border-left: 1px solid #000000 !important;">
+            <td colspan="5"
+                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-top: none #000000;border-right: 1px solid #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2F2F2;border-left: 1px solid #000000 !important;">
             </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-top: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2F2F2;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-top: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2F2F2;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-top: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2F2F2;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-top: none #000000;border-left: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2F2F2;border-right: 1px solid #000000 !important;">
-            </td>
-
 
             <!---- vendor Business Type ----->
-
             @foreach($cis['vendors'] as $vendor_id => $vendor)
-            @php
-            if(!empty($cis['filter_vendors']) && !in_array($vendor_id,
-            $cis['filter_vendors'])) {
-            continue;
-            }
-            @endphp
-
-
+            @if ($cis['vendor_total_amount'][$vendor_id]>0)
             <td
                 style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-left: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2F2F2;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-right: 1px solid #000000 !important;">
                 {{ $nature_of_business[$vendor['nature_of_business']] }}
             </td>
+            @endif
             @endforeach
         </tr>
         <!----END Business Type---->
@@ -830,32 +648,15 @@ $count=6;
             <td
                 style="text-align: center;border: 1px dotted black;vertical-align: middle;border-right: none #000000;font-weight: bold;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-left: 1px solid #000000 !important;">
                 Main Products</td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: middle;border-bottom: none #000000;border-top: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-left: 1px solid #000000 !important;">
+            <td colspan="5"
+                style="text-align: center;border: 1px dotted black;vertical-align: middle;border-bottom: none #000000;border-top: none #000000;border-right: 1px solid #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-left: 1px solid #000000 !important;">
             </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: middle;border-bottom: none #000000;border-top: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: middle;border-bottom: none #000000;border-top: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: middle;border-bottom: none #000000;border-top: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: middle;border-bottom: none #000000;border-top: none #000000;border-left: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-right: 1px solid #000000 !important;">
-            </td>
+
 
             <!----vendor main_products---->
-
-
             @foreach($cis['vendors'] as $vendor_id => $vendor)
-            @php
-            if(!empty($cis['filter_vendors']) && !in_array($vendor_id,
-            $cis['filter_vendors'])) {
-            continue;
-            }
-            @endphp
+            @if ($cis['vendor_total_amount'][$vendor_id]>0)
+
             <td
                 style="text-align: center;border: 1px dotted black;vertical-align: middle;border-left: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-right: 1px solid #000000 !important;">
                 @php
@@ -865,6 +666,7 @@ $count=6;
                 {{ $vendor_product }}
 
             </td>
+            @endif
             @endforeach
         </tr>
         <!-----END Main Products------>
@@ -874,40 +676,23 @@ $count=6;
             <td
                 style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-right: none #000000;font-weight: bold;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2F2F2;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-left: 1px solid #000000 !important;">
                 Client</td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-top: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2F2F2;border-left: 1px solid #000000 !important;">
+            <td colspan="5"
+                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-top: none #000000;border-right: 1px solid #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2F2F2;border-left: 1px solid #000000 !important;">
             </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-top: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2F2F2;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-top: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2F2F2;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-top: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2F2F2;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-bottom: none #000000;border-top: none #000000;border-left: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2F2F2;border-right: 1px solid #000000 !important;">
-            </td>
+
 
             <!------Vendor client------>
-
-
             @foreach($cis['vendors'] as $vendor_id => $vendor)
-            @php
-            if(!empty($cis['filter_vendors']) && !in_array($vendor_id,
-            $cis['filter_vendors'])) {
-            continue;
-            }
-            @endphp
+            @if ($cis['vendor_total_amount'][$vendor_id]>0)
+
             <td
                 style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-left: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #F2F2F2;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-right: 1px solid #000000 !important;">
                 @php
                 $client = !empty($vendor['client']) ? $vendor['client'] : '';
                 @endphp
                 {{ $client }}
-
             </td>
+            @endif
             @endforeach
         </tr>
         <!----END Client----->
@@ -918,31 +703,16 @@ $count=6;
             <td
                 style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-right: none #000000;font-weight: bold;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-left: 1px solid #000000 !important;">
                 Certifications-MSME/ISO</td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-top: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;border-left: 1px solid #000000 !important;">
+            <td colspan="5"
+                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-top: none #000000;border-right: 1px solid  #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;border-left: 1px solid #000000 !important;">
             </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-top: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-top: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-top: none #000000;border-left: none #000000;border-right: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;">
-            </td>
-            <td
-                style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-top: none #000000;border-left: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;border-right: 1px solid #000000 !important;">
-            </td>
+
 
             <!----vendor certifications----->
 
             @foreach($cis['vendors'] as $vendor_id => $vendor)
-            @php
-            if(!empty($cis['filter_vendors']) && !in_array($vendor_id,
-            $cis['filter_vendors'])) {
-            continue;
-            }
-            @endphp
+            @if ($cis['vendor_total_amount'][$vendor_id]>0)
+
             <td
                 style="text-align: center;border: 1px dotted black;vertical-align: bottom;border-left: none #000000;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: white;border-bottom: 1px solid #000000 !important;border-top: 1px solid #000000 !important;border-right: 1px solid #000000 !important;">
                 @php
@@ -952,9 +722,8 @@ $count=6;
                 {{ $certifications }}
 
             </td>
+            @endif
             @endforeach
-
-
         </tr>
     </tbody>
 </table>

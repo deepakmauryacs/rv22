@@ -14,6 +14,9 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\UserRoleMapping;
 use DB;
 use App\Traits\HasModulePermission;
+use App\Helpers\EmailHelper;
+
+
 class UserManagementController extends Controller
 {
     use HasModulePermission;
@@ -92,6 +95,8 @@ class UserManagementController extends Controller
                 'message' => $validator->errors()->first()
             ]);
         }
+        // $password = mt_rand(10000000, 99999999);
+        $password = 12345678;
 
         try {
             DB::beginTransaction();
@@ -99,7 +104,7 @@ class UserManagementController extends Controller
             $user = new User();
             $user->name = strtoupper($request->name);
             $user->email = $request->email;
-            $user->password = Hash::make(12345678);
+            $user->password = Hash::make($password);
             $user->designation = $request->designation;
             $user->country_code = $request->country;
             $user->mobile = $request->mobile_no;
@@ -116,8 +121,28 @@ class UserManagementController extends Controller
             $roleMapping->user_role_id = $request->role_id;
             $roleMapping->is_active = 1;
             $roleMapping->save();
-            $this->updateBuyerUserBranch($user->id,$request->branchId);
+            $this->updateBuyerUserBranch($user->id, $request->branchId);
+
+            $notification_data = array();
+            $notification_data['message_type'] = 'Buyer User Creation';
+            $notification_data['notification_link'] = route("admin.dashboard");
+            $notification_data['to_user_id'] = getSADetails()->id;
+            sendNotifications($notification_data);
+            
             DB::commit();
+
+            // send mail to created user
+            $mail_data = buyerEmailTemplet('when-buyer-register-user-email');
+            $admin_msg = $mail_data->mail_message;
+            $subject = $mail_data->subject;
+            $bold_html_password = '<span style="font-weight: 600" >'.$password.'<span>';
+
+            $admin_msg = str_replace('$name', strtoupper($request->name), $admin_msg);
+            $admin_msg = str_replace('$email', $request->email, $admin_msg);
+            $admin_msg = str_replace('$password', $bold_html_password, $admin_msg);
+            $admin_msg = str_replace('$link', route("login"), $admin_msg);
+            
+            EmailHelper::sendMail($request->email, $subject, $admin_msg);
 
             return response()->json([
                 'success' => true,

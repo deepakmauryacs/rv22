@@ -139,7 +139,7 @@
                                 </tr>
                                 <tr>
                                     <td colspan="2">
-                                        <p class="fc1"><b>Phone NO : </b> <?php echo '+'.$order->vendor->user->country_code.' '.$order->vendor->user->mobile; ?></p>
+                                        <p class="fc1"><b>Phone NO : </b> <?php echo ($order->vendor->user->country_code ? '+'.$order->vendor->user->country_code : '').' '.$order->vendor->user->mobile; ?></p>
                                     </td>
                                 </tr>
                                 <tr>
@@ -183,7 +183,7 @@
                                         <p class="fc1"><b>Delivery Period : </b><?php echo $delivery_date; ?></p>
                                     </td>
                                     <td style="width: 50%;">
-                                        <p class="fc1"><b>PRN : </b><?php //echo $order->prn_no; ?></p>
+                                        <p class="fc1"><b>PRN : </b>{{ $order->rfq->prn_no }}</p>
                                     </td>
                                 </tr>
                                 <tr>
@@ -286,7 +286,7 @@
                                 </tr>
                                 <tr>
                                     <td colspan="2">
-                                        <p class="fc1"><b>Phone NO : </b> <?php echo '+'.$order->buyer->users->country_code.' '.$order->buyer->users->mobile; ?></p>
+                                        <p class="fc1"><b>Phone NO : </b> <?php echo ($order->buyer->users->country_code ? '+'.$order->buyer->users->country_code : '').' '.$order->buyer->users->mobile; ?></p>
                                     </td>
                                 </tr>
                                 <tr>
@@ -345,7 +345,7 @@
                                 </tr>
                                 <tr>
                                     <td colspan="2">
-                                        <p class="fc1"><b>Phone NO : </b> <?php echo $order->rfq->buyer_branchs->mobile; ?></p>
+                                        <p class="fc1"><b>Phone NO : </b> +<?php echo $order->rfq->buyer_branchs->branch_country->phonecode; ?> <?php echo $order->rfq->buyer_branchs->mobile; ?></p>
                                     </td>
                                 </tr>
                                 <tr>
@@ -434,21 +434,21 @@
                  $isIndian=$order->vendor->country==101;
                 foreach ($order->order_variants as $key => $val) {
 
-                    $order_quantity= !empty($order_quantity[$val->rfq_product_variant_id])?$order_quantity[$val->rfq_product_variant_id]: $val->order_quantity;
-                    $order_mrp = !empty($order_mrp[$val->rfq_product_variant_id])?$order_mrp[$val->rfq_product_variant_id]: (float)$val->order_mrp;
-                    $order_discount =!empty($order_discount[$val->rfq_product_variant_id])?$order_discount[$val->rfq_product_variant_id]: (float)$val->order_discount;
-                    $order_price = !empty($order_rate[$val->rfq_product_variant_id])?$order_rate[$val->rfq_product_variant_id]: (float)$val->order_price;
+                    $v_order_quantity = !empty($order_quantity[$val->rfq_product_variant_id]) ? $order_quantity[$val->rfq_product_variant_id] : $val->order_quantity;
+                    $v_order_mrp = !empty($order_mrp[$val->rfq_product_variant_id])?$order_mrp[$val->rfq_product_variant_id]: (float)$val->order_mrp;
+                    $v_order_discount =!empty($order_discount[$val->rfq_product_variant_id])?$order_discount[$val->rfq_product_variant_id]: (float)$val->order_discount;
+                    $v_order_price = !empty($order_rate[$val->rfq_product_variant_id])?$order_rate[$val->rfq_product_variant_id]: (float)$val->order_price;
                     $productGST = $val->product_gst;
 
                     $productTax = $isIndian ? $productGST : 0;
-                    $itemTotal = $order_price * $order_quantity;
+                    $itemTotal = $v_order_price * $v_order_quantity;
                     $taxAmount = $isIndian ? (($itemTotal * $productTax) / 100) : 0;
                     $amount = $itemTotal + $taxAmount;
 
                     $grand_total += $amount;
 
-                    $grand_total=  number_format((float)$grand_total, 2, '.', '');
-                    $amount =  number_format((float)$amount, 2, '.', '');
+                    $grand_total = number_format((float)$grand_total, 2, '.', '');
+                    $amount = number_format((float)$amount, 2, '.', '');
                 ?>
                 <tr>
                     <td style="text-align:center;"><?php echo $i++ ?></td>
@@ -460,31 +460,31 @@
                         </span>
                     </td>
                     <td style="text-align:center;">
-                        <?php echo $order_quantity; ?>
+                        <?php echo $v_order_quantity; ?>
                     </td>
                     <td style="text-align:center;">
                         <?php echo getUOMName($val->frq_variant->uom); ?>
                     </td>
                     <td style="text-align:center;">
                         <?php
-                            $order_mrps = number_format($order_mrp, 2, '.', '');
+                            $order_mrps = number_format($v_order_mrp, 2, '.', '');
                             echo !empty($order_mrp) ? IND_money_format($order_mrps) : '';
                         ?>
                     </td>
                     <td style="text-align:center;">
-                        <?php echo !empty($order_discount) ? $order_discount : ''; ?>
+                        <?php echo !empty($v_order_discount) ? $v_order_discount : ''; ?>
                     </td>
                     <td style="text-align:center;">
                         <span style="font-family: DejaVu Sans; sans-serif;">
                             <?php ?>
                         </span>
                         <?php
-                            $rate_amount = number_format($order_price, 2, '.', '');
+                            $rate_amount = number_format($v_order_price, 2, '.', '');
                             echo IND_money_format($rate_amount);
                         ?>
                     </td>
                     <td style="text-align:center;">
-                        <?php echo !empty($val->vend_product_hsn_code) ? $val->vend_product_hsn_code : '' ?>
+                        <?php echo !empty($val->product_hsn_code) ? $val->product_hsn_code : '' ?>
                     </td>
                     <?php
                     if($order->int_buyer_vendor==2){
@@ -591,7 +591,7 @@
                     <td style="padding: 5px;width: 50%;" colspan="5">
                         <!-- <p class="fc"><b>Checked By : </b><?php //echo 'Checked'; ?></p> -->
                         <p class="fc"><b>RFQ Generated By : </b><?php echo $order->rfq->rfq_generated_by?->name; ?></p>
-                        <p class="fc"><b>PO Generated By : </b><?php echo $order->po_generated_by?->name; ?></p>
+                        <p class="fc"><b>PO Generated By : </b><?php echo $order->order_confirmed_by?->name; ?></p>
                         {{-- <p style="margin-bottom: 3px;" class="fc"><b>Order Confirmed By : </b><?php echo $order->order_confirmed_by?->name; ?></p> --}}
                     </td>
                     <td style="padding: 5px;width: 50%;text-align:right;"

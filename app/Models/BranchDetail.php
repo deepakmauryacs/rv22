@@ -40,31 +40,29 @@ class BranchDetail extends Model
             ->get();
     }
 
-
-    protected static function booted()
-    {
-        static::addGlobalScope('alphabeticalFirst', function (Builder $builder) {
-            $builder->whereIn('branch_details.id', function ($query) {
-                $query->select(DB::raw('MIN(bd1.id)'))
-                    ->from('branch_details as bd1')
-                    ->join(DB::raw('
-                        (
-                            SELECT branch_id, MIN(name) AS name
-                            FROM branch_details
-                            WHERE record_type = 1 AND user_type = 1 AND status = 1
-                            GROUP BY branch_id
-                        ) as bd2
-                    '), function ($join) {
-                        $join->on('bd1.branch_id', '=', 'bd2.branch_id')
-                            ->on('bd1.name', '=', 'bd2.name');
-                    })
-                    ->where('bd1.record_type', 1)
-                    ->where('bd1.status', 1)
-                    ->groupBy('bd1.branch_id');
-            });
-        });
-    }
-    
+    // protected static function booted()
+    // {
+    //     static::addGlobalScope('alphabeticalFirst', function (Builder $builder) {
+    //         $builder->whereIn('branch_details.id', function ($query) {
+    //             $query->select(DB::raw('MIN(bd1.id)'))
+    //                 ->from('branch_details as bd1')
+    //                 ->join(DB::raw('
+    //                     (
+    //                         SELECT branch_id, MIN(name) AS name
+    //                         FROM branch_details
+    //                         WHERE record_type = 1 AND status = 1
+    //                         GROUP BY branch_id
+    //                     ) as bd2
+    //                 '), function ($join) {
+    //                     $join->on('bd1.branch_id', '=', 'bd2.branch_id')
+    //                         ->on('bd1.name', '=', 'bd2.name');
+    //                 })
+    //                 ->where('bd1.record_type', 1)
+    //                 ->where('bd1.status', 1)
+    //                 ->groupBy('bd1.branch_id');
+    //         });
+    //     });
+    // }
      public function branch_country()
     {
         return $this->hasOne(Country::class, 'id', 'country');

@@ -141,7 +141,7 @@
                                 </tr>
                                 <tr>
                                     <td colspan="2">
-                                        <p class="fc1"><b>Phone NO : </b> <?php echo '+'.$order->vendor->user->country_code.' '.$order->vendor->user->mobile; ?></p>
+                                        <p class="fc1"><b>Phone NO : </b> <?php echo ($order->vendor->user->country_code ? '+'.$order->vendor->user->country_code : '').' '.$order->vendor->user->mobile; ?></p>
                                     </td>
                                 </tr>
                                 <tr>
@@ -262,7 +262,7 @@
                                 </tr>
                                 <tr>
                                     <td colspan="2">
-                                        <p class="fc1"><b>Phone NO : </b> <?php echo '+'.$order->buyer->users->country_code.' '.$order->buyer->users->mobile; ?></p>
+                                        <p class="fc1"><b>Phone NO : </b> <?php echo ($order->buyer->users->country_code ? '+'.$order->buyer->users->country_code : '').' '.$order->buyer->users->mobile; ?></p>
                                     </td>
                                 </tr>
                                 <tr>
@@ -321,7 +321,7 @@
                                 </tr>
                                 <tr>
                                     <td colspan="2">
-                                        <p class="fc1"><b>Phone NO : </b> <?php echo $order->rfq->buyer_branchs->mobile; ?></p>
+                                        <p class="fc1"><b>Phone NO : </b> +<?php echo $order->rfq->buyer_branchs->branch_country->phonecode; ?> <?php echo $order->rfq->buyer_branchs->mobile; ?></p>
                                     </td>
                                 </tr>
                                 <tr>
@@ -428,7 +428,7 @@
                         </span>
                     </td>
                     <td style="text-align:center;"><?php echo $val->order_quantity; ?> </td>
-                    <td style="text-align:center;"><?php echo $val->frq_variant->uom; ?> </td>
+                    <td style="text-align:center;"><?php echo getUOMName($val->frq_variant->uom); ?> </td>
                     <td style="text-align:center;">
                         <?php
                             $order_mrp = number_format((float)$val->order_mrp, 2, '.', '');

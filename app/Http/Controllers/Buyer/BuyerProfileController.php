@@ -24,19 +24,19 @@ class BuyerProfileController extends Controller
     public function index()
     {
         $company_id = getParentUserId();
-        
+
         $buyer_data = User::with(["buyer", "branchDetails", "topManagamantDetails"])->where("id", $company_id)->first();
-        
+
         $divisions = Division::where("status", 1)
                                 ->select("id", "division_name")
                                 ->orderBy("division_name", "ASC")
                                 ->pluck("division_name", "id")->toArray();
-        
+
         $countries = DB::table("countries")
                             ->select("id", "name")
                             ->orderBy("name", "ASC")
                             ->pluck("name", "id")->toArray();
-        
+
         $india_states = DB::table("states")
                             ->select("id", "name")
                             ->where("country_id", 101)
@@ -87,7 +87,7 @@ class BuyerProfileController extends Controller
         }
         return response()->json($response);
     }
-    
+
     public function validateBuyerShortCode(Request $request)
     {
         $short_code = $request->short_code;
@@ -125,7 +125,7 @@ class BuyerProfileController extends Controller
         $request->merge($clean);
 
         $request->merge([
-            'legal_name' => trim($request->legal_name),
+            'legal_name' => trim(html_entity_decode($request->legal_name)),
             'incorporation_date' => trim($request->incorporation_date),
             'registered_address' => trim($request->registered_address),
             'country' => trim($request->country),
@@ -162,11 +162,11 @@ class BuyerProfileController extends Controller
             'organisation_short_code' => trim($request->organisation_short_code),
             'buyer_accept_tnc' => trim($request->buyer_accept_tnc),
         ]);
-        
+
         $company_id = getParentUserId();
 
         $validator = $this->validateBuyerProfile($request);
-        
+
         if ($validator->fails()) {
             // Return or print errors
             return response()->json([
@@ -395,7 +395,7 @@ class BuyerProfileController extends Controller
             }
 
             $admin_detail = getMainSuperadminDetails();
-            
+
             $notification = array();
             $notification_data['to_user_id'] = $admin_detail->id;
             $notification_data['notification_link'] = route('admin.buyer.profile', ['id'=>$buyer->id]);
@@ -437,7 +437,7 @@ class BuyerProfileController extends Controller
             ]);
         }
     }
-    
+
     private function validateBuyerProfile($request)
     {
         $company_id = getParentUserId();
@@ -685,7 +685,7 @@ class BuyerProfileController extends Controller
                 Rule::in(Division::where("status", 1)->select("id")->pluck("id")->toArray())
             ],
             'branch_status.*' => [
-                'required', 
+                'required',
                 Rule::in(array(1, 2)),
                 function ($attribute, $value, $fail) use ($request) {
                     if (!in_array(1, $request->input('branch_status', []))) {
@@ -693,7 +693,7 @@ class BuyerProfileController extends Controller
                     }
                 }
             ],
-            
+
             'organisation_description' => [
                 'required',
                 'string',

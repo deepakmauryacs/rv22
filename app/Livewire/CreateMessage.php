@@ -114,9 +114,14 @@ class CreateMessage extends Component
         // Save the message to the database
         $this->saveData();
         $this->listing_type = 'send';
-        session()->flash('success', 'Your message has been sent!');
+
         // $this->resetInputFields();
         $this->dispatch('hide-compose-modal');
+
+        $this->dispatch('notify', [
+            'type'    => 'success',
+            'message' => 'Message sent successfully!',
+        ]);
     }
 
     public function replyMessage(Request $request)
@@ -210,10 +215,15 @@ class CreateMessage extends Component
             }
             // $this->saveData(2);
 
-            session()->flash('success', 'Your message has been saved to draft!');
+            $this->dispatch('notify', [
+                'type'    => 'success',
+                'message' => 'Your message has been saved to draft!',
+            ]);
         } else {
-            session()->flash('error', 'Message not saved to draft. Please fill in all required fields!');
-            // return;
+            $this->dispatch('notify', [
+                'type'    => 'error',
+                'message' => 'Message not saved to draft. Please fill in all required fields!'
+            ]);
         }
         $this->resetInputFields();
     }
@@ -231,7 +241,10 @@ class CreateMessage extends Component
         }, 'messageFile'])->findOrFail($id);
 
         if (!$msg) {
-            session()->flash('error', 'Message not found!');
+            $this->dispatch('notify', [
+                'type'    => 'error',
+                'message' => 'Message not found!'
+            ]);
             return;
         }
 
@@ -240,6 +253,7 @@ class CreateMessage extends Component
         $this->draftEditMode = true;
         $this->id = $id;
         $this->subject = $msg->subject;
+        // $this->parent_id = null;
         $this->message = html_entity_decode($msg->message);
 
         $this->dispatch('show-compose-modal');
@@ -285,6 +299,7 @@ class CreateMessage extends Component
         $this->search = null;
         $this->page = null;
         $this->selectAll = false;
+        //dd($this->listing_type);
         $this->resetPage();
         $this->dispatch('reset-row-checkboxes');
     }
@@ -299,7 +314,11 @@ class CreateMessage extends Component
         // Save the message to the database
         $this->updateDraftData();
 
-        session()->flash('success', 'Your draft message has been sent!');
+
+        $this->dispatch('notify', [
+            'type'    => 'success',
+            'message' => 'Your draft message has been sent!'
+        ]);
         $this->resetInputFields();
         $this->dispatch('hide-compose-modal');
     }
@@ -337,10 +356,19 @@ class CreateMessage extends Component
                 );
             }
             $this->listing_type = 'send';
-            session()->flash('success', 'Your message has been sent!');
+
+            $this->dispatch('notify', [
+                'type'    => 'success',
+                'message' => 'Your message has been sent!'
+            ]);
+
             $this->resetInputFields();
             $this->dispatch('hide-compose-modal');
         } catch (\Throwable $th) {
+            $this->dispatch('notify', [
+                'type'    => 'error',
+                'message' => $th
+            ]);
             logger()->error($th);
         }
     }
@@ -355,14 +383,14 @@ class CreateMessage extends Component
     }
 
 
-    public function replyBack()
+    public function replyBack($listingType)
     {
         $this->replyListStatus = false;
+        $this->listing_type = $listingType;
         $this->id = null;
         $this->parent_id = null;
         $this->search = null;
         $this->page = null;
-        $this->listing_type = 'inbox';
         $this->resetInputFields();
     }
 
@@ -572,10 +600,11 @@ class CreateMessage extends Component
 
             $rawQuery = "$rawQuery,  CASE WHEN f1.id IS NOT NULL THEN 1 WHEN f2.id IS NOT NULL THEN 1 ELSE 0 END as is_fav";
 
-            if ($this->id) {
+            if ($this->id && $this->listing_type != 'draft') {
+                // dd($this->id);
                 $inbox->where('messages.parent_id', $this->id);
             }
-            // $inbox->orderByDesc('is_fav');
+            $inbox->orderByDesc('is_fav');
             $inbox->orderBy('messages.id', 'desc');
             $inbox->selectRaw($rawQuery);
             //dd($inbox->toSql(), $inbox->getBindings());
@@ -630,7 +659,11 @@ class CreateMessage extends Component
 
         try {
             if (empty($this->selectedMessages)) {
-                session()->flash('error', 'No messages selected.');
+                $this->dispatch('notify', [
+                    'type'    => 'error',
+                    'message' => 'No messages selected.'
+                ]);
+
                 return;
             }
 
@@ -707,7 +740,10 @@ class CreateMessage extends Component
                     }
                 }
             } else {
-                session()->flash('error', 'Message not found.');
+                $this->dispatch('notify', [
+                    'type'    => 'error',
+                    'message' => 'Message not found.'
+                ]);
             }
         } catch (\Throwable $th) {
             logger()->error($th);
@@ -747,7 +783,10 @@ class CreateMessage extends Component
                 $msgData = MessageStatus::find($data['message_statuses_id']);
                 $this->readSelectedOne($markType, $msgData->id, $msgData->message_id, $msgData->sender_id, $msgData->receiver_id);
             }
-            session()->flash('message', "Selected message $markType Successfully");
+            $this->dispatch('notify', [
+                'type'    => 'success',
+                'message' => "Selected message $markType Successfully"
+            ]);
         } catch (\Throwable $th) {
             logger()->error($th);
             throw $th;
@@ -775,9 +814,16 @@ class CreateMessage extends Component
                 }
                 $this->selectedMessages = [];
                 $this->selectAll = false;
-                session()->flash('message', 'Message moved to trash.');
+
+                $this->dispatch('notify', [
+                    'type'    => 'success',
+                    'message' => 'Message moved to trash.'
+                ]);
             } else {
-                session()->flash('error', 'Message not found.');
+                $this->dispatch('notify', [
+                    'type'    => 'error',
+                    'message' => 'Message not found.'
+                ]);
             }
         } catch (\Throwable $th) {
             logger()->error($th);
@@ -833,7 +879,11 @@ class CreateMessage extends Component
             }
             $this->selectedMessages = [];
             $this->selectAll = false;
-            session()->flash('message', 'Selected messages have been moved to trash.');
+
+            $this->dispatch('notify', [
+                'type'    => 'success',
+                'message' => 'Selected messages have been moved to trash.'
+            ]);
         }
     }
 
@@ -931,6 +981,11 @@ class CreateMessage extends Component
             return $listingData;
         } catch (\Throwable $th) {
             logger()->error($th);
+
+            $this->dispatch('notify', [
+                'type'    => 'error',
+                'message' => $th
+            ]);
             throw $th;
         }
     }

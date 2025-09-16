@@ -21,11 +21,11 @@
                     <div class="col-md-7">
                         <div class="buyer-info d-flex">
                             <div class="mini-web-page-profile-img rounded border me-3">
-                                @if (optional($vendorInfo->vendor)->profile_img)
+                                @if (optional($vendorInfo->vendor)->profile_img&&file_exists(public_path('uploads/vendor-profile/'.optional($vendorInfo->vendor)->profile_img)))
                                 <img src="{{ url('public/uploads/vendor-profile',$vendorInfo->vendor->profile_img) }}"
                                     alt="">
                                 @else
-                                <img src="{{ url('public/uploads/vendor-profile/default-logo.png') }}" alt="">
+                                <img src="{{ url('public/assets/images/mini-web-page/company_default_logo.png') }}" alt="">
                                 @endif
                             </div>
 
@@ -68,17 +68,27 @@
                     <div class="row">
 
                         @if ($vendorInfo->vendorWebPage)
-                        @if (optional($vendorInfo->vendorWebPage)->left_banner)
+                        @if(optional($vendorInfo->vendorWebPage)->left_banner&&file_exists(public_path('uploads/web-page/'.optional($vendorInfo->vendorWebPage)->left_banner)))
                         <div class="col-md-6">
-                            <img src="{{ url('public/uploads/vendor-profile',optional($vendorInfo->vendorWebPage)->left_banner) }}"
+                            <img style="height: 350px; width:100%;" src="{{ url('public/uploads/web-page',optional($vendorInfo->vendorWebPage)->left_banner) }}"
                                 alt="Banner" class="img-responsive mini-web-page-banner">
+                        </div>
+                        @else
+                        <div class="col-md-6">
+                            <img style="height: 350px; width:100%;" src="{{ url('public/assets/images/mini-web-page/default_banner_1.jpg') }}" alt="Banner"
+                                class="img-responsive mini-web-page-banner">
                         </div>
                         @endif
 
-                        @if (optional($vendorInfo->vendorWebPage)->right_banner)
+                        @if (optional($vendorInfo->vendorWebPage)->right_banner&&file_exists(public_path('uploads/web-page/'.optional($vendorInfo->vendorWebPage)->right_banner)))
                         <div class="col-md-6">
-                            <img src="{{ url('public/uploads/vendor-profile',optional($vendorInfo->vendorWebPage)->right_banner) }}"
+                            <img style="height: 350px; width:100%;" src="{{ url('public/uploads/web-page',optional($vendorInfo->vendorWebPage)->right_banner) }}"
                                 alt="Banner" class="img-responsive mini-web-page-banner">
+                        </div>
+                        @else
+                        <div class="col-md-6">
+                            <img style="height: 350px; width:100%;" src="{{ url('public/assets/images/mini-web-page/default_banner_2.jpg') }}" alt="Banner"
+                                class="img-responsive mini-web-page-banner">
                         </div>
                         @endif
                         @endif
@@ -91,18 +101,18 @@
                     <div class="row">
 
                         @if ($vendorInfo->vendorWebPage)
-                        @if (optional($vendorInfo->vendorWebPage)->catalogue)
+                        @if (optional($vendorInfo->vendorWebPage)->catalogue&&file_exists(public_path('uploads/web-page/'.optional($vendorInfo->vendorWebPage)->catalogue)))
                         <div class="col-md-6">
-                            <a href="{{ url('public/uploads/vendor-profile',$vendorInfo->vendorWebPage->catalogue) }}"
+                            <a href="{{ url('public/uploads/web-page',$vendorInfo->vendorWebPage->catalogue) }}"
                                 download class="btn btn-outline-primary btn-md rounded-1  align-items-center">
                                 Download Catalogue
                             </a>
                         </div>
                         @endif
 
-                        @if (optional($vendorInfo->vendorWebPage)->other_credentials)
+                        @if (optional($vendorInfo->vendorWebPage)->other_credentials&&file_exists(public_path('uploads/web-page/'.optional($vendorInfo->vendorWebPage)->other_credentials)))
                         <div class="col-md-6">
-                            <a href="{{ url('public/uploads/vendor-profile',$vendorInfo->vendorWebPage->other_credentials) }}"
+                            <a href="{{ url('public/uploads/web-page',$vendorInfo->vendorWebPage->other_credentials) }}"
                                 download class="btn btn-outline-primary btn-md rounded-1 d-flex1 align-items-center">
                                 Download Certification
                             </a>

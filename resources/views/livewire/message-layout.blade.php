@@ -29,6 +29,10 @@
             width: 86% !important;
             left: 15% !important;
         }
+
+        .ck-editor__editable_inline {
+            min-height: 180px !important;
+        }
     </style>
     @endpush
 
@@ -147,7 +151,7 @@
     @if ($errors->any())
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-                    const modal = new bootstrap.Modal(document.getElementById('composeModal'));
+                    const modal = new bootstrap.Modal(document.getElementById('composeModal'),{ focus: false });
                     modal.show();
                 });
     </script>
@@ -155,8 +159,11 @@
 
     <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
 
+
+    <script src="{{ asset('public/assets/js/messagePopup.js') }}"></script>
+
     <script>
-        let ckEditorInstance = null;
+        /*let ckEditorInstance = null;
 
             function initCkEditor(initialData = '') {
                 const editorElement = document.querySelector('#msg');
@@ -198,7 +205,86 @@
                     .catch(error => {
                         console.error('CKEditor error:', error);
                     });
-            }
+            }*/
+            // function injectCkeditorStyles() {
+            // if (document.getElementById('ck-custom-styles')) return;
+
+            // const style = document.createElement('style');
+            // style.id = 'ck-custom-styles';
+            // style.textContent = `
+            // /* Keep link panel above Bootstrap modal */
+            // .ck-balloon-panel,
+            // .ck.ck-balloon-panel,
+            // .ck.ck-tooltip {
+            // z-index: 999999999 !important;
+            // }
+
+            // /* Minimum height for editor area */
+            // .ck-editor__editable_inline {
+            // min-height: 180px !important;
+            // }
+
+            // /* Restore bullets/numbers inside CKEditor even if global CSS removes them */
+            // .ck-editor__editable_inline ul,
+            // .ck-editor__editable_inline ol {
+            // padding-left: 2rem;
+            // margin-left: 0;
+            // }
+            // .ck-editor__editable_inline ul li {
+            // list-style-type: disc !important;
+            // }
+            // .ck-editor__editable_inline ol li {
+            // list-style-type: decimal !important;
+            // }
+            // `;
+            // document.head.appendChild(style);
+            // }
+
+            // let ckEditorInstance = null;
+
+            // function initCkEditor(initialData = '') {
+            //     const editorElement = document.querySelector('#msg');
+            //     if (!editorElement) {
+            //     console.warn('CKEditor target #msg not found');
+            //     return;
+            //     }
+
+            //     if (ckEditorInstance) {
+            //     ckEditorInstance.destroy()
+            //     .then(() => {
+            //     createCkEditor(editorElement, initialData);
+            //     })
+            //     .catch(error => {
+            //     console.error('Error destroying previous CKEditor:', error);
+            //     createCkEditor(editorElement, initialData);
+            //     });
+            //     } else {
+            //     createCkEditor(editorElement, initialData);
+            //     }
+            // }
+
+            // function createCkEditor(editorElement, initialData = '') {
+            //     injectCkeditorStyles();
+            // ClassicEditor
+            // .create(editorElement, {
+            // toolbar: [
+            // 'heading', '|', 'bold', 'italic',
+            // 'link', 'bulletedList', 'numberedList',
+            // 'blockQuote', 'undo', 'redo'
+            // ],
+            // })
+            // .then(editor => {
+            // ckEditorInstance = editor;
+            // editor.setData(initialData || '');
+            // editor.model.document.on('change:data', () => {
+            // const data = editor.getData();
+            // Livewire.dispatch('ckeditor-update', { content: data });
+            // });
+            // })
+            // .catch(error => {
+            // console.error('CKEditor error:', error);
+            // });
+            // }
 
             document.addEventListener('DOMContentLoaded', function() {
 
@@ -283,13 +369,42 @@
                 /***:- show form  -:***/
                 window.addEventListener('show-compose-modal', () => {
                     //alert(1);
-                    const modal = new bootstrap.Modal(document.getElementById('composeModal'));
+                    const modal = new bootstrap.Modal(document.getElementById('composeModal'),{ focus: false });
                     modal.show();
                     setTimeout(() => {
-                        initCkEditor(@this.get('message') || '');
-                    }, 300);
+
+                        console.log('msg',@this.get('message'));
+
+                        const content = @this.get('message');
+                        // initCkEditor(content || '');
+                        initCkEditor(content || '', "#msg");
+                        // initCkEditor(@this.get('message') || '');
+                    }, 500);
 
                 });
+
+
+                /***:- notifications  -:***/
+                    window.addEventListener('notify', function (e) {
+                        const detail=e.detail[0];
+                        const type = detail.type ?? 'info';
+                        const msg  = detail.message ?? 'No message provided';
+
+                        toastr.options.closeButton = true;
+                        toastr.options.progressBar = true;
+                        toastr[type](msg);
+                    });
+
+                    /*window.Livewire.onError((error, component) => {
+                        if (error.status === 419) {
+                            alert('Your session has expired. The page will reload.');
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 2000); // wait 2 seconds
+                        }
+
+                        return true;
+                    });*/
             });
 
             document.addEventListener("livewire:update", () => {
@@ -303,8 +418,10 @@
                         el.scrollTop = el.scrollHeight;
                     }
                 }, 50);
+                let content=@this.get('message');
+                // initCkEditor( @this.get('message')|| '');
 
-                initCkEditor(@this.get('message') || '');
+                initCkEditor(content || '', "#msg");
 
             });
             window.addEventListener('scroll-to-bottom', () => {
@@ -405,7 +522,9 @@
 
             document.addEventListener('DOMContentLoaded', function() {
                 bindChatScroll();
-                initCkEditor(@this.get('message') || '');
+                let content=@this.get('message') || '';
+                // initCkEditor(@this.get('message') || '');
+                initCkEditor(content || '', "#msg");
 
             });
 
@@ -415,7 +534,10 @@
                 const modal = document.getElementById('composeModal');
                 if (modal?.classList.contains('show')) {
                     setTimeout(() => {
-                        initCkEditor(@this.get('message') || '');
+                        // initCkEditor(@this.get('message') || '');
+                        let content=@this.get('message') || '';
+                        // initCkEditor(@this.get('message') || '');
+                        initCkEditor(content || '', "#msg");
                     }, 300);
                 }
 

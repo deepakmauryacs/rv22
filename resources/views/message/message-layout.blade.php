@@ -132,6 +132,7 @@
         <!---bootsrap-->
         <script src="{{ asset('public/assets/superadmin/bootstrap/js/bootstrap.bundle.js') }}"></script>
         <!---local-js-->
+        <link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/46.1.0/ckeditor5.css" />
 
         @if (Auth::user()->user_type==3)
         <script src="{{ asset('public/assets/buyer/js/common.js') }}"></script>

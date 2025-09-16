@@ -217,7 +217,7 @@
 
                                         <li>
                                             <a class="dropdown-item"
-                                                onclick="if(confirm('Are you sure you want to delete this item?')) { @this.deleteSelectedOne({{ $data->parent_id }},{{ $data->sender_id }}, {{ $data->receiver_id }}) }"
+                                                onclick="if(confirm('Are you sure you want to delete this message.?')) { @this.deleteSelectedOne({{ $data->parent_id }},{{ $data->sender_id }}, {{ $data->receiver_id }}) }"
                                                 {{--
                                                 wire:click="deleteSelectedOne({{ $data->parent_id }},{{ $data->sender_id }}, {{ $data->receiver_id }})"
                                                 --}}>

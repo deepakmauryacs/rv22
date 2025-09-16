@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\UsersExport;
 use App\Traits\HasModulePermission;
+use App\Helpers\EmailHelper;
 
 
 class UserController extends Controller
@@ -124,6 +125,8 @@ class UserController extends Controller
                 'message' => $validator->errors()->first()
             ]);
         }
+        // $password = mt_rand(10000000, 99999999);
+        $password = 12345678;
 
         try {
             DB::beginTransaction();
@@ -132,13 +135,13 @@ class UserController extends Controller
             $user = new User();
             $user->name = strtoupper($request->name);
             $user->email = $request->email;
-            $user->password = Hash::make(12345678);
+            $user->password = Hash::make($password);
             $user->designation = $request->designation;
             $user->country_code = $request->country_code;
             $user->mobile = $request->mobile;
             $user->status = $request->status;
             $user->user_type = '3';
-            $user->parent_id = '2';
+            $user->parent_id = getParentUserId();
             $user->user_created_by = Auth::id();
             $user->user_updated_by = Auth::id();
             $user->save();
@@ -151,6 +154,18 @@ class UserController extends Controller
             $roleMapping->save();
 
             DB::commit();
+
+            $mail_data = vendorEmailTemplet('admin-user-registration');
+            $admin_msg = $mail_data->mail_message;
+            $subject = $mail_data->subject;
+            $bold_html_password = '<span style="font-weight: 600" >'.$password.'<span>';
+
+            $admin_msg = str_replace('$name', strtoupper($request->name), $admin_msg);
+            $admin_msg = str_replace('$email', $request->email, $admin_msg);
+            $admin_msg = str_replace('$password', $bold_html_password, $admin_msg);
+            $admin_msg = str_replace('$link', route("admin.dashboard"), $admin_msg);
+
+            EmailHelper::sendMail($request->email, $subject, $admin_msg);
 
             return response()->json([
                 'success' => true,

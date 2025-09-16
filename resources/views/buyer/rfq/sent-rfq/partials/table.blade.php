@@ -64,8 +64,8 @@
                     </div>
                 </td>
                 <td>{{ $result->prn_no}}</td>
+                <td>{{ $result->buyerBranch->name }}</td>
                 <td>{{ $result->buyerUser->name}}</td>
-                <td>{{ $result->buyerBranch->name}}</td>
                 <td>
                     @if ($is_auction)
                         {!! $auction_statue !!}

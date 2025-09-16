@@ -109,11 +109,21 @@ class OrderController extends Controller
         return view('vendor.order.direct-view',compact('order'));
     }
 
-    public function directOrderPrint(Request $request,$id) {
+    public function directOrderPrint(Request $request, $id) {
         // echo '<pre>';
-        $order = ManualOrder::with('order_products','order_products.inventory','buyer')->where('id', $id)->first();
-        //    print_r($order->order_products[0]->inventory->branch);die;
-        // print_r($order);
+        $order = ManualOrder::with([
+                            'order_products',
+                            'order_products.vendorProducts' => function($q) {
+                                $q->select('product_id', 'vendor_id', 'hsn_code');
+                                $q->where('vendor_id', getParentUserId());
+                            },
+                            'order_products.inventory',
+                            'buyer'
+                            ])
+                            ->where('id', $id)
+                            ->first();
+        // echo "<pre>";
+        // print_r($order);die;
         $vendor=Vendor::with(['vendor_country','vendor_state','vendor_city'])->where('user_id',getParentUserId())->first();
         // print_r($vendor);die;
         return view('vendor.order.direct-pdf',compact('order','vendor'));

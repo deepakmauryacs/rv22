@@ -55,7 +55,7 @@
 
                 <section class="ck-editor-section pt-3 pb-2">
                     <textarea name="" id="msg" rows="6" class="form-control height-inherit"
-                        placeholder="This is the placeholder of the editor.">{{ $data['message'] }}</textarea>
+                        placeholder="Type your message here...">{{ $data['message'] }}</textarea>
                 </section>
 
 

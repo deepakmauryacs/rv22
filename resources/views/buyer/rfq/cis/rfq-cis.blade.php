@@ -9,10 +9,6 @@
     .no-vendor-found {
         padding: 7.6px !important;
     }
-
-    .ck-editor__editable_inline {
-        min-height: 180px !important;
-    }
 </style>
 @endsection
 
@@ -329,6 +325,8 @@ $mg_products=[];
                                             <td class="align-middle p-1" colspan="4"></td>
                                             {{-- <td class="align-middle p-1"></td> --}}
                                         </tr>
+                                        @if($rfq['is_auction'] == 1)
+                                        @if($rfq['is_rfq_price_map'] == 1)
                                         @if(!empty($auction_roundoff_price))
                                         <tr>
                                             <td class="align-middle p-1 bg-pink" scope="row">Round Off</td>
@@ -338,6 +336,8 @@ $mg_products=[];
                                             <td class="align-middle p-1 bg-pink" scope="row">Auction Price</td>
                                             <td class="align-middle p-1" colspan="4"></td>
                                         </tr>
+                                        @endif
+                                        @endif
                                         @endif
                                         <tr>
                                             <td class="align-middle p-1" scope="row">Price Basis</td>
@@ -640,35 +640,45 @@ $mg_products=[];
                                             </td>
                                             @endforeach
                                         </tr>
+                                        @if($rfq['is_auction'] == 1)
+                                        @if($rfq['is_rfq_price_map'] == 1)
                                         @if(!empty($auction_roundoff_price))
                                         <tr>
                                             @foreach($cis['vendors'] as $vendor_id => $vendor)
-                                                @php
-                                                    if(!empty($cis['filter_vendors']) && !in_array($vendor_id, $cis['filter_vendors'])) {
-                                                        continue;
-                                                    }
-                                                    $total_price = $auction_roundoff_price[$vendor_id] ?? 0;
-                                                    $currency = !empty($vendor['latest_quote']) && !empty($vendor['latest_quote']['vendor_currency']) ? $vendor['latest_quote']['vendor_currency'] : '₹';
-                                                @endphp
-                                                <td class="product-price p-1 align-middle text-center">
-                                                    {{ $currency }} {{ $total_price }}
-                                                </td>
+                                            @php
+                                            if(!empty($cis['filter_vendors']) && !in_array($vendor_id,
+                                            $cis['filter_vendors'])) {
+                                            continue;
+                                            }
+                                            $total_price = $auction_roundoff_price[$vendor_id] ?? 0;
+                                            $currency = !empty($vendor['latest_quote']) &&
+                                            !empty($vendor['latest_quote']['vendor_currency']) ?
+                                            $vendor['latest_quote']['vendor_currency'] : '₹';
+                                            @endphp
+                                            <td class="product-price p-1 align-middle text-center">
+                                                {{ $currency }} {{ $total_price }}
+                                            </td>
                                             @endforeach
                                         </tr>
                                         <tr>
                                             @foreach($cis['vendors'] as $vendor_id => $vendor)
-                                                @php
-                                                    if(!empty($cis['filter_vendors']) && !in_array($vendor_id, $cis['filter_vendors'])) {
-                                                        continue;
-                                                    }
-                                                    $total_price = $vend_auction_total_price[$vendor_id] ?? 0;
-                                                    $currency = !empty($vendor['latest_quote']) && !empty($vendor['latest_quote']['vendor_currency']) ? $vendor['latest_quote']['vendor_currency'] : '₹';
-                                                @endphp
-                                                <td class="product-price p-1 align-middle text-center">
-                                                    {{ $currency }} {{ IND_money_format($total_price) }}
-                                                </td>
+                                            @php
+                                            if(!empty($cis['filter_vendors']) && !in_array($vendor_id,
+                                            $cis['filter_vendors'])) {
+                                            continue;
+                                            }
+                                            $total_price = $vend_auction_total_price[$vendor_id] ?? 0;
+                                            $currency = !empty($vendor['latest_quote']) &&
+                                            !empty($vendor['latest_quote']['vendor_currency']) ?
+                                            $vendor['latest_quote']['vendor_currency'] : '₹';
+                                            @endphp
+                                            <td class="product-price p-1 align-middle text-center">
+                                                {{ $currency }} {{ IND_money_format($total_price) }}
+                                            </td>
                                             @endforeach
                                         </tr>
+                                        @endif
+                                        @endif
                                         @endif
                                         <tr>
                                             @foreach($cis['vendors'] as $vendor_id => $vendor)
@@ -1284,7 +1294,7 @@ $mg_products=[];
 
                     <section class="ck-editor-section py-2">
                         <textarea required name="message" id="msg1" rows="5" class="form-control height-inherit"
-                            placeholder="This is the placeholder of the editor."></textarea>
+                            placeholder="Type your message here..."></textarea>
                     </section>
                     <section class="upload-file py-2">
                         <div class="file-upload-block justify-content-start">

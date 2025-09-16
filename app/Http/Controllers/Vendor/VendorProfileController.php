@@ -84,7 +84,7 @@ class VendorProfileController extends Controller
         $request->merge($clean);
 
         $request->merge([
-            'legal_name' => trim($request->legal_name),
+            'legal_name' => trim(html_entity_decode($request->legal_name)),
             'profile_img_old' => trim($request->profile_img_old),
             'date_of_incorporation' => trim($request->date_of_incorporation),
             'nature_of_organization' => trim($request->nature_of_organization),

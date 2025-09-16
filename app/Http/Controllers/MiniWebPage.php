@@ -138,6 +138,7 @@ class MiniWebPage extends Controller
             ->where('approval_status', 1)
             ->paginate($perPage, ['*'], 'page', $page);
 
+
         if ($products->count() > 0) {
             $product_html = view('web-page.vendor-product-list', compact('products'))->render();
             return response()->json([

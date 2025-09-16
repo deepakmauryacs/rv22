@@ -51,7 +51,7 @@
                 <div class="cust_container">
                     <div class="row btm_heada">
                         <div class="col-lg-2 col-md-6 col-sm-5 col-5 navbar-logo bottom-header-left">
-                            <a class="logo-brand p-0" href="#">
+                            <a class="logo-brand p-0" href="{{route("admin.dashboard")}}">
                                 <img alt=" " class="brand-logo-img"
                                     src="{{ asset('public/assets/superadmin/images/rfq-logo.png') }}" />
                             </a>

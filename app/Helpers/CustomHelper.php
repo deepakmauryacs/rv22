@@ -386,11 +386,20 @@ if(!function_exists('sendNotifications')){
             'RFQ Auction' => (function () use ($notification_data, $sender_name) {
                 return "A new Auction has been scheduled. Time <b style='color:red;'>".$notification_data['auction_time']."</b> on <b style='color:red;'>".$notification_data['auction_date']."</b> for <b>".$notification_data['rfq_no']."</b> from <b>".$sender_name."</b> against RFQ No. ".$notification_data['rfq_no'].".";
             })(),
+            'Forward Auction Created' => (function () use ($notification_data, $sender_name) {
+                return "A new Forward Auction has been scheduled. Time <b style='color:red;'>".$notification_data['auction_time']."</b> on <b style='color:red;'>".$notification_data['auction_date']."</b> from <b>".$sender_name."</b> (Auction ID: ".$notification_data['auction_id'].").";
+            })(),
+            'Forward Auction Updated' => (function () use ($notification_data, $sender_name) {
+                return "Forward Auction details have been updated. New schedule: Time <b style='color:red;'>".$notification_data['auction_time']."</b> on <b style='color:red;'>".$notification_data['auction_date']."</b> from <b>".$sender_name."</b> (Auction ID: ".$notification_data['auction_id'].").";
+            })(),
             'Quotation to Buyer' => (function () use ($notification_data, $sender_name) {
                 return "<b>".$sender_name."</b> has responded to your RFQ No. ".$notification_data['rfq_no'].". You can check their quote here.";
             })(),
             'Counter Offer to Buyer' => (function () use ($notification_data, $sender_name) {
                 return "<b>".$sender_name."</b> has responded to the counter offer for RFQ No. ".$notification_data['rfq_no'].". You can check their revised quote here.";
+            })(),
+            'Buyer User Creation' => (function () use ($sender_name) {
+                return "<b>".$sender_name."</b> has created a new user.";
             })(),
             // 'editor' => (function () {
             //     logAccess('editor');
@@ -451,6 +460,12 @@ if(!function_exists('sendMultipleDBEmails')){
         if (!empty($all_mail_data)) {
             DB::table('mail_data')->insert($all_mail_data);
         }
+    }
+}
+
+if(!function_exists('getSADetails')){
+    function getSADetails(): object {
+        return DB::table('users')->select('id', 'name', 'email', 'mobile')->where('user_type', 3)->whereNull('parent_id')->first();
     }
 }
 
@@ -1209,6 +1224,7 @@ if (!function_exists('makeDuplicateRFQData')) {
         $newRfqArray['is_bulk_rfq'] = 2;
         // $newRfqArray['buyer_rfq_status'] = 1;
         $newRfqArray['buyer_user_id'] = $current_user_id;
+        $newRfqArray['last_response_date'] = \Carbon\Carbon::parse($newRfqArray['last_response_date'])->format('Y-m-d');
         $newRfqArray['edit_by'] = $type == 'edit' ? $current_user_id : NULL;
         $newRfqArray['edit_rfq_id'] = $edited_rfq_id;
         $rfqInsertId = DB::table('rfqs')->insertGetId($newRfqArray);

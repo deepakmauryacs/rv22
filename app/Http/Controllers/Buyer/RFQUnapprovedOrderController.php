@@ -240,7 +240,7 @@ class RFQUnapprovedOrderController extends Controller
 
         $buyer_id = getParentUserId();
         $order = Order::with([
-                    // 'rfq',
+                    'rfq',
                     'buyer',
                     'order_variants.frq_variant',
                     'order_variants.frq_quotation_variant'=>function($q){
@@ -256,6 +256,9 @@ class RFQUnapprovedOrderController extends Controller
             //return to back ;
             return redirect()->back();
         }
+        // echo "<pre>";
+        // print_r($order);
+        // die;
         return view('buyer.unapproved-orders.print',compact('order','order_quantity','order_mrp','order_discount','order_rate','order_price_basis','order_payment_term','order_delivery_period','order_gurantee_warranty','order_remarks','order_add_remarks','buyer_order_number'))->render();
     }
 

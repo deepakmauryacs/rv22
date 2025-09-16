@@ -147,7 +147,7 @@
                                 </tr>
                                 <tr>
                                     <td style="width: 100%;">
-                                        <p class="fc1"><b>Phone NO : </b><?php echo $vendor->user->mobile; ?></p>
+                                        <p class="fc1"><b>Phone NO : </b><?php echo ($vendor->user->country_code ? '+'.$vendor->user->country_code : '').' '.$vendor->user->mobile; ?></p>
                                     </td>
                                 </tr>
                             </tbody>
@@ -229,6 +229,14 @@
                                     </td>
                                 </tr>
                                 <tr>
+                                    <td style="width: 60%;">
+                                        <p class="fc1"><b>Country : </b><?php echo $order->buyer->buyer_country->name; ?> </p>
+                                    </td>
+                                    <td style="width: 40%;">
+                                        <p class="fc1"></p>
+                                    </td>
+                                </tr>
+                                <tr>
                                     <td style="width: 100%;">
                                         <p class="fc1"><b>GSTIN : </b><?php echo $order->buyer->gstin; ?></p>
                                     </td>
@@ -249,7 +257,7 @@
                                 <tr>
                                     <td style="width: 100%;">
                                         <p class="fc1"><b>Phone NO :
-                                            </b><?php echo '+'.$order->buyer->users->country_code.' '.$order->buyer->users->mobile; ?>
+                                            </b><?php echo ($order->buyer->users->country_code ? '+'.$order->buyer->users->country_code : '').' '.$order->buyer->users->mobile; ?>
                                         </p>
                                     </td>
                                 </tr>
@@ -288,6 +296,14 @@
                                     </td>
                                 </tr>
                                 <tr>
+                                    <td style="width: 60%;">
+                                        <p class="fc1"><b>Country : </b><?php echo $order->order_products[0]->inventory->branch->branch_country->name; ?></p>
+                                    </td>
+                                    <td style="width: 40%;">
+                                        <p class="fc1"></p>
+                                    </td>
+                                </tr>
+                                <tr>
                                     <td style="width: 100%;">
                                         <p class="fc1"><b>GSTIN :
                                             </b><?php echo $order->order_products[0]->inventory->branch->gstin; ?>
@@ -304,7 +320,7 @@
                                 <tr>
                                     <td style="width: 100%;">
                                         <p class="fc1"><b>Phone NO :
-                                            </b><?php echo $order->order_products[0]->inventory->branch->mobile; ?></p>
+                                            </b>+<?php echo $order->order_products[0]->inventory->branch->branch_country->phonecode; ?> <?php echo $order->order_products[0]->inventory->branch->mobile; ?></p>
                                     </td>
                                 </tr>
                                 <tr>
@@ -359,12 +375,12 @@
                         {{$value->inventory->size}}
                     </td>
                     <td style="text-align:center;">{{$value->product_quantity}}</td>
-                    <td style="text-align:center;">{{$value->product->uom}}</td>
+                    <td style="text-align:center;">{{getUOMName($value->inventory->uom_id)}}</td>
                     <td style="text-align:center;">
                         <span style="font-family: DejaVu Sans; sans-serif;">&#8377;</span>
                         {{$value->product_price}}
                     </td>
-                    <td style="text-align:center;">{{$value->product->prod_hsn_code}}</td>
+                    <td style="text-align:center;">{{$value->vendorProducts[0]->hsn_code}}</td>
                     <td style="text-align:center;">{{$value->product_gst}}%</td>
                     <td style="text-align:right; padding-right:5px;">
                         <span style="font-family: DejaVu Sans; sans-serif;">&#8377;</span>

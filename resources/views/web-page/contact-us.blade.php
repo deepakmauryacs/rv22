@@ -14,11 +14,11 @@
                     <div class="col-md-7">
                         <div class="buyer-info d-flex">
                             <div class="mini-web-page-profile-img rounded border me-3">
-                                @if (optional($vendorInfo->vendor)->profile_img)
+                                @if (optional($vendorInfo->vendor)->profile_img&&file_exists(public_path('uploads/vendor-profile/'.optional($vendorInfo->vendor)->profile_img)))
                                 <img src="{{ url('public/uploads/vendor-profile',$vendorInfo->vendor->profile_img) }}"
                                     alt="">
                                 @else
-                                <img src="{{ url('public/uploads/vendor-profile/default-logo.png') }}" alt="">
+                                <img src="{{ url('public/assets/images/mini-web-page/company_default_logo.png') }}" alt="">
                                 @endif
                             </div>
                             <div class="buyer-sort-desc">

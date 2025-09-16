@@ -1,11 +1,11 @@
 @extends('vendor.layouts.app_second',['title'=>'Change Password','sub_title'=>''])
 @section('styles')
-<link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
 
 @endsection
- 
+
 @section('content')
- <section class="container-fluid">
+<section class="container-fluid">
     <!-- Start Breadcrumb Here -->
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb breadcrumb-global py-2 mb-0">
@@ -20,7 +20,8 @@
                 <h1 class="card-title font-size-18 mb-0">Mini Web Page Management</h1>
             </div>
             <div class="card-body add-product-section">
-                <form class="updateAboutUs" method="POST" action="{{route('vendor.web-pages.store')}}" id="updateAboutUs" enctype="multipart/form-data">
+                <form class="updateAboutUs" method="POST" action="{{route('vendor.web-pages.store')}}"
+                    id="updateAboutUs" enctype="multipart/form-data">
                     @csrf
                     <div class="web-page-form">
 
@@ -31,7 +32,8 @@
                             <div class="col-sm-10 col-md-10">
                                 <input type="hidden" name="store_id" value="{{getParentUserId()}}" id="store_id">
                                 <span class="text-secondary font-size-13 about-char-count">Characters: 0/10000</span>
-                                <textarea name="about_us" id="about_us" rows="5" class="form-control" maxlength="10000">{!!(!empty($data)?$data->about_us:'')!!}</textarea>
+                                <textarea name="about_us" id="about_us" rows="5" class="form-control"
+                                    maxlength="10000">{!!(!empty($data)?$data->about_us:'')!!}</textarea>
                             </div>
                         </div>
 
@@ -41,8 +43,10 @@
                             </div>
                             <div class="col-sm-4">
                                 <div class="simple-file-upload button-browse">
-                                    <input type="file" onchange="validatePDF(this)" name="catalogue" id="catalogue" class="real-file-input" style="display: none;">
-                                    <div class="file-display-box form-control text-start font-size-12 text-dark" role="button" data-bs-toggle="tooltip" data-bs-placement="top">
+                                    <input type="file" onchange="validatePDF(this)" name="catalogue" id="catalogue"
+                                        class="real-file-input" style="display: none;">
+                                    <div class="file-display-box form-control text-start font-size-12 text-dark"
+                                        role="button" data-bs-toggle="tooltip" data-bs-placement="top">
                                         Upload Catalogue Document
                                     </div>
                                 </div>
@@ -50,7 +54,7 @@
                             </div>
                             <div class="col-sm-4">
                                 @if(!empty($data->catalogue))
-                                <a href="{{asset('uploads/web-page/'.$data->catalogue)}}" download>Download</a>
+                                <a href="{{url('public/uploads/web-page/'.$data->catalogue)}}" download>Download</a>
                                 @endif
                                 <span class="text-danger">
                                     (PDF/Image/Document)
@@ -64,8 +68,10 @@
                             </div>
                             <div class="col-sm-4">
                                 <div class="simple-file-upload button-browse">
-                                    <input type="file" onchange="validatePDF(this)" name="certification" id="certification" class="real-file-input" style="display: none;">
-                                    <div class="file-display-box form-control text-start font-size-12 text-dark" role="button" data-bs-toggle="tooltip" data-bs-placement="top">
+                                    <input type="file" onchange="validatePDF(this)" name="certification"
+                                        id="certification" class="real-file-input" style="display: none;">
+                                    <div class="file-display-box form-control text-start font-size-12 text-dark"
+                                        role="button" data-bs-toggle="tooltip" data-bs-placement="top">
                                         Upload Other Credentials Document
                                     </div>
                                 </div>
@@ -73,7 +79,8 @@
                             </div>
                             <div class="col-sm-4">
                                 @if(!empty($data->other_credentials))
-                                    <a href="{{asset('uploads/web-page/'.$data->other_credentials)}}" download>Download</a>
+                                <a href="{{url('public/uploads/web-page/'.$data->other_credentials)}}"
+                                    download>Download</a>
                                 @endif
                                 <span class="text-danger">
                                     (PDF/Image/Document)
@@ -87,8 +94,10 @@
                             </div>
                             <div class="col-sm-4">
                                 <div class="simple-file-upload button-browse">
-                                    <input type="file" onchange="validateImage(this, 1890, 450)" name="banner1" id="banner1" class="real-file-input"  style="display: none;">
-                                    <div class="file-display-box form-control text-start font-size-12 text-dark" role="button" data-bs-toggle="tooltip" data-bs-placement="top">
+                                    <input type="file" onchange="validateImage(this, 1890, 450)" name="banner1"
+                                        id="banner1" class="real-file-input" style="display: none;">
+                                    <div class="file-display-box form-control text-start font-size-12 text-dark"
+                                        role="button" data-bs-toggle="tooltip" data-bs-placement="top">
                                         Upload Home Banner Left
                                     </div>
                                 </div>
@@ -96,7 +105,7 @@
                             </div>
                             <div class="col-sm-4">
                                 @if(!empty($data->left_banner))
-                                    <a href="{{asset('uploads/web-page/'.$data->left_banner)}}" download>Download</a>
+                                <a href="{{url('public/uploads/web-page/'.$data->left_banner)}}" download>Download</a>
                                 @endif
                                 <span class="text-danger">
                                     (JPEG/JPG/PNG/GIF )
@@ -110,8 +119,10 @@
                             </div>
                             <div class="col-sm-4">
                                 <div class="simple-file-upload button-browse">
-                                    <input type="file" onchange="validateImage(this, 1890, 450)" name="banner2" id="banner2" class="real-file-input" style="display: none;">
-                                    <div class="file-display-box form-control text-start font-size-12 text-dark" role="button" data-bs-toggle="tooltip" data-bs-placement="top">
+                                    <input type="file" onchange="validateImage(this, 1890, 450)" name="banner2"
+                                        id="banner2" class="real-file-input" style="display: none;">
+                                    <div class="file-display-box form-control text-start font-size-12 text-dark"
+                                        role="button" data-bs-toggle="tooltip" data-bs-placement="top">
                                         Upload Home Banner Right
                                     </div>
                                 </div>
@@ -120,7 +131,7 @@
 
                             <div class="col-sm-4">
                                 @if(!empty($data->right_banner))
-                                    <a href="{{asset('uploads/web-page/'.$data->right_banner)}}" download>Download</a>
+                                <a href="{{url('public/uploads/web-page/'.$data->right_banner)}}" download>Download</a>
                                 @endif
                                 <span class="text-danger">
                                     (JPEG/JPG/PNG/GIF )
@@ -147,7 +158,7 @@
         </div>
     </section>
 </section>
- 
+
 @endsection
 @section('scripts')
 <script src="https://cdn.ckeditor.com/ckeditor5/12.0.0/classic/ckeditor.js"></script>
@@ -175,7 +186,7 @@
     function validateFileSize(event) {
         var fileInput = event.target;
         var maxSize = 2 * 1024 * 1024; // 2MB in bytes
-        var files = fileInput.files; 
+        var files = fileInput.files;
 
         if (files.length > 0) {
             for (var i = 0; i < files.length; i++) {
@@ -235,8 +246,8 @@
                 console.error("Error: Character count <span> not found!");
                 return;
             }
-            
-            
+
+
             //  Function to update character count
             function updateCharCount() {
                 const editorData = editor.getData();
@@ -324,7 +335,7 @@
             var width = img.naturalWidth;
             var height = img.naturalHeight;
             window.URL.revokeObjectURL(img.src);
-           
+
             var avatarok = 1;
             appendFileError(obj, '');
             if (avatarok == 0) {
@@ -332,7 +343,7 @@
                 $(obj).attr('src', '');
                 return false;
             }
-           
+
         };
 
     }
@@ -344,11 +355,11 @@
             $(e).parents().parents().find('.error-message').text(msg);
         }
     }
-   
+
     //for select file: end
     $('#updateAboutUs').submit(function (e) {
         e.preventDefault();
-         
+
         let form = $(this);
         let url = form.attr('action');
         let formData = new FormData(this);

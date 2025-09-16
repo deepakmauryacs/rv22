@@ -51,9 +51,9 @@ class ActiveRFQController extends Controller
                         },
                         'rfqProducts.masterProduct',
                         'buyerUser',
-                        // 'buyerBranch' => function ($q) {
-                        //     $q->where('user_type', 1);
-                        // },
+                        'buyerBranch' => function ($q) {
+                            $q->where('user_type', 1);
+                        },
                         'rfq_auction'=> function ($query) {
                             $query->select('rfq_no', 'auction_date', 'auction_start_time', 'auction_end_time');
                         }
@@ -109,8 +109,10 @@ class ActiveRFQController extends Controller
         $perPage = $request->input('per_page', 25);
         $results = $query->paginate($perPage)->appends($request->all());
 
+        $branches = '';// getbuyerAllBranch(getParentUserId());
+
         if ($request->ajax()) {
-            return view('buyer.rfq.active-rfq.partials.table', compact('results'))->render();
+            return view('buyer.rfq.active-rfq.partials.table', compact('results', 'branches'))->render();
         }
 
         $divisions = Division::where("status", 1)->orderBy('division_name', 'asc')->get();
@@ -126,8 +128,6 @@ class ActiveRFQController extends Controller
             $unique_category[$name][] = $id;
         }
         ksort($unique_category);
-
-        $branches = getbuyerAllBranch(getParentUserId());
 
         return view('buyer.rfq.active-rfq.index', compact('divisions', 'unique_category', 'results', 'branches'));
     }
@@ -258,9 +258,10 @@ class ActiveRFQController extends Controller
         $results = $query->paginate($perPage)->appends($request->all());
 
         // dd(DB::getQueryLog());
+        $branches = '';// getbuyerAllBranch(getParentUserId());
 
         if ($request->ajax()) {
-            return view('buyer.rfq.sent-rfq.partials.table', compact('results'))->render();
+            return view('buyer.rfq.sent-rfq.partials.table', compact('results', 'branches'))->render();
         }
 
         $divisions = Division::where("status", 1)->orderBy('division_name', 'asc')->get();
@@ -277,7 +278,7 @@ class ActiveRFQController extends Controller
         }
         ksort($unique_category);
 
-        return view('buyer.rfq.sent-rfq.index', compact('divisions', 'unique_category', 'results'));
+        return view('buyer.rfq.sent-rfq.index', compact('divisions', 'unique_category', 'results', 'branches'));
     }
 
     public function closeRFQ(Request $request)

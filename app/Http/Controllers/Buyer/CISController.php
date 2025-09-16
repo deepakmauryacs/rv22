@@ -17,11 +17,6 @@ use DB;
 use Auth;
 use App\Traits\HasModulePermission;
 
-use App\Exports\CisExport;
-use Maatwebsite\Excel\Facades\Excel;
-
-
-
 class CISController extends Controller
 {
     use HasModulePermission;
@@ -189,21 +184,14 @@ class CISController extends Controller
 
         /***:- download xlsx -:***/
         if ($request->has('export') && $request->export == 'true') {
-
-
-            $filename = ('CIS-Sheet ' . $rfq['rfq_id'] . ' ') . date('d-m-Y') . ".xls";
-            header("Content-Type: application/vnd.ms-excel");
-            header("Content-disposition: attachment; filename=$filename");
-            echo view('buyer.rfq.cis.cis-export', $data);
-            exit;
-
-            // return Excel::download(new CisExport($data), "CIS-Sheet-{$rfq_id}-" . now()->format('d-m-Y') . ".xlsx");
+            $filename = ('CIS_' . $rfq['rfq_id'] . '_') . now()->format('d-m-Y');
+            return download_xlsx_from_view('buyer.rfq.cis.cis-export', $data, $filename);
         }
-        DB::table('rfqs')->where("rfq_id", $rfq_id)->update(['buyer_rfq_read_status' => 2]);
 
+        /***:- mark rfq read  -:***/
+        DB::table('rfqs')->where("rfq_id", $rfq_id)->update(['buyer_rfq_read_status' => 2]);
         return view('buyer.rfq.cis.rfq-cis', $data);
     }
-
 
     public function counter_offer($rfq_id)
     {
@@ -337,7 +325,7 @@ class CISController extends Controller
                 }
             }
             $updated_vendors = array_keys($updated_vendors);
-            
+
             if (!empty($updated_vendors)) {
                 // Update vendor_status to 4 for this vendor in the relevant table
                 DB::table('rfq_vendors')
@@ -428,6 +416,11 @@ class CISController extends Controller
         $this->ensurePermission('COUNTER_OFFER_RFQ', 'view', '1');
         $company_id = getParentUserId();
         $rfq = Rfq::with([
+            // 'getLastRfqVendorQuotation' => function ($q) use ($vendor_id) {
+            //     $q->select('vendor_id', "rfq_product_variant_id");
+            //     $q->where('vendor_id', $vendor_id);
+            //     $q->groupBy('vendor_id', "rfq_product_variant_id");
+            // },
             'rfqProducts',
             'rfqProducts.masterProduct:id,division_id,category_id,product_name',
             'rfqProducts.masterProduct.division:id,division_name',
@@ -449,6 +442,8 @@ class CISController extends Controller
             session()->flash('error', "RFQ not found");
             return redirect()->to(route('buyer.dashboard'));
         }
+        // echo "<pre>"; print_r($rfq); 
+        // die;
 
         $rfq_vendor = Vendor::where('user_id', $vendor_id)->first();
 

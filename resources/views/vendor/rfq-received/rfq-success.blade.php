@@ -19,7 +19,7 @@
 
         <!-- logo (replace src with your logo path) -->
         <div class="text-center mt-5">
-            <img class="brand-mark" src="https://tech.guruworkwithit.online/assets/uploads/web_setup/raprocure-fevicon.png" style="width: 8%;" alt="Brand Logo">
+            <img class="brand-mark" src="{{ asset('public/assets/images/raprocure-fevicon.png') }}" style="width: 8%;" alt="Brand Logo">
         </div>
 
         <!-- main line -->
@@ -44,20 +44,6 @@
 
         </section>
     </main>
-    {{-- <div class="bg-white mt-10">
-        <div class="order_confirm">
-            <div class="raprosvg-container">
-                <img src="{{ asset('public/assets/images/raprocure-fevicon.png') }}">
-            </div>
-            <div class="order_confirm_head text-center animated growIn go">
-                <h3>Vendor Profile Status </h3>
-                <p>Your <?php echo $page=='quotation' ? 'Quotation' : 'Counter Offer'; ?> for RFQ No. {{$rfq_id}} has been sent successfully.</p>
-                <p> The Buyer will get back to you shortly.</p>
-                <a href="{{ route('vendor.rfq.reply', ['rfq_id' => $rfq_id]) }}" class="btn-rfq btn-rfq-primary profile_edit_btn">Back</a>
-                <a href="{{ route('vendor.rfq.received.index') }}" class="btn-rfq btn-rfq-primary profile_edit_btn">View All RFQ Received</a>
-            </div>
-        </div>
-    </div> --}}
 @endsection
 
 @section('scripts')

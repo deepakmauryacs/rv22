@@ -206,11 +206,6 @@ function IND_amount_format($amount) {
                             </thead>
                             <tbody>
                                 @foreach ($productVariants as $vIndex => $variant)
-                                @php
-                                 echo "<pre>";
-                                 print_r($variant); die;
-                                @endphp
-
                                 <tr>
                                     <td>{{ $vIndex + 1 }}</td>
                                     <td>{{ $variant->specification }}</td>
@@ -238,6 +233,14 @@ function IND_amount_format($amount) {
                                                     ? substr($variant->attachment, 0, 10)
                                                     : $variant->attachment
                                             !!}
+                                            @if(strlen($variant->attachment) > 10)
+                                            <span role="button" type="button" class="p-0 infoIcon"
+                                                data-bs-toggle="tooltip" data-bs-placement="top"
+                                                title="{!! $variant->attachment !!}">
+                                                <span class="bi bi-info-circle-fill text-dark font-size-14"
+                                                    aria-hidden="true"></span>
+                                            </span>
+                                            @endif
                                         </a>
                                         @endif
                                     </td>
@@ -289,17 +292,17 @@ function IND_amount_format($amount) {
                                     }
                                     $coLatest = optional($coItems->first())->buyer_price;
                                     $coContent = $coItems->map(function ($item) {
-                                    $amt = number_format((float)$item->buyer_price, 2);
-                                    $dt = $item->updated_at ? \Carbon\Carbon::parse($item->updated_at)->format('d-M') :
-                                    '';
-                                    return "<div>{$amt} <small class='text-white'>({$dt})</small></div>";
+                                        $amt = number_format((float)$item->buyer_price, 2);
+                                        $dt = $item->updated_at ? \Carbon\Carbon::parse($item->updated_at)->format('d-M') :
+                                        '';
+                                        return "<div>{$amt} <small class='text-white'>({$dt})</small></div>";
                                     })->implode('');
                                     @endphp
                                     <td data-th="Counter Offer" class="counter-offer">
                                         <span class="form-control h-35 d-inline-flex align-items-center">
                                             @if ($coItems->isNotEmpty())
                                             <span class="buyer-old-price" data-bs-toggle="tooltip"
-                                                data-bs-placement="top" data-bs-original-title="{{ $coContent }}">
+                                                data-bs-placement="top" data-bs-original-title="{!! $coContent !!}">
                                                 <i class="bi bi-info-circle-fill" aria-hidden="true"></i>
                                             </span>&nbsp;
                                             {{ number_format((float)$coLatest, 2) }}
@@ -321,17 +324,17 @@ function IND_amount_format($amount) {
                                     }
                                     $hpLatest = optional($hpItems->first())->price;
                                     $hpContent = $hpItems->map(function ($item) {
-                                    $amt = number_format((float)$item->price, 2);
-                                    $dt = $item->created_at ? \Carbon\Carbon::parse($item->created_at)->format('d-M') :
-                                    '';
-                                    return "<div>{$amt} <small class='text-white'>({$dt})</small></div>";
+                                        $amt = number_format((float)$item->price, 2);
+                                        $dt = $item->created_at ? \Carbon\Carbon::parse($item->created_at)->format('d-M') :
+                                        '';
+                                        return "<div>{$amt} <small class='text-white'>({$dt})</small></div>";
                                     })->implode('');
                                     @endphp
                                     <td data-th="Historical Price">
                                         <span class="form-control h-35 d-inline-flex align-items-center">
                                             @if ($hpItems->isNotEmpty())
                                             <span class="vendor-old-price" data-bs-toggle="tooltip"
-                                                data-bs-placement="top" data-bs-original-title="{{ $hpContent }}">
+                                                data-bs-placement="top" data-bs-original-title="{!! $hpContent !!}">
                                                 <i class="bi bi-info-circle-fill" aria-hidden="true"></i>
                                             </span>&nbsp;
                                             {{ number_format((float)$hpLatest, 2) }}
@@ -385,7 +388,7 @@ function IND_amount_format($amount) {
 
 
                         <div class="col-md-4 mb-3">
-                          <div class="upload-field" data-variant="{{ $productVariants[0]->id }}">
+                          <div class="upload-field" data-product="{{ $product->product_id }}">
                            <!--  <div class="d-flex justify-content-end mb-1">
                               <span class="upload-label js-upload-trigger">UPLOAD FILE</span>
                             </div> -->
@@ -402,8 +405,8 @@ function IND_amount_format($amount) {
 
                               <!-- Hidden real file input -->
                               <input type="file"
-                                     id="uploadFile_{{ $productVariants[0]->id }}"
-                                     name="vendor_attachment[{{ $productVariants[0]->id }}]"
+                                     id="uploadFile_{{ $product->product_id }}"
+                                     name="vendor_attachment[{{ $product->product_id }}]"
                                      class="d-none vendor-attachment"
                                      accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
                                      {{ $product->is_product == 'no' ? 'disabled' : '' }} />
@@ -430,7 +433,7 @@ function IND_amount_format($amount) {
                                 <i class="bi bi-x-circle text-danger file-remove js-remove-existing"
                                    title="Remove"></i>
                                 <input type="hidden"
-                                       name="existing_vendor_attachment[{{ $productVariants[0]->id }}]"
+                                       name="existing_vendor_attachment[{{ $product->product_id }}]"
                                        value="{{ $existingFile }}">
                               @endif
                               <!-- new selection will appear here -->
@@ -453,7 +456,7 @@ function IND_amount_format($amount) {
                                 </span>
                                 <div class="form-floating">
                                     <input type="text" class="form-control" id="sellerBrand"
-                                        name="sellerbrand[{{ $productVariants[0]->id }}]"
+                                        name="sellerbrand[{{ $product->product_id }}]"
                                         value="{{ optional($productVariants[0]->vendor_quotation)->vendor_brand ?? '' }}"
                                         placeholder="Seller Brand" {{ $product->is_product == 'no' ? 'disabled' : '' }}>
                                     <label for="sellerBrand">Seller Brand</label>
@@ -524,7 +527,8 @@ function IND_amount_format($amount) {
                                 <div class="form-floating">
                                     <input type="text" class="form-control form-control-delivery-period"
                                         id="deliveryPeriodInDays" name="vendor_delivery_period"
-                                        placeholder="Delivery Period (In Days)"
+                                        placeholder="Delivery Period (In Days)" maxlength="3"
+                                        oninput="this.value=this.value.replace(/[^0-9]/,'')"
                                         value="{{ !empty($normal_product_data->vendor_delivery_period) ? $normal_product_data->vendor_delivery_period : ($rfq->buyer_delivery_period ?? '') }}">
                                     <label for="deliveryPeriodInDays">Delivery Period (In Days) <span
                                             class="text-danger">*</span></label>
@@ -811,14 +815,18 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function IND_amount_format(amount) {
-    amount = String(amount);
-    const main_amount = amount.split('.');
-    amount = main_amount[0].toString();
-    let lastThree = amount.substring(amount.length - 3);
-    let otherNumbers = amount.substring(0, amount.length - 3);
-    if (otherNumbers != '') lastThree = ',' + lastThree;
-    const res = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + lastThree;
-    return main_amount.length > 1 ? res + '.' . main_amount[1] : res + '.00';
+    if (amount === null || amount === undefined) return '';
+
+    amount = amount.toString();
+    const [integerPart, decimalPart = '00'] = amount.split('.');
+    const lastThree = integerPart.slice(-3);
+    const otherNumbers = integerPart.slice(0, -3);
+    const formattedOtherNumbers = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",");
+    const formattedAmount = (formattedOtherNumbers ? formattedOtherNumbers + ',' : '') + lastThree;
+    
+    return decimalPart.length === 1 
+        ? `${formattedAmount}.${decimalPart}0`
+        : `${formattedAmount}.${decimalPart}`;
 }
 
 let currentSpecInputId = null;

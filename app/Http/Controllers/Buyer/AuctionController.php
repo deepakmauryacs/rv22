@@ -62,7 +62,8 @@ class AuctionController extends Controller
                     $q->where('status', 1);
                 },
                 'rfqProducts.masterProduct',
-                'buyerUser'
+                'buyerUser',
+                'buyerBranch'
             ])
             ->addSelect([
                 'rfq_response_received' => function ($q) {
