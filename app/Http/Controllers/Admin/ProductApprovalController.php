@@ -53,7 +53,9 @@ class ProductApprovalController extends Controller
 
     public function approval($id)
     {
-        $product = VendorProduct::with(['vendor', 'product'])->findOrFail($id);
+        $product = VendorProduct::with(['vendor', 'vendor_profile', 'product'])->findOrFail($id);
+
+        $isNationalVendor = optional($product->vendor_profile)->country == 101;
 
         $dealertypes = DB::table('dealer_types')
             ->where('status', '1')
@@ -71,7 +73,8 @@ class ProductApprovalController extends Controller
             'product',
             'dealertypes',
             'uoms',
-            'taxes'
+            'taxes',
+            'isNationalVendor'
         ));
     }
 
@@ -79,15 +82,21 @@ class ProductApprovalController extends Controller
     {
 
 
-        $validator = Validator::make($request->all(), [
+        $isNationalVendor = is_national($request->vendor_id);
+
+        $rules = [
             'product_name' => 'required',
             'product_description' => 'required',
             'product_hsn_code' => 'required|digits_between:2,8',
             'product_dealer_type' => 'required',
             'product_uom' => 'required',
-            'product_gst' => 'required',
+        ];
 
-        ]);
+        if ($isNationalVendor) {
+            $rules['product_gst'] = 'required';
+        }
+
+        $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
             return response()->json([
@@ -129,7 +138,7 @@ class ProductApprovalController extends Controller
             'description' => strip_tags($request->product_description, '<a><b><h1><p><div><strong><ul><li>'),
             'dealer_type_id' => $request->product_dealer_type,
             'uom' => $request->product_uom ?? 0,
-            'gst_id' => $request->product_gst,
+            'gst_id' => $isNationalVendor ? $request->product_gst : null,
             'hsn_code' => $request->product_hsn_code ?? 0,
             'dealership' => $request->product_dealership,
             'brand' => $request->brand_name,

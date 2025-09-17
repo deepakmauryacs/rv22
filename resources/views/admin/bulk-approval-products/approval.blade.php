@@ -21,7 +21,27 @@
 <div class="row">
     <div class="col-sm-12">
         <div class="card">
-			<form method="post" enctype="multipart/form-data">
+            @php
+                $taxCollection = collect($taxes ?? []);
+                $formatTaxLabel = static function ($tax) {
+                    $name = trim((string) ($tax->tax_name ?? ''));
+                    $percentage = is_numeric($tax->tax)
+                        ? rtrim(rtrim(number_format((float) $tax->tax, 2, '.', ''), '0'), '.')
+                        : trim((string) $tax->tax);
+                    $percentageLabel = $percentage !== '' ? $percentage . '%' : '';
+
+                    if ($name !== '' && $percentageLabel !== '') {
+                        return $name . ' (' . $percentageLabel . ')';
+                    }
+
+                    if ($name !== '') {
+                        return $name;
+                    }
+
+                    return $percentageLabel !== '' ? $percentageLabel : 'N/A';
+                };
+            @endphp
+                        <form method="post" enctype="multipart/form-data">
 				<div class="card-header bg-transparent py-3">
 					<div class="d-flex align-items-center justify-content-between flex-wrap">
 						<h1 class="card-title mb-0"> Products For Approval Bulk</h1>
@@ -60,8 +80,11 @@
 							</thead>
 							<tbody>
 								<!-- Example product row -->
-								@foreach($products as $index => $product)
-								<tr class="product-row">
+                                                                @foreach($products as $index => $product)
+                                                                @php
+                                                                    $requiresGst = optional($product->vendor_profile)->country == 101;
+                                                                @endphp
+                                                                <tr class="product-row" data-requires-gst="{{ $requiresGst ? '1' : '0' }}">
 									<td>
 										<input type="checkbox" name="selected[]" value="{{ $product->id }}" />
 									</td>
@@ -92,18 +115,25 @@
 											<option value="Trader" {{ $product->dealer_type == '2' ? 'selected' : '' }}>Distributor</option> -->
 										</select>
 									</td>
-									<td>
-										<select class="form-control tax_class import_drop_down_sel" name="tax_class[{{ $product->id }}]" id="tax_class_{{ $product->id }}" tabindex="{{ $index + 1 }}" data-astric="true">
-											<option value="">Select</option>
-											<option value="1" {{ $product->gst_id == '1' ? 'selected' : '' }}>0%</option>
-											<option value="6" {{ $product->gst_id == '6' ? 'selected' : '' }}>3%</option>
-											<option value="2" {{ $product->gst_id == '2' ? 'selected' : '' }}>5%</option>
-											<option value="3" {{ $product->gst_id == '3' ? 'selected' : '' }}>12%</option>
-											<option value="4" {{ $product->gst_id == '4' ? 'selected' : '' }}>18%</option>
-											<option value="5" {{ $product->gst_id == '5' ? 'selected' : '' }}>38%</option>
-										</select>
-										<div class="text-danger error-message" data-field="tax_class" data-id="{{ $product->id }}"></div>
-									</td>
+                                                                        <td>
+                                                                            @if ($requiresGst)
+                                                                                @if ($taxCollection->isNotEmpty())
+                                                                                    <select class="form-control tax_class import_drop_down_sel" name="tax_class[{{ $product->id }}]" id="tax_class_{{ $product->id }}" tabindex="{{ $index + 1 }}" data-astric="true">
+                                                                                        <option value="">Select</option>
+                                                                                        @foreach ($taxCollection as $tax)
+                                                                                            <option value="{{ $tax->id }}" {{ (string) $product->gst_id === (string) $tax->id ? 'selected' : '' }}>
+                                                                                                {{ $formatTaxLabel($tax) }}
+                                                                                            </option>
+                                                                                        @endforeach
+                                                                                    </select>
+                                                                                @else
+                                                                                    <span class="text-muted">No GST rates available</span>
+                                                                                @endif
+                                                                            @else
+                                                                                <span class="text-muted">Not applicable</span>
+                                                                            @endif
+                                                                            <div class="text-danger error-message" data-field="tax_class" data-id="{{ $product->id }}"></div>
+                                                                        </td>
 									<td>
 										<input class="form-control" type="text" name="hsn[]" value="{{ $product->hsn_code }}" required />
 										<div class="text-danger error-message" data-field="hsn" data-id="{{ $product->id }}"></div>
@@ -129,7 +159,7 @@
 $(document).ready(function() {
     // Select All checkbox functionality
     $('#select_all_checkbox').change(function() {
-        $('input[name="selected[]"]').prop('checked', $(this).prop('checked'));
+                $('input[name="selected[]"]').prop('checked', $(this).prop('checked'));
     });
 
     // Delete selected products
@@ -190,7 +220,8 @@ $(document).ready(function() {
 
 	        let productDescription = row.find('input[name="product_description[]"]').val().trim();
 	        let dealerType = row.find('select[name="dealer_type[]"]').val();
-	        let taxClass = row.find('select[name="tax_class[' + id + ']"]').val();
+                const requiresGst = row.data('requires-gst') == 1;
+                let taxClass = requiresGst ? row.find('select[name="tax_class[' + id + ']"]').val() : '';
 	        let hsn = row.find('input[name="hsn[]"]').val().trim();
 	        let imageFile = row.find('input[type="file"][name="product_image[]"]')[0]?.files[0];
 
@@ -203,10 +234,12 @@ $(document).ready(function() {
 	            row.find('[data-field="dealer_type"]').text('Dealer type is required.');
 	            valid = false;
 	        }
-	        if (taxClass === '') {
-	            row.find('[data-field="tax_class"]').text('GST rate is required.');
-	            valid = false;
-	        }
+                if (requiresGst && taxClass === '') {
+                    row.find('[data-field="tax_class"]').text('GST rate is required.');
+                    valid = false;
+                } else {
+                    row.find('[data-field="tax_class"]').text('');
+                }
 	        if (hsn === '') {
 	            row.find('[data-field="hsn"]').text('HSN code is required.');
 	            valid = false;
