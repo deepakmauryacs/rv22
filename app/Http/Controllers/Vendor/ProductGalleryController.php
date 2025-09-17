@@ -5,7 +5,6 @@ use App\Models\VendorProduct;
 use App\Models\ProductGallery;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\File;
 use Intervention\Image\Facades\Image;
 
 class ProductGalleryController extends Controller {
@@ -59,13 +58,15 @@ class ProductGalleryController extends Controller {
                 $extension = $image->getClientOriginalExtension();
                 $originalName = pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME);
                 $filename = strtolower(time() . '-' . str_replace('_', '-', $originalName)) . '.' . $extension;
-                // Ensure the temporary directory exists
-                $tempDir = public_path('storage/products/temp');
-                File::ensureDirectoryExists($tempDir);
-                // Move the file to the temporary directory
-                $image->move($tempDir, $filename);
+
+                // Store the file within the public disk so later requests using Storage work correctly
+                $path = $image->storeAs('products/temp', $filename, 'public');
+
                 // Prepare the response with the temporary URL
-                $uploadedImages[] = ['name' => $filename, 'temp_url' => asset('public/storage/products/temp/' . $filename), ];
+                $uploadedImages[] = [
+                    'name' => $filename,
+                    'temp_url' => asset('public/storage/' . $path),
+                ];
             }
             return response()->json(['success' => true, 'images' => $uploadedImages, ]);
         }
