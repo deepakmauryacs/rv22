@@ -35,8 +35,8 @@
                     <div class="note-text fw-bold px-2">
                         <p style="margin-bottom: 0.3rem;">Note: 1. Type the name of your product. All products with same
                             name will appear below. Select the products you deal in.</p>
-                        <p style="margin-bottom: 0.3rem;">2. Add Dealer type, GST and HSN Code, then press 'Apply to
-                            all' button.</p>
+                        <p style="margin-bottom: 0.3rem;">2. Add Dealer type{{ is_national() ? ', GST' : '' }} and HSN
+                            Code, then press 'Apply to all' button.</p>
                         <p style="margin-bottom: 0.3rem;">3. Click on Submit button at the bottom of the page.</p>
                     </div>
 
@@ -62,8 +62,9 @@
                         </div>
                     </div>
 
+                    @php $bulkColumnClass = is_national() == 1 ? 'col-md-3' : 'col-md-4'; @endphp
                     <div class="row mb-3" id="bulkSelectRow" style="display:none;">
-                        <div class="col-md-3">
+                        <div class="{{ $bulkColumnClass }}">
                             <select id="bulk_dealer_type" class="form-select">
                                 <option value="">Select Dealer Type</option>
                                 @foreach($dealertypes as $dealer)
@@ -71,6 +72,7 @@
                                 @endforeach
                             </select>
                         </div>
+                        @if (is_national() == 1)
                         <div class="col-md-3">
                             <select id="bulk_gst" class="form-select">
                                 <option value="">Select GST Rate</option>
@@ -79,11 +81,12 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-3">
+                        @endif
+                        <div class="{{ $bulkColumnClass }}">
                             <input type="text" id="bulk_hsn" class="form-control" placeholder="Enter HSN Code"
                                 maxlength="8">
                         </div>
-                        <div class="col-md-3">
+                        <div class="{{ $bulkColumnClass }}">
                             <button type="button" class="ra-btn ra-btn-primary" id="applyBulk">Apply To All</button>
                         </div>
                     </div>
@@ -229,11 +232,11 @@ function renderRow(product, index) {
 // Bulk apply
 $('#applyBulk').click(() => {
     let dealer = $('#bulk_dealer_type').val();
-    let gst = $('#bulk_gst').val();
+    let gst = isNational ? $('#bulk_gst').val() : null;
     let hsn = $('#bulk_hsn').val();
     $('#productTable tbody tr').each(function(i) {
         if (dealer) $(this).find('.dealer-input').val(dealer);
-        if (gst) $(this).find('.gst-input').val(gst);
+        if (isNational && gst) $(this).find('.gst-input').val(gst);
         if (hsn) $(this).find('.hsn-input').val(hsn);
         verifyRow(i);
     });
@@ -249,7 +252,7 @@ function verifyRow(index) {
     let row = $(`#productTable tbody tr[data-index="${index}"]`);
     let desc = row.find('.desc-input').val().trim();
     let dealer = row.find('.dealer-input').val();
-    let gst = row.find('.gst-input').val();
+    let gst = isNational ? row.find('.gst-input').val() : null;
     let hsn = row.find('.hsn-input').val();
     let status = row.find('.status-msg');
 
@@ -257,7 +260,7 @@ function verifyRow(index) {
 
     if (!desc) errors.push('<div><i class="bi bi-x-circle-fill text-danger"></i> Enter Description</div>');
     if (!dealer) errors.push('<div><i class="bi bi-x-circle-fill text-danger"></i> Select Dealer Type</div>');
-    if (!gst) errors.push('<div><i class="bi bi-x-circle-fill text-danger"></i> Select GST Rate</div>');
+    if (isNational && !gst) errors.push('<div><i class="bi bi-x-circle-fill text-danger"></i> Select GST Rate</div>');
     if (!hsn || !/^\d{2,8}$/.test(hsn)) errors.push(
         '<div><i class="bi bi-x-circle-fill text-danger"></i> Enter Valid HSN Code (2-8 digits)</div>');
 
@@ -294,7 +297,9 @@ $('#submitProducts').click(() => {
             `input[name="products[${index}][id]"]`).val());
         formData.append(`products[${index}][ps_desc]`, row.find('.desc-input').val());
         formData.append(`products[${index}][dealer_type]`, row.find('.dealer-input').val());
-        formData.append(`products[${index}][tax_class]`, row.find('.gst-input').val());
+        if (isNational) {
+            formData.append(`products[${index}][tax_class]`, row.find('.gst-input').val());
+        }
         formData.append(`products[${index}][ean_code]`, row.find('.hsn-input').val());
 
         const fileInput = row.find('.real-file-input')[0];

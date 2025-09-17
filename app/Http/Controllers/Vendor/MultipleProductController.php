@@ -95,6 +95,16 @@ class MultipleProductController extends Controller
         $createdCount = 0;
         $groupId = \Illuminate\Support\Str::uuid()->toString(); // Use UUID for unique group_id
 
+        $isNationalVendor = is_national();
+
+        if (!$isNationalVendor) {
+            $productsInput = $request->input('products', []);
+            foreach ($productsInput as $key => $productInput) {
+                $productsInput[$key]['tax_class'] = $productInput['tax_class'] ?? null;
+            }
+            $request->merge(['products' => $productsInput]);
+        }
+
         foreach ($request->products as $index => $product) {
             if ($product['checked'] != 1) {
                 continue;
@@ -105,7 +115,7 @@ class MultipleProductController extends Controller
                 'product_id' => 'required|numeric',
                 'ps_desc' => 'required|string|max:500',
                 'dealer_type' => 'required|exists:dealer_types,id',
-                'tax_class' => 'required|exists:taxes,id',
+                'tax_class' => $isNationalVendor ? 'required|exists:taxes,id' : 'nullable|exists:taxes,id',
                 'ean_code' => 'required|numeric|digits_between:2,8',
                 'product_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             ]);
@@ -143,7 +153,7 @@ class MultipleProductController extends Controller
                 'image' => $imagePath,
                 'description' => $product['ps_desc'],
                 'dealer_type_id' => $product['dealer_type'],
-                'gst_id' => $product['tax_class'],
+                'gst_id' => $product['tax_class'] ?? null,
                 'hsn_code' => $product['ean_code'],
                 'group_id' => $groupId, // Add group_id
                 'vendor_status' => '1',
