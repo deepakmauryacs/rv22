@@ -20,7 +20,7 @@ class ProductApprovalController extends Controller
     {
         $this->ensurePermission('PRODUCTS_FOR_APPROVAL');
 
-        $query = VendorProduct::with(['vendor', 'product' , 'receivedfrom'])
+        $query = VendorProduct::with(['vendor', 'vendor_profile', 'product' , 'receivedfrom'])
             ->where('edit_status', 3)
             ->where('approval_status', '!=', 1)
             ->whereNull('group_id'); // equivalent to IS NULL
@@ -32,8 +32,8 @@ class ProductApprovalController extends Controller
         }
 
         if ($request->filled('vendor_name')) {
-            $query->whereHas('vendor', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->input('vendor_name') . '%');
+            $query->whereHas('vendor_profile', function ($q) use ($request) {
+                $q->where('legal_name', 'like', '%' . $request->input('vendor_name') . '%');
             });
         }
 

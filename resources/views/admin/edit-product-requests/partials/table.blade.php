@@ -22,7 +22,7 @@
         @forelse ($products as $product)
             <tr>
                 <td>{{ $i++ }}</td>
-                <td>{{ $product->vendor->name ?? '-' }}</td>
+                <td>{{ optional($product->vendor_profile)->legal_name ?? '-' }}</td>
                 <td>{{ $product->receivedfrom->name ?? '-' }}</td>
                 <td>{{ $product->product->product_name ?? '-' }}</td>
                 <td>{{ \Carbon\Carbon::parse($product->created_at)->format('d/m/Y') }}</td>

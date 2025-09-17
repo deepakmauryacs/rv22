@@ -24,7 +24,7 @@
                     <input type="checkbox" class="product-checkbox" value="{{ $product->id }}" />
                 </td>
                 <td>{{ $i++ }}</td> {{-- S.No. --}}
-                <td>{{ $product->vendor->name ?? '' }}</td>
+                <td>{{ optional($product->vendor_profile)->legal_name ?? '-' }}</td>
                 <td>{{ $product->product->product_name ?? '' }}</td>
                 <td>
                     <button class="btn-style btn-style-danger btn-delete-product" data-id="{{ $product->id }}">Delete</button>

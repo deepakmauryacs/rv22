@@ -21,7 +21,7 @@ class NewProductRequestController extends Controller
     {
         $this->ensurePermission('NEW_PRODUCT_REQUEST');
 
-        $query = VendorProduct::with(['vendor','receivedfrom'])
+        $query = VendorProduct::with(['vendor','vendor_profile','receivedfrom'])
             ->where('edit_status', 2) // 1 => New Request
             ->where('approval_status', '!=', 1)
             ->whereNull('group_id')->orderBy('updated_at', 'DESC'); // <-- NEW: Orders by latest updates first;
@@ -31,8 +31,8 @@ class NewProductRequestController extends Controller
         }
 
         if ($request->filled('vendor_name')) {
-            $query->whereHas('vendor', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->input('vendor_name') . '%');
+            $query->whereHas('vendor_profile', function ($q) use ($request) {
+                $q->where('legal_name', 'like', '%' . $request->input('vendor_name') . '%');
             });
         }
 

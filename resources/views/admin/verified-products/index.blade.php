@@ -63,7 +63,7 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="bi bi-journal-text"></i></span>
                                             <div class="form-floating">
-                                                <input type="text" name="vendor_name" id="vendorName" class="form-control fillter-form-control" value="{{ request('product_name') }}" placeholder="Vendor Name">
+                                                <input type="text" name="vendor_name" id="vendorName" class="form-control fillter-form-control" value="{{ request('vendor_name') }}" placeholder="Vendor Name">
                                                 <label for="vendorName">Vendor Name</label>
                                             </div>
                                         </div>
