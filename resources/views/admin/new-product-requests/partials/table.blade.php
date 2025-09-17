@@ -23,7 +23,7 @@
         @forelse ($products as $product)
             <tr>
                 <td>{{ $i++ }}</td>
-                <td>{{ $product->vendor->name ?? '-' }}</td>
+                <td>{{ optional($product->vendor_profile)->legal_name ?? '-' }}</td>
                 <td class="text-wrap keep-word">{{ $product->receivedfrom->name ?? '-' }}</td>
                 <td class="text-wrap keep-word">{{ $product->product_name ?? '-' }}</td>
                 <td><button class="btn-rfq btn-sm btn-rfq-danger btn-delete-product" data-id="{{ $product->id }}">Delete</button></td>

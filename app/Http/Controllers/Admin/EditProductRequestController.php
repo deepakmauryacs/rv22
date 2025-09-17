@@ -19,7 +19,7 @@ class EditProductRequestController extends Controller
     {
         $this->ensurePermission('EDIT_PRODUCT');
 
-        $query = VendorProduct::with(['vendor', 'product', 'receivedfrom'])
+        $query = VendorProduct::with(['vendor', 'vendor_profile', 'product', 'receivedfrom'])
             ->where('edit_status', 1) // 1 => Edit Request
             ->where('approval_status', '!=', 1)
             ->whereNull('group_id')->orderBy('updated_at', 'DESC'); // <-- NEW: Orders by latest updates first;
@@ -31,8 +31,8 @@ class EditProductRequestController extends Controller
         }
 
         if ($request->filled('vendor_name')) {
-            $query->whereHas('vendor', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->input('vendor_name') . '%');
+            $query->whereHas('vendor_profile', function ($q) use ($request) {
+                $q->where('legal_name', 'like', '%' . $request->input('vendor_name') . '%');
             });
         }
 

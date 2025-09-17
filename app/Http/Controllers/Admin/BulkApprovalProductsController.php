@@ -34,8 +34,8 @@ class BulkApprovalProductsController extends Controller
         }
 
         if ($request->filled('vendor_name')) {
-            $subQuery->whereHas('vendor', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->input('vendor_name') . '%');
+            $subQuery->whereHas('vendor_profile', function ($q) use ($request) {
+                $q->where('legal_name', 'like', '%' . $request->input('vendor_name') . '%');
             });
         }
 
@@ -45,7 +45,7 @@ class BulkApprovalProductsController extends Controller
 
         $groupedIds = $subQuery->groupBy('group_id')->pluck('id');
 
-        $query = VendorProduct::with(['vendor','receivedfrom'])
+        $query = VendorProduct::with(['vendor','vendor_profile','receivedfrom'])
             ->whereIn('id', $groupedIds);
 
         $perPage = $request->input('per_page', 25);

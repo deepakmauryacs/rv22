@@ -47,7 +47,7 @@ class VerifiedProductController extends Controller
         $this->ensurePermission('ALL_VERIFIED_PRODUCTS');
 
         // slected column
-        $query = VendorProduct::with(['vendor', 'product'])->where('approval_status', 1)->orderBy('updated_at', 'desc'); // Order by updated_at in descending order
+        $query = VendorProduct::with(['vendor', 'vendor_profile', 'product'])->where('approval_status', 1)->orderBy('updated_at', 'desc'); // Order by updated_at in descending order
         if ($request->filled('product_name')) {
             $query->whereHas('product', function ($q) use ($request) {
                 $q->where('product_name', 'like', '%' . $request->input('product_name') . '%');
@@ -55,8 +55,8 @@ class VerifiedProductController extends Controller
         }
 
         if ($request->filled('vendor_name')) {
-            $query->whereHas('vendor', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->input('vendor_name') . '%');
+            $query->whereHas('vendor_profile', function ($q) use ($request) {
+                $q->where('legal_name', 'like', '%' . $request->input('vendor_name') . '%');
             });
         }
 
