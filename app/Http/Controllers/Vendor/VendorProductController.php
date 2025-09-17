@@ -347,7 +347,12 @@ class VendorProductController extends Controller
 
             // Save product (insert)
             $product->save();
-            $this->checkAndInsertProductAliases($request->tag, $request->product_id,$vendorId);
+            $this->checkAndInsertProductAliases(
+                $request->tag,
+                $request->product_id,
+                $vendorId,
+                $product->id
+            );
            
 
             DB::commit();
@@ -504,7 +509,12 @@ class VendorProductController extends Controller
 
             // Save product (update)
             $product->save();
-            $this->checkAndInsertProductAliases($request->tag, $product->product_id, $product->vendor_id);
+            $this->checkAndInsertProductAliases(
+                $request->tag,
+                $product->product_id,
+                $product->vendor_id,
+                $product->id
+            );
             DB::commit();
 
             return response()->json([
@@ -580,8 +590,14 @@ class VendorProductController extends Controller
     }
 
     // Function to check and insert product aliases on update
-    public function checkAndInsertProductAliases($tags, $productId, $vendorId)
+    public function checkAndInsertProductAliases($tags, $productId, $vendorId, $vendorProductId = null)
     {
+        $aliasProductId = $vendorProductId ?: $productId;
+
+        if (empty($aliasProductId)) {
+            return;
+        }
+
         if (!is_array($tags)) {
             $tags = explode(',', $tags); // If it's a string, split it into an array
         }
@@ -589,12 +605,47 @@ class VendorProductController extends Controller
         $tags = array_map('trim', $tags); // Trim spaces
         $tags = array_map('strtoupper', $tags); // Convert to uppercase
         $tags = array_unique($tags); // Ensure tags are unique
+        $tags = array_filter($tags, function ($tag) {
+            return $tag !== '';
+        });
+
+        if (empty($tags)) {
+            return;
+        }
 
         $aliasData = [];
 
+        $legacyProductIds = [];
+        if (!empty($productId) && (int) $productId !== (int) $aliasProductId) {
+            $legacyProductIds[] = $productId;
+        }
+
+        $legacyProductIds[] = 0; // Handle any legacy records stored with 0
+        $legacyProductIds = array_unique(array_filter($legacyProductIds, function ($value) {
+            return $value !== null;
+        }));
+
+        if (!empty($legacyProductIds)) {
+            DB::table('product_alias')
+                ->where('alias_of', 2)
+                ->where('vendor_id', $vendorId)
+                ->whereIn('alias', $tags)
+                ->whereIn('product_id', $legacyProductIds)
+                ->where('product_id', '!=', $aliasProductId)
+                ->update([
+                    'product_id' => $aliasProductId,
+                    'updated_by' => auth()->id(),
+                    'updated_at' => now(),
+                ]);
+        }
+
+        $productIdsForLookup = array_unique(array_merge([$aliasProductId], $legacyProductIds));
+
         // Get the existing aliases for the product from the database
         $existingAliases = DB::table('product_alias')
-            ->where('product_id', $productId)
+            ->whereIn('product_id', $productIdsForLookup)
+            ->where('alias_of', 2)
+            ->where('vendor_id', $vendorId)
             ->pluck('alias')
             ->toArray();
 
@@ -604,9 +655,14 @@ class VendorProductController extends Controller
         // Remove the aliases that are no longer included in the updated tags
         if (!empty($tagsToRemove)) {
             DB::table('product_alias')
+                ->whereIn('product_id', $productIdsForLookup)
+                ->where('alias_of', 2)
+                ->where('vendor_id', $vendorId)
                 ->whereIn('alias', $tagsToRemove)
                 ->delete();
         }
+
+        $isNewAlias = empty($productId) || (int) $productId === 0 ? null : 1;
 
         foreach ($tags as $tag) {
             $tag = substr($tag, 0, 255); // Ensure alias doesn't exceed column length
@@ -617,11 +673,11 @@ class VendorProductController extends Controller
             if (!empty($tag) && !$this->aliasExists($tag)) {
                 // Use the method from the same class
                 $aliasData[] = [
-                    'product_id' => $productId,
+                    'product_id' => $aliasProductId,
                     'vendor_id' => $vendorId,
                     'alias' => $tag,
                     'alias_of' => 2, // 2 indicates the alias belongs to a vendor
-                    'is_new' => 0, // is_new = 0 for updates
+                    'is_new' => $isNewAlias,
                     'created_by' => auth()->id(),
                     'updated_by' => auth()->id(),
                     'created_at' => now(),
