@@ -123,7 +123,10 @@
           </div>
 
           <!-- GST/Sales Tax Rate Dropdown -->
-          @if (is_national() == 1)
+          @php
+              $isNationalVendor = is_national() == 1;
+          @endphp
+          @if ($isNationalVendor)
           <div class="row gx-3 align-items-center mb-4">
             <div class="col-sm-3">
               <label class="col-form-label">GST/Sales Tax Rate <span class="text-danger">*</span></label>
@@ -142,7 +145,7 @@
           </div>
           @else
               <!-- Hidden GST field with value 1 -->
-              <input type="hidden" name="gst" id="product_gst" value="1">
+              <input type="hidden" name="gst" id="product_gst" value="{{ $product->gst_id ?? '' }}">
           @endif
 
 
@@ -349,6 +352,8 @@ $(document).ready(function () {
     initEditor('#product_description', '.prod-des-count', '#product-description-error', true);
     initEditor('#product_specifications', '.spec-char-count');
 
+    const isNationalVendor = @json($isNationalVendor);
+
     $('#productForm').submit(function (e) {
       e.preventDefault();
       const $submitBtn = $('#submitBtn');
@@ -389,7 +394,7 @@ $(document).ready(function () {
           hasErrors = true;
       }
 
-      if (!product_gst) {
+      if (isNationalVendor && !product_gst) {
           $('.product-gst-error').text('GST/Sales Tax Rate is required***');
           hasErrors = true;
       }
