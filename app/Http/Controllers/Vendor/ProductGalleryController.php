@@ -20,26 +20,34 @@ class ProductGalleryController extends Controller {
         $request->validate(['images' => 'required|array', 'images.*' => 'string', // Validate that each item is a string (filename)
         ]);
         try {
-            // Define the target directory for storing images
-            $productDir = public_path('uploads/product');
-            // Ensure the directory exists
-            if (!is_dir($productDir)) {
-                mkdir($productDir, 0775, true); // Create the directory if it doesn't exist
-                
+            $disk = Storage::disk('public_uploads');
+            $productDir = 'uploads/product';
+            $tempDir = $productDir . '/temp';
+
+            if (!$disk->exists($productDir)) {
+                $disk->makeDirectory($productDir);
             }
+
             foreach ($request->input('images') as $filename) {
-                // Check if the temporary file exists
-                if (Storage::disk('public')->exists('products/temp/' . $filename)) {
-                    // Get the contents of the image
-                    $imageContents = Storage::disk('public')->get('products/temp/' . $filename);
-                    // Store the original image in the 'uploads/product/' folder
-                    file_put_contents($productDir . '/' . $filename, $imageContents);
-                    // Delete the temporary image file
-                    Storage::disk('public')->delete('products/temp/' . $filename);
-                    // Save image data to the database (ProductGallery)
-                    ProductGallery::create(['product_id' => $product->id, 'image' => $filename, 'created_by' => auth()->id(), 'updated_by' => auth()->id(), ]);
+                $tempPath = $tempDir . '/' . $filename;
+                $finalPath = $productDir . '/' . $filename;
+
+                if (!$disk->exists($tempPath)) {
+                    continue;
                 }
+
+                if (!$disk->move($tempPath, $finalPath)) {
+                    throw new \RuntimeException('Unable to move image to product directory');
+                }
+
+                ProductGallery::create([
+                    'product_id' => $product->id,
+                    'image' => $filename,
+                    'created_by' => auth()->id(),
+                    'updated_by' => auth()->id(),
+                ]);
             }
+
             return response()->json(['success' => true, 'message' => 'Images uploaded successfully', ]);
         }
         catch(\Exception $e) {
@@ -53,6 +61,13 @@ class ProductGalleryController extends Controller {
         $request->validate(['images' => 'required', 'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048', ]);
         $uploadedImages = [];
         try {
+            $disk = Storage::disk('public_uploads');
+            $tempDir = 'uploads/product/temp';
+
+            if (!$disk->exists($tempDir)) {
+                $disk->makeDirectory($tempDir);
+            }
+
             foreach ($request->file('images') as $image) {
                 // Generate a unique filename with timestamp and replace underscores with hyphens
                 $extension = $image->getClientOriginalExtension();
@@ -60,12 +75,12 @@ class ProductGalleryController extends Controller {
                 $filename = strtolower(time() . '-' . str_replace('_', '-', $originalName)) . '.' . $extension;
 
                 // Store the file within the public disk so later requests using Storage work correctly
-                $path = $image->storeAs('products/temp', $filename, 'public');
+                $path = $image->storeAs($tempDir, $filename, 'public_uploads');
 
                 // Prepare the response with the temporary URL
                 $uploadedImages[] = [
                     'name' => $filename,
-                    'temp_url' => asset('public/storage/' . $path),
+                    'temp_url' => asset('public/' . $path),
                 ];
             }
             return response()->json(['success' => true, 'images' => $uploadedImages, ]);
@@ -79,7 +94,7 @@ class ProductGalleryController extends Controller {
     public function removeTemp(Request $request) {
         $request->validate(['image' => 'required|string', ]);
         try {
-            Storage::disk('public')->delete('products/temp/' . $request->image);
+            Storage::disk('public_uploads')->delete('uploads/product/temp/' . $request->image);
             return response()->json(['success' => true, 'message' => 'Image removed', ]);
         }
         catch(\Exception $e) {
@@ -91,7 +106,7 @@ class ProductGalleryController extends Controller {
     public function destroy(Request $request, VendorProduct $product) {
         $request->validate(['image_id' => 'required|integer', 'image_name' => 'required|string', ]);
         try {
-            Storage::disk('public')->delete(['products/gallery/' . $request->image_name, 'products/gallery/thumbs/' . $request->image_name, ]);
+            Storage::disk('public_uploads')->delete(['uploads/product/' . $request->image_name]);
             ProductGallery::where('id', $request->image_id)->where('product_id', $product->id)->delete();
             return response()->json(['success' => true, 'message' => 'Image deleted successfully', ]);
         }
