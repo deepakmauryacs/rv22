@@ -275,10 +275,10 @@ $(document).ready(function() {
 	        data: formData,
 	        processData: false,
 	        contentType: false,
-	        success: function (response) {
-	            if (response.success) {
-	                toastr.success('Products updated successfully.');
-	                location.reload();
+                success: function (response) {
+                    if (response.success) {
+                        toastr.success('Products updated successfully.');
+                        window.location.href = '{{ route("admin.bulk-products.index") }}';
 	            } else {
 	                toastr.error('Something went wrong.');
 	            }
