@@ -106,6 +106,8 @@
                                 @if (is_national() == 1)
                                 <th scope="col" class="text-center text-uppercase text-nowrap">GST/Sales Tax Rate <span
                                         class="text-danger">*</span></th>
+                                @else
+                                <th scope="col" class="d-none">GST/Sales Tax Rate</th>
                                 @endif
                                 <th scope="col" class="text-center text-uppercase text-nowrap">HSN Code <span
                                         class="text-danger">*</span></th>
@@ -169,7 +171,9 @@
                                         </select>
                                     </td>
                                     @else
-                                    <input type="hidden" name="select-tax1" id="tax_class_1" value="1">
+                                    <td class="d-none">
+                                        <input type="hidden" name="select-tax1" id="tax_class_1" value="">
+                                    </td>
                                     @endif
 
 
@@ -213,6 +217,7 @@
 @endsection
 @section('scripts')
 <script>
+const isNational = {{ is_national() }};
 // Add new product row
 document.getElementById("addProductBtn").addEventListener("click", function() {
     const tableBody = document.querySelector("#productTable tbody");
@@ -259,8 +264,9 @@ document.getElementById("addProductBtn").addEventListener("click", function() {
                 </select>
                </td>
             @else
-                <input type="hidden" name="select-tax${rowCount}" id="tax_class_${rowCount}" value="1">
-                <span class="text-muted">N/A (International)</span>
+                <td class="d-none">
+                    <input type="hidden" name="select-tax${rowCount}" id="tax_class_${rowCount}" value="">
+                </td>
             @endif
             
 
@@ -318,7 +324,10 @@ function updateRowNumbers() {
         // Update other IDs
         row.querySelector('[id^="ps_desc_"]').id = `ps_desc_${rowIndex}`;
         row.querySelector('[id^="dealer_type_"]').id = `dealer_type_${rowIndex}`;
-        row.querySelector('[id^="tax_class_"]').id = `tax_class_${rowIndex}`;
+        const taxField = row.querySelector('[id^="tax_class_"]');
+        if (taxField) {
+            taxField.id = `tax_class_${rowIndex}`;
+        }
         row.querySelector('[id^="ean_code_"]').id = `ean_code_${rowIndex}`;
         row.querySelector('[id^="product_message_"]').id = `product_message_${rowIndex}`;
         row.querySelector('[id^="status_"]').id = `status_${rowIndex}`;
@@ -462,11 +471,12 @@ function verifyproductlst(tab_index) {
         var product_id = $('#product_id_' + tab_index).val();
         var ps_desc = $('#ps_desc_' + tab_index).val().replace(/\s+/g, '');
         var dealer_type = $('#dealer_type_' + tab_index).val();
-        var tax_class = $('#tax_class_' + tab_index).val();
+        var tax_class = isNational ? $('#tax_class_' + tab_index).val() : null;
         var ean_code = $('#ean_code_' + tab_index).val();
+        var isTaxValid = isNational ? (tax_class != '') : true;
 
         // For existing products (selected from dropdown)
-        if (product_id && product_name != '' && ps_desc != '' && dealer_type != '' && tax_class != '' && ean_code !=
+        if (product_id && product_name != '' && ps_desc != '' && dealer_type != '' && isTaxValid && ean_code !=
             '' && $.isNumeric(ean_code) && parseInt(ean_code.length) > 1 && parseInt(ean_code.length) < 9 && parseInt(
                 ean_code) > 9 && parseInt(ean_code) <= 99999999) {
             $('#product_message_' + tab_index).removeClass('bg-danger');
@@ -475,7 +485,7 @@ function verifyproductlst(tab_index) {
             $('#status_' + tab_index).val('1');
         }
         // For new products (not selected from dropdown)
-        else if (!product_id && product_name != '' && ps_desc != '' && dealer_type != '' && tax_class != '' &&
+        else if (!product_id && product_name != '' && ps_desc != '' && dealer_type != '' && isTaxValid &&
             ean_code != '' && $.isNumeric(ean_code) && parseInt(ean_code.length) > 1 && parseInt(ean_code.length) < 9 &&
             parseInt(ean_code) > 9 && parseInt(ean_code) <= 99999999) {
             $('#product_message_' + tab_index).removeClass('bg-danger');
@@ -507,95 +517,7 @@ function verifyproductlst(tab_index) {
                 error_msg += '</div>';
                 error_count++;
             }
-            if (tax_class == "") {
-                error_msg += '<div class="d-flex align-items-center mb-1">';
-                error_msg += '<span class="bi bi-x-circle-fill text-danger me-2"></span>';
-                error_msg += '<span>Select GST/Sales Tax Rate</span>';
-                error_msg += '</div>';
-                error_count++;
-            }
-            if (ean_code == '' || !$.isNumeric(ean_code)) {
-                error_msg += '<div class="d-flex align-items-center mb-1">';
-                error_msg += '<span class="bi bi-x-circle-fill text-danger me-2"></span>';
-                error_msg += '<span>Enter Valid HSN Code</span>';
-                error_msg += '</div>';
-                error_count++;
-            } else if (parseInt(ean_code.length) <= 1 || parseInt(ean_code.length) >= 9 || parseInt(ean_code) <= 9 ||
-                parseInt(ean_code) > 99999999) {
-                error_msg += '<div class="d-flex align-items-center mb-1">';
-                error_msg += '<span class="bi bi-x-circle-fill text-danger me-2"></span>';
-                error_msg += '<span>HSN Code must be 2-8 digits</span>';
-                error_msg += '</div>';
-                error_count++;
-            }
-
-            error_msg += '</div>';
-
-            $('#status_' + tab_index).val('3');
-            $('#product_message_' + tab_index).addClass('bg-danger');
-            $('#product_message_' + tab_index).removeClass('bg-success');
-
-            if (error_count > 0) {
-                $('#product_message_' + tab_index).html(error_msg);
-            } else {
-                $('#product_message_' + tab_index).html('');
-            }
-        }
-    }
-}
-// Modify the verifyproductlst function to handle validation messages
-function verifyproductlst(tab_index) {
-    if (tab_index) {
-        var product_name = $('#product_name_' + tab_index).val();
-        var product_id = $('#product_id_' + tab_index).val();
-        var ps_desc = $('#ps_desc_' + tab_index).val().replace(/\s+/g, '');
-        var dealer_type = $('#dealer_type_' + tab_index).val();
-        var tax_class = $('#tax_class_' + tab_index).val();
-        var ean_code = $('#ean_code_' + tab_index).val();
-
-        // For existing products (selected from dropdown)
-        if (product_id && product_name != '' && ps_desc != '' && dealer_type != '' && tax_class != '' && ean_code !=
-            '' && $.isNumeric(ean_code) && parseInt(ean_code.length) > 1 && parseInt(ean_code.length) < 9 && parseInt(
-                ean_code) > 9 && parseInt(ean_code) <= 99999999) {
-            $('#product_message_' + tab_index).removeClass('bg-danger');
-            $('#product_message_' + tab_index).addClass('bg-success');
-            $('#product_message_' + tab_index).html('Product Verified');
-            $('#status_' + tab_index).val('1');
-        }
-        // For new products (not selected from dropdown)
-        else if (!product_id && product_name != '' && ps_desc != '' && dealer_type != '' && tax_class != '' &&
-            ean_code != '' && $.isNumeric(ean_code) && parseInt(ean_code.length) > 1 && parseInt(ean_code.length) < 9 &&
-            parseInt(ean_code) > 9 && parseInt(ean_code) <= 99999999) {
-            $('#product_message_' + tab_index).removeClass('bg-danger');
-            $('#product_message_' + tab_index).addClass('bg-success');
-            $('#product_message_' + tab_index).html('New Product');
-            $('#status_' + tab_index).val('2');
-        } else {
-            var error_msg = '<div class="text-start">';
-            var error_count = 0;
-
-            if (product_name == '') {
-                error_msg += '<div class="d-flex align-items-center mb-1">';
-                error_msg += '<span class="bi bi-x-circle-fill text-danger me-2"></span>';
-                error_msg += '<span>Enter Product Name</span>';
-                error_msg += '</div>';
-                error_count++;
-            }
-            if (ps_desc == "") {
-                error_msg += '<div class="d-flex align-items-center mb-1">';
-                error_msg += '<span class="bi bi-x-circle-fill text-danger me-2"></span>';
-                error_msg += '<span>Enter Description</span>';
-                error_msg += '</div>';
-                error_count++;
-            }
-            if (dealer_type == "") {
-                error_msg += '<div class="d-flex align-items-center mb-1">';
-                error_msg += '<span class="bi bi-x-circle-fill text-danger me-2"></span>';
-                error_msg += '<span>Select Dealer Type</span>';
-                error_msg += '</div>';
-                error_count++;
-            }
-            if (tax_class == "") {
+            if (isNational && tax_class == "") {
                 error_msg += '<div class="d-flex align-items-center mb-1">';
                 error_msg += '<span class="bi bi-x-circle-fill text-danger me-2"></span>';
                 error_msg += '<span>Select GST/Sales Tax Rate</span>';
@@ -692,7 +614,9 @@ $(document).on('click', '#submitProducts', function() {
             formData.append('products[' + rowIndex + '][ps_desc]', $('#ps_desc_' + rowIndex).val());
             formData.append('products[' + rowIndex + '][dealer_type]', $('#dealer_type_' + rowIndex)
                 .val());
-            formData.append('products[' + rowIndex + '][tax_class]', $('#tax_class_' + rowIndex).val());
+            if (isNational) {
+                formData.append('products[' + rowIndex + '][tax_class]', $('#tax_class_' + rowIndex).val());
+            }
             formData.append('products[' + rowIndex + '][ean_code]', $('#ean_code_' + rowIndex).val());
             formData.append('products[' + rowIndex + '][status]', status);
 

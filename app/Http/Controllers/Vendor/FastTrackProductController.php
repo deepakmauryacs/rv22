@@ -84,12 +84,24 @@ class FastTrackProductController extends Controller
 
     public function storeFastTrackProducts_old(Request $request)
     {
+        $isNationalVendor = is_national();
+
+        if (!$isNationalVendor) {
+            $productsInput = $request->input('products', []);
+            foreach ($productsInput as $key => $productInput) {
+                $productsInput[$key]['tax_class'] = $productInput['tax_class'] ?? null;
+            }
+            $request->merge(['products' => $productsInput]);
+        }
+
+        $taxRule = $isNationalVendor ? 'required|exists:taxes,id' : 'nullable|exists:taxes,id';
+
         $validated = $request->validate([
             'products' => 'required|array|min:1',
             'products.*.product_name' => 'required|string|max:255',
-            'products.*.ps_desc' => 'required|string|max:500', 
-            'products.*.dealer_type' => 'required|exists:dealer_types,id', 
-            'products.*.tax_class' => 'required|exists:taxes,id',
+            'products.*.ps_desc' => 'required|string|max:500',
+            'products.*.dealer_type' => 'required|exists:dealer_types,id',
+            'products.*.tax_class' => $taxRule,
             'products.*.ean_code' => 'required|numeric|digits_between:2,8',
             'products.*.image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
@@ -123,7 +135,7 @@ class FastTrackProductController extends Controller
                 'image' => $imagePath,
                 'description' => $productData['ps_desc'],
                 'dealer_type_id' => $productData['dealer_type'],
-                'gst_id' => $productData['tax_class'],
+                'gst_id' => $productData['tax_class'] ?? null,
                 'hsn_code' => $productData['ean_code'], 
                 'vendor_status' => $status,
                 'edit_status' => $editStatus,
@@ -146,12 +158,24 @@ class FastTrackProductController extends Controller
     public function storeFastTrackProducts(Request $request)
     {    
         
+        $isNationalVendor = is_national();
+
+        if (!$isNationalVendor) {
+            $productsInput = $request->input('products', []);
+            foreach ($productsInput as $key => $productInput) {
+                $productsInput[$key]['tax_class'] = $productInput['tax_class'] ?? null;
+            }
+            $request->merge(['products' => $productsInput]);
+        }
+
+        $taxRule = $isNationalVendor ? 'required|exists:taxes,id' : 'nullable|exists:taxes,id';
+
         $validated = $request->validate([
             'products' => 'required|array|min:1',
             'products.*.product_name' => 'required|string|max:255',
             'products.*.ps_desc' => 'required|string|max:500',
             'products.*.dealer_type' => 'required|exists:dealer_types,id',
-            'products.*.tax_class' => 'required|exists:taxes,id',
+            'products.*.tax_class' => $taxRule,
             'products.*.ean_code' => 'required|numeric|digits_between:2,8',
             'products.*.product_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
@@ -191,7 +215,7 @@ class FastTrackProductController extends Controller
                 'image' => $imagePath,
                 'description' => $productData['ps_desc'],
                 'dealer_type_id' => $productData['dealer_type'],
-                'gst_id' => $productData['tax_class'],
+                'gst_id' => $productData['tax_class'] ?? null,
                 'hsn_code' => $productData['ean_code'],
                 'vendor_status' => $status,
                 'edit_status' => $editStatus,
