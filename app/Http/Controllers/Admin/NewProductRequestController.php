@@ -17,6 +17,7 @@ use Intervention\Image\Drivers\Gd\Driver;
 class NewProductRequestController extends Controller
 {
     use HasModulePermission;
+
     public function index(Request $request)
     {
         $this->ensurePermission('NEW_PRODUCT_REQUEST');
@@ -118,11 +119,11 @@ class NewProductRequestController extends Controller
     }
 
 
-
-
-
     public function update(Request $request)
-    {
+    {   
+
+     
+  
         if ($request->has('product_name')) {
             $normalizedProductName = strtoupper(preg_replace('/\s+/', ' ', trim($request->input('product_name', ''))));
             $request->merge([
@@ -272,9 +273,17 @@ class NewProductRequestController extends Controller
             if (!empty($request->tag)) {
                 DB::table('product_alias')
                     ->where('product_id', $prod_id)
-                    ->where('vendor_id', $request->vend_id)
+                    ->where('vendor_id', $request->vendor_id)
                     ->where('alias_of', 2)
                     ->delete();
+
+                 DB::table('product_alias')
+                    ->where('product_id', $request->id)
+                    ->where('vendor_id', $request->vendor_id)
+                    ->where('alias_of', 2)
+                    ->where('is_new',null)
+                    ->delete();
+
 
                 $tags = array_unique(array_map('trim', explode(',', $request->tag)));
                 $aliasData = [];
@@ -282,7 +291,7 @@ class NewProductRequestController extends Controller
                 foreach ($tags as $tag) {
                     $aliasData[] = [
                         'product_id' => $prod_id,
-                        'vendor_id' => $request->vend_id,
+                        'vendor_id' => $request->vendor_id,
                         'alias' => htmlspecialchars(strtoupper(substr($tag, 0, 255)), ENT_QUOTES),
                         'alias_of' => 2,
                         'is_new' => 1,

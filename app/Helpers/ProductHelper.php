@@ -72,7 +72,7 @@ if (!function_exists('validate_product_tags')) {
 
             $vendorAlias = $vendorAliasQuery->first();
 
-            if ($vendorAlias) {
+            if ($vendorAlias && !empty($productId)) {
                 $vendorName = get_vendor_name_by_vend_id($vendorAlias->vendor_id);
                 $productName = get_product_name_by_prod_id($vendorAlias->product_id);
                 $errors[] = "<b>{$tag}</b> already used by Vendor <b>{$vendorName}</b> as an alias for Product <b>{$productName}</b>.";

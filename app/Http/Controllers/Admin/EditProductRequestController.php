@@ -79,7 +79,8 @@ class EditProductRequestController extends Controller
 
 
     public function update(Request $request)
-    {
+    {   
+
         $isNationalVendor = is_national($request->vendor_id);
 
         $rules = [
@@ -179,11 +180,13 @@ class EditProductRequestController extends Controller
 
             VendorProduct::where('id', $request->id)->update($productData);
 
+            
+
             // Update Tags/Aliases
             if (!empty($request->tag)) {
                 DB::table('product_alias')
-                    ->where('product_id', $request->prod_id)
-                    ->where('vendor_id', $request->vend_id)
+                    ->where('product_id', $request->product_id)
+                    ->where('vendor_id', $request->vendor_id)
                     ->where('alias_of', 2)
                     ->delete();
 
@@ -192,8 +195,8 @@ class EditProductRequestController extends Controller
 
                 foreach ($tags as $tag) {
                     $aliasData[] = [
-                        'product_id' => $request->prod_id,
-                        'vendor_id' => $request->vend_id,
+                        'product_id' => $request->product_id,
+                        'vendor_id' => $request->vendor_id,
                         'alias' => htmlspecialchars(strtoupper(substr($tag, 0, 255)), ENT_QUOTES),
                         'alias_of' => 2,
                         'is_new' => 1,

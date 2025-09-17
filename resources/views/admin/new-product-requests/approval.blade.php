@@ -89,6 +89,7 @@
                                 <div class="position-relative">
                                      <input type="text" class="form-control" name="product_name" id="product_name" value="{{ old('product_name', $product->product_name) }}" autocomplete="off">
                                      <input type="hidden" name="product_id" id="product_id">
+                                     <input type="hidden" name="vendor_id" id="vendor_id" value="{{ $product->vendor_id }}">
                                      <!-- <div id="product_suggestions" class="dropdown-menu" style="width: 100%; display: none;"></div> -->
 
                                     <div id="product_suggestions" class="dropdown-menu w-100 shadow" style="display: none; max-height: 300px; overflow-y: auto; position: absolute; z-index: 1000;"></div>
@@ -220,7 +221,16 @@
                             <label class="col-sm-3 col-form-label">Aliases &amp; Tags</label>
                             <div class="col-md-9">
                                 <span><b>Master Aliases:</b> {{ $product->master_aliases ?? 'N/A' }}</span>
-                                <input type="text" data-role="tagsinput" class="form-control" name="tag" id="tags-input" value="">
+
+                                 @php
+                                      $vendor_alias = get_alias_vendor_by_prod_id($product->product_id, $product->vendor_id);
+
+                                      if ($product->edit_status == 2) {
+                                          $vendor_alias = get_new_alias_vendor_by_prod_id($product->id, $product->vendor_id);
+                                      }
+                                  @endphp
+
+                                <input type="text" data-role="tagsinput" class="form-control" name="tag" id="tags-input" value="{{ $vendor_alias }}">
                                 <div class="product-alias-error-msg"></div>
                             </div>
                         </div>
