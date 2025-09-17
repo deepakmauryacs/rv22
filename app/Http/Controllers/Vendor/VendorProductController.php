@@ -200,14 +200,21 @@ class VendorProductController extends Controller
     }
 
     public function store(Request $request)
-    {   
-        
-        $validator = Validator::make($request->all(), [
+    {
+
+        $isNationalVendor = is_national() == 1;
+
+        $rules = [
             'product_name' => 'required',
             'description' => 'required',
             'hsn_code' => 'required|digits_between:2,8',
-            'gst' => 'required',
-        ]);
+        ];
+
+        if ($isNationalVendor) {
+            $rules['gst'] = 'required';
+        }
+
+        $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
             return response()->json([
@@ -280,7 +287,7 @@ class VendorProductController extends Controller
             }
             $product->description = strip_tags($request->description, '<a><b><h1><p><div><strong><ul><li>');
             $product->dealer_type_id = $request->dealer_type;
-            $product->gst_id = $request->gst;
+            $product->gst_id = $isNationalVendor ? $request->gst : 1;
             $product->hsn_code = $request->hsn_code;
             $product->dealership = $request->dealership;
             $product->brand = $request->brand;
@@ -379,12 +386,19 @@ class VendorProductController extends Controller
         $vendorId = getParentUserId();
         $product = VendorProduct::findOrFail($id);
 
-        $validator = Validator::make($request->all(), [
+        $isNationalVendor = is_national() == 1;
+
+        $rules = [
             'product_name' => 'required',
             'description' => 'required',
             'hsn_code' => 'required|digits_between:2,8',
-            'gst' => 'required',
-        ]);
+        ];
+
+        if ($isNationalVendor) {
+            $rules['gst'] = 'required';
+        }
+
+        $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
             return response()->json([
@@ -420,7 +434,7 @@ class VendorProductController extends Controller
             $product->product_id = $request->product_id ?? 0;  // Set to 0 if product_id is empty
             $product->description = strip_tags($request->description, '<a><b><h1><p><div><strong><ul><li>');
             $product->dealer_type_id = $request->dealer_type ?? '1';
-            $product->gst_id = $request->gst;
+            $product->gst_id = $isNationalVendor ? $request->gst : 1;
             $product->hsn_code = $request->hsn_code;
             $product->dealership = $request->dealership;
             $product->brand = $request->brand;
