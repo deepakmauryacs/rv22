@@ -60,7 +60,7 @@ class BulkApprovalProductsController extends Controller
 
     public function approval($id, $group_id)
     {
-        $products = VendorProduct::with(['vendor', 'product'])
+        $products = VendorProduct::with(['vendor', 'vendor_profile', 'product'])
             ->where('edit_status', '!=', 2)
             ->where('approval_status', '!=', 1)
             ->where('group_id', $group_id)
@@ -96,6 +96,7 @@ class BulkApprovalProductsController extends Controller
 
         foreach ($request->products as $index => $productData) {
             $productId = $productData['id'] ?? null;
+            $product = null;
             $description = trim($productData['product_description'] ?? '');
             $dealerType = trim($productData['dealer_type'] ?? '');
             $taxClass = $productData['tax_class'] ?? '';
@@ -104,7 +105,11 @@ class BulkApprovalProductsController extends Controller
             // Manual validation
             $rowErrors = [];
 
-            if (empty($productId) || !VendorProduct::find($productId)) {
+            if (!empty($productId)) {
+                $product = VendorProduct::with('vendor_profile')->find($productId);
+            }
+
+            if (!$product) {
                 $rowErrors['id'] = 'Invalid product ID.';
             }
             if ($description === '') {
@@ -113,8 +118,10 @@ class BulkApprovalProductsController extends Controller
             if ($dealerType === '') {
                 $rowErrors['dealer_type'] = 'Dealer type is required.';
             }
-            if (!is_numeric($taxClass)) {
-                $rowErrors['tax_class'] = 'GST rate must be numeric.';
+            $isNationalVendor = optional($product?->vendor_profile)->country == 101;
+
+            if ($isNationalVendor && !is_numeric($taxClass)) {
+                $rowErrors['tax_class'] = 'GST rate is required.';
             }
             if ($hsn === '') {
                 $rowErrors['hsn'] = 'HSN code is required.';
@@ -126,10 +133,10 @@ class BulkApprovalProductsController extends Controller
             }
 
             // Passed all checks, proceed with update
-            $product = VendorProduct::find($productId);
+            $product = $product ?? VendorProduct::find($productId);
             $product->description = $description;
             $product->dealer_type_id = $dealerType;
-            $product->gst_id = $taxClass;
+            $product->gst_id = $isNationalVendor ? $taxClass : null;
             $product->hsn_code = $hsn;
 
             // Image handling

@@ -87,6 +87,28 @@ ul {
                                 <input type="hidden" name="id" value="{{ $product->id }}">
                                 <input type="hidden" name="product_id" value="{{ $product->product_id }}">
                                 <input type="hidden" name="vendor_id" value="{{ $product->vendor_id }}">
+
+                                @php
+                                    $isInternationalVendor = !($isNationalVendor ?? (optional($product->vendor_profile)->country == 101));
+                                    $taxCollection = collect($taxes ?? []);
+                                    $formatTaxLabel = static function ($tax) {
+                                        $name = trim((string) ($tax->tax_name ?? ''));
+                                        $percentage = is_numeric($tax->tax)
+                                            ? rtrim(rtrim(number_format((float) $tax->tax, 2, '.', ''), '0'), '.')
+                                            : trim((string) $tax->tax);
+                                        $percentageLabel = $percentage !== '' ? $percentage . '%' : '';
+
+                                        if ($name !== '' && $percentageLabel !== '') {
+                                            return $name . ' (' . $percentageLabel . ')';
+                                        }
+
+                                        if ($name !== '') {
+                                            return $name;
+                                        }
+
+                                        return $percentageLabel !== '' ? $percentageLabel : 'N/A';
+                                    };
+                                @endphp
                                 
                                 <!-- Product Name -->
                                 <div class="row mb-3">
@@ -169,23 +191,30 @@ ul {
                                     </div>
                                 </div>
 
+                                @unless ($isInternationalVendor)
                                 <!-- GST/Sales Tax Rate -->
                                 <div class="row mb-3">
                                     <div class="col-md-3 d-flex align-items-center">
                                         <label class="form-label mb-0">GST/Sales Tax Rate<span class="text-danger">*</span></label>
                                     </div>
                                     <div class="col-md-4">
-                                        <select class="form-select" id="product_gst" name="product_gst">
-                                            <option value="">Select GST Class</option>
-                                            <option value="1" {{ $product->gst_id == '1' ? 'selected' : '' }}>0%</option>
-                                            <option value="2" {{ $product->gst_id == '2' ? 'selected' : '' }}>5%</option>
-                                            <option value="3" {{ $product->gst_id == '3' ? 'selected' : '' }}>12%</option>
-                                            <option value="4" {{ $product->gst_id == '4' ? 'selected' : '' }}>18%</option>
-                                            <option value="5" {{ $product->gst_id == '5' ? 'selected' : '' }}>28%</option>
-                                        </select>
+                                            <select class="form-select" id="product_gst" name="product_gst">
+                                                <option value="">Select GST Class</option>
+                                                @if ($taxCollection->isNotEmpty())
+                                                    @foreach ($taxCollection as $tax)
+                                                        <option value="{{ $tax->id }}" {{ (string) $product->gst_id === (string) $tax->id ? 'selected' : '' }}>
+                                                            {{ $formatTaxLabel($tax) }}
+                                                        </option>
+                                                    @endforeach
+                                                @else
+                                                    <option value="" disabled>No GST rates available</option>
+                                                @endif
+                                            </select>
                                         <span class="text-danger error-text product_gst_error"></span>
                                     </div>
                                 </div>
+
+                                @endunless
 
                                 <!-- HSN Code -->
                                 <div class="row mb-3">
@@ -405,7 +434,8 @@ $(document).ready(function () {
 
         const product_name = $('#product_name').val().trim();
         const product_hsn_code = $('#product_hsn_code').val();
-        const product_gst = $('#product_gst').val();
+        const isInternationalVendor = @json($isInternationalVendor);
+        const product_gst = isInternationalVendor ? null : $('#product_gst').val();
         const product_dealer_type = $('#product_dealer_type').val();
         
         let hasErrors = false;
@@ -433,7 +463,7 @@ $(document).ready(function () {
         }
 
         // GST
-        if (!product_gst) {
+        if (!isInternationalVendor && !product_gst) {
             $('.product_gst_error').text('Please enter the GST percentage.');
             toastr.error('Please enter the GST percentage.');
             hasErrors = true;
