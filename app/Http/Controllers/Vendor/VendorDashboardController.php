@@ -18,7 +18,7 @@ class VendorDashboardController extends Controller
 
         if ($user) {
             $recentProducts = VendorProduct::with(['product.division', 'product.category'])
-                ->where('vendor_id', $user->id)
+                ->where('vendor_id', $user->id)->where('vendor_status',1)->where('approval_status',1)
                 ->orderByDesc('created_at')
                 ->take(8)
                 ->get();
