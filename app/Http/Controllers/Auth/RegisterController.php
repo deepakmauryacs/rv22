@@ -107,8 +107,9 @@ class RegisterController extends Controller
         if(!empty($is_exists)){
             $tempUser = TempUser::find($is_exists->id);
             $tempUser->user_type = $request->user_type;
-            $tempUser->company_name = $request->company_name;
-            $tempUser->name = $request->name;
+            // make uppercase
+            $tempUser->company_name = strtoupper($request->company_name);
+            $tempUser->name = strtoupper($request->name);
             $tempUser->email = $request->email;
             $tempUser->country_code = $request->country_code;
             $tempUser->mobile = $request->mobile;
@@ -118,8 +119,8 @@ class RegisterController extends Controller
         }else{
             $tempUser = new TempUser();
             $tempUser->user_type = $request->user_type;
-            $tempUser->company_name = $request->company_name;
-            $tempUser->name = $request->name;
+            $tempUser->company_name = strtoupper($request->company_name);
+            $tempUser->name = strtoupper($request->name);
             $tempUser->email = $request->email;
             $tempUser->country_code = $request->country_code;
             $tempUser->mobile = $request->mobile;

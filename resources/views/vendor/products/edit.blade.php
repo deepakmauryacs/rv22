@@ -167,9 +167,14 @@
               </div>
               <div class="col-md-4">
                   <span><b>Master Aliases:</b> </span>
-                   @php
-                    $vendor_alias = get_alias_vendor_by_prod_id($product->product_id,$product->vendor_id);
+                  @php
+                      $vendor_alias = get_alias_vendor_by_prod_id($product->product_id, $product->vendor_id);
+
+                      if ($product->edit_status == 2) {
+                          $vendor_alias = get_new_alias_vendor_by_prod_id($product->id, $product->vendor_id);
+                      }
                   @endphp
+
                   <input type="text" data-role="tagsinput" class="form-control" name="tag" id="tags-input"value="{{ $vendor_alias }}">
                   <div class="product-alias-error-msg"></div>
               </div>

@@ -396,9 +396,11 @@ class BuyerProfileController extends Controller
 
             $admin_detail = getMainSuperadminDetails();
 
+            Session::put('legal_name', $buyer->legal_name);
+
             $notification = array();
             $notification_data['to_user_id'] = $admin_detail->id;
-            $notification_data['notification_link'] = route('admin.buyer.profile', ['id'=>$buyer->id]);
+            $notification_data['notification_link'] = route('admin.buyer.profile', ['id'=>$buyer->user_id]);
             if($is_first_mail_sent==false){
                 $this->sendMailForProfileCompletion($request);
                 // send notification to SA for verify new buyer profile
@@ -419,8 +421,6 @@ class BuyerProfileController extends Controller
             }
 
             DB::commit();
-
-            Session::put('legal_name', $buyer->legal_name);
 
             return response()->json([
                 'status' => true,

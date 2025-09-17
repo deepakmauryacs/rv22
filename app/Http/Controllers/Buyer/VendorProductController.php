@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\RfqProduct;
 use App\Helpers\CircularArray;
 use DB;
+use Auth;
 
 class VendorProductController extends Controller
 {
@@ -267,9 +268,9 @@ class VendorProductController extends Controller
 
         if(empty($product->product_vendor)){
             session()->flash('error', "Vendor Product not found");
-            if(auth()->user_type == 1){
+            if(Auth::user()->user_type == 1){
                 return redirect()->to(route('buyer.dashboard'));
-            }else if(auth()->user_type == 2){
+            }else if(Auth::user()->user_type == 2){
                 return redirect()->to(route('vendor.dashboard'));
             }else{
                 return redirect()->to(route('admin.dashboard'));

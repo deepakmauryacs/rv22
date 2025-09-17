@@ -34,6 +34,7 @@
 
     <div class="header-nav-right">
       <ul class="d-flex flex-row align-items-center">
+        @if(Auth::user()->is_profile_verified==1)
         <li>
           <a type="button" aria-label="Mini Webpage" class="ra-btn ra-btn-link font-size-24 custom-tooltip"
             data-tooltip="Mini Webpage" href="{{ route('webPage.index',['vendorId'=>base64_encode(Auth::user()->id)]) }}" target="blank">
@@ -45,7 +46,7 @@
             <button type="button" class="ra-btn ra-btn-link font-size-24 custom-tooltip" aria-label="Notification"
               data-toggle="dropdown" aria-expanded="false" data-tooltip="Notification" id="notifyButton">
               <span class="bi bi-bell" aria-hidden="true"></span>
-              <span class="notification-number">7</span>
+              <span class="notification-number">0</span>
             </button>
             <div class="bell-messages" id="Allnotification-messages">
               <div class="message-wrap">
@@ -132,6 +133,7 @@
             <span class="bi bi-question-circle" aria-hidden="true"></span>
           </a>
         </li>
+        @endif
         <li>
           <div class="dropdown">
             <button type="button" class="ra-btn ra-btn-link font-size-24 custom-tooltip dropdown-toggle"

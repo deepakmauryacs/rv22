@@ -59,7 +59,7 @@
             <th>Last Date to Response</th>
             <td>{{ $rfq->last_response_date ? \Carbon\Carbon::parse($rfq->last_response_date)->format('d/m/Y') : '-' }}</td>
             <th>Delivery Period</th>
-            <td>{{$rfq->buyer_delivery_period}} Days</td>
+            <td>{{!empty($rfq->buyer_delivery_period)?$rfq->buyer_delivery_period. ' Days' : ''}}</td>
         </tr>
         <tr>
             <th>Price Basis</th>
@@ -71,7 +71,9 @@
 </div>
 
 @foreach($rfq->rfqProducts as $key=> $product)
-
+        @php
+        $vendor_currency=$product->productVariants[0]->latestVendorQuotation($vendor_id)->vendor_currency;
+        @endphp
     <div class="section">
         <h4>
             {{++$key}}. {{$product->masterProduct->division->division_name}} - {{$product->masterProduct->category->category_name}} - {{$product->masterProduct->product_name}}
@@ -83,7 +85,7 @@
                 <th>Specification</th>
                 <th>Size</th>
                 <th>Qty/UOM</th>
-                <th>Price (₹)</th>
+                <th>Price ({{!empty($vendor_currency)?$vendor_currency:'₹'}})</th>
                 <th>MRP</th>
                 <th>Disc. %</th>
                 <th>Total</th>
@@ -91,6 +93,7 @@
             </tr>
             </thead>
             <tbody>
+                @php $vendor_brand =''; @endphp
             @foreach($product->productVariants as $keyj => $variant)
                 <tr>
                     <td>{{++$keyj}}</td>
@@ -103,14 +106,14 @@
                     <td>{{$variant->latestVendorQuotation($vendor_id)?->vendor_currency}}
                                                 {{IND_money_format($variant->quantity*$variant->latestVendorQuotation($vendor_id)?->price)}}</td>
                     <td>{{ substr($variant->latestVendorQuotation($vendor_id)?->specification, 0, 25) }}</td>
+                    @php $vendor_brand = $variant->latestVendorQuotation($vendor_id)?->vendor_brand;@endphp
                 </tr>
             @endforeach
             </tbody>
         </table>
-
         <p><strong>Brand:</strong>{{ $product->brand }}</p>
         <p><strong>Buyer Remarks:</strong> {{ $product->remarks}}</p>
-        <p><strong>Seller Brand:</strong> {{$rfq->getLastRfqVendorQuotation->vendor_brand}}</p>
+        <p><strong>Seller Brand:</strong> {{$vendor_brand}}</p>
 
     </div>
 @endforeach

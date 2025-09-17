@@ -63,7 +63,6 @@ class MessageController extends Controller
      */
     public function storeMessageData(Request $request, $draft = null)
     {
-
         try {
             DB::beginTransaction();
             $message_type = 'raprocure';

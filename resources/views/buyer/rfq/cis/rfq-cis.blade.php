@@ -953,7 +953,7 @@ $mg_products=[];
                                             }
                                             @endphp
                                             <td class="product-price p-1 align-middle text-center">
-                                                {{ $nature_of_business[$vendor['nature_of_business']] }}
+                                                {{ isset($nature_of_business[$vendor['nature_of_business']]) ? $nature_of_business[$vendor['nature_of_business']] : '' }}
                                             </td>
                                             @endforeach
                                         </tr>
@@ -1293,7 +1293,7 @@ $mg_products=[];
                     </div>
 
                     <section class="ck-editor-section py-2">
-                        <textarea required name="message" id="msg1" rows="5" class="form-control height-inherit"
+                        <textarea name="message" id="msg1" rows="5" class="form-control height-inherit"
                             placeholder="Type your message here..."></textarea>
                     </section>
                     <section class="upload-file py-2">

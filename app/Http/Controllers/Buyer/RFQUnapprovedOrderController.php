@@ -222,36 +222,37 @@ class RFQUnapprovedOrderController extends Controller
         return view('buyer.unapproved-orders.create', compact('uom', 'taxes', 'unapprovedOrder'));
     }
 
-    public function print(Request $request) {
+    public function print(Request $request)
+    {
         $this->ensurePermission('TO_GENERATE_UNAPPROVE_PO', 'view', '1');
-        $id=$request->order_id;
-        $order_quantity=$request->order_quantity;
-        $order_mrp=$request->order_mrp;
-        $order_discount=$request->order_discount;
-        $order_rate=$request->order_rate;
+        $id = $request->order_id;
+        $order_quantity = $request->order_quantity;
+        $order_mrp = $request->order_mrp;
+        $order_discount = $request->order_discount;
+        $order_rate = $request->order_rate;
 
-        $order_price_basis=$request->order_price_basis;
-        $order_payment_term=$request->order_payment_term;
-        $order_delivery_period=$request->order_delivery_period;
-        $order_gurantee_warranty=$request->order_gurantee_warranty;
-        $order_remarks=$request->order_remarks;
-        $order_add_remarks=$request->order_add_remarks;
-        $buyer_order_number=$request->buyer_order_number;
+        $order_price_basis = $request->order_price_basis;
+        $order_payment_term = $request->order_payment_term;
+        $order_delivery_period = $request->order_delivery_period;
+        $order_gurantee_warranty = $request->order_gurantee_warranty;
+        $order_remarks = $request->order_remarks;
+        $order_add_remarks = $request->order_add_remarks;
+        $buyer_order_number = $request->buyer_order_number;
 
         $buyer_id = getParentUserId();
         $order = Order::with([
-                    'rfq',
-                    'buyer',
-                    'order_variants.frq_variant',
-                    'order_variants.frq_quotation_variant'=>function($q){
-                        //$q->where('vendor_id', getParentUserId());
-                    },
-                ])
-                ->where('buyer_id', $buyer_id)
-                ->where('id', $id)
-                ->first();
+            'rfq',
+            'buyer',
+            'order_variants.frq_variant',
+            'order_variants.frq_quotation_variant' => function ($q) {
+                //$q->where('vendor_id', getParentUserId());
+            },
+        ])
+            ->where('buyer_id', $buyer_id)
+            ->where('id', $id)
+            ->first();
         //
-        if(empty($order)){
+        if (empty($order)) {
             session()->flash('error', "Nothing found for this order id.");
             //return to back ;
             return redirect()->back();
@@ -259,7 +260,7 @@ class RFQUnapprovedOrderController extends Controller
         // echo "<pre>";
         // print_r($order);
         // die;
-        return view('buyer.unapproved-orders.print',compact('order','order_quantity','order_mrp','order_discount','order_rate','order_price_basis','order_payment_term','order_delivery_period','order_gurantee_warranty','order_remarks','order_add_remarks','buyer_order_number'))->render();
+        return view('buyer.unapproved-orders.print', compact('order', 'order_quantity', 'order_mrp', 'order_discount', 'order_rate', 'order_price_basis', 'order_payment_term', 'order_delivery_period', 'order_gurantee_warranty', 'order_remarks', 'order_add_remarks', 'buyer_order_number'))->render();
     }
 
     public function sanitizeTheRequest($request)
@@ -302,6 +303,7 @@ class RFQUnapprovedOrderController extends Controller
     {
         $this->ensurePermission('TO_GENERATE_UNAPPROVE_PO', 'view', '1');
         $vendors = $this->sanitizeTheRequest($request);
+
         $pdf = Pdf::loadView('buyer.unapproved-orders.download-po-pdf', [
             'vendors' => $vendors,
             'preparedBy' => auth()->user()->name,
@@ -384,6 +386,8 @@ class RFQUnapprovedOrderController extends Controller
         $taxes = DB::table("taxes")
             ->select("id", "tax")
             ->pluck("tax", "id")->toArray();
+
+
 
         // Generate PDF
         $pdf = Pdf::loadView('buyer.unapproved-orders.download-po-pdf', [

@@ -90,7 +90,7 @@
                                     <div class="simple-file-upload file-browse">
                                         <input type="file" onchange="validateRFQFile(this)" name="bulk_rfq_excel" id="bulkRfq" class="real-file-input" style="display: none;">
                                         <div class="file-display-box form-control text-start font-size-12 text-dark" role="button" data-bs-toggle="tooltip" data-bs-placement="top">
-                                            Upload Bulk RFQ12
+                                            Upload Bulk RFQ
                                         </div>
                                     </div>
                                     <input type="hidden" class="form-control" placeholder="Upload Bulk RFQ" readonly="">
@@ -216,82 +216,105 @@
        
    }
    $("#bulkRFQForm").validate({
-            // setTimeout(removeFileError, 3000);
-        submitHandler: function(form) {
-            event.preventDefault();
-            if($("#bulkRfq").val()==''){
-               alert("Please Select Excel file to import Bulk RFQ.");
-               return false;
-            }
-            if($("#submit_type").val()=='2'){
-               if($(".validate-product").length<=0 ){
-                  alert("No Product found to upload bulk RFQ.");
-                  return false;
-               }
-               var p_name_status = true;
-               $(".bulk-rfq-product-field").each(function(){
-                  if($(this).val()=='' ){
-                     p_name_status = false;
-                  }
-               });
-               if(p_name_status == false){
-                  alert("All Product Name field is required to upload bulk RFQ.");
-                  return false;
-               }              
-               var errorStatus = false;
-               $(".validate-qty-uom").each(function(){
-                  if($(this).val()==2 && $(this).parents('td').find('.validate-product').val()==1){
-                     errorStatus = true;
-                  }
-               });
-               if(errorStatus == true ){
-                  alert("Quantity and UOM field is required to upload bulk RFQ.");
-                  return false;
-               }
-               var errorStatus1 = false;
-               $(".validate-product").each(function(){
-                  if($(this).val()==2){
-                     errorStatus1 = true;
-                  }
-               });
-              
-            }
-            var form_data = new FormData(document.getElementById("bulkRFQForm"));
-            $('#data_list').html('<div id="loading" style="text-align:center;width: 100%;" ></div>');
-
-            // console.log("form data", form_data);
-            $.ajax({
-                url: "{{ route("buyer.rfq.bulk-rfq.bulkDraftRFQ") }}",
-                type: "POST",
-                dataType: 'json',
-                data: form_data,
-                contentType: false,
-                cache: false,
-                processData: false,
-                beforeSend: function() {},
-                success: function(responce) {
-
-                //console.log('responce',responce);
-
-                    if (responce.status == 2) {//invalid products
-                        printInvalidProduct(responce.all_product_data.all_product_data);
-                    } else if (responce.status == 3) {//'No Product Found....';, Uploaded Product Verified successfully
-                        $(".remove-rfq-file").click();
-                        alert(responce.message);
-                    } else if (responce.status == 1) {
-                        alert(responce.message);
-                        setTimeout(function(){
-                           window.location.href=responce.url;
-                        },1000);
-                    }
-                },
-                error: function() {
-                    alert('Something Went Wrong..');
-                },
-                complete: function() {}
-            });
+    submitHandler: function(form, event) {
+        
+        event.preventDefault();
+         
+        if ($("#bulkRfq").val() == '') {
+            alert("Please Select Excel file to import Bulk RFQ.");
+            return false;
         }
-   });
+
+        let errorStatus = false;
+
+        $(".bulk-product-row").each(function () {
+            let productStatus = $(this).find('.validate-product').val();
+            let quantityVal = $(this).find('input[name="quantity[]"]').val().trim();
+            let uomVal = $(this).find('select[name="uom[]"]').val();
+
+            // Only validate if product is marked valid
+            if (productStatus == "1") {
+                let quantity = parseFloat(quantityVal);
+
+                if (
+                    quantityVal === '' || 
+                    isNaN(quantity) || 
+                    quantity <= 0 || 
+                    uomVal === ''
+                ) {
+                    errorStatus = true;
+
+                    // Optional: Add UI feedback
+                    $(this).find('input[name="quantity[]"]').addClass('is-invalid');
+                    $(this).find('select[name="uom[]"]').addClass('is-invalid');
+                    $(this).find('.product-message')
+                        .text("Quantity & UOM is required")
+                        .addClass('text-danger');
+                } else {
+                    // Clear invalid styles if valid
+                    $(this).find('input[name="quantity[]"]').removeClass('is-invalid');
+                    $(this).find('select[name="uom[]"]').removeClass('is-invalid');
+                }
+            }
+        });
+
+        if (errorStatus) {
+            alert("Valid Quantity and UOM are required to upload bulk RFQ.");
+            event.preventDefault();
+            return false;
+        }
+
+        let errorStatus1 = false;
+        $(".validate-product").each(function () {
+            if ($(this).val() == "2") {
+                errorStatus1 = true;
+            }
+        });
+
+        if (errorStatus1 === true) {
+            if (!confirm("Do you want to ignore the Invalid Products?")) {
+                event.preventDefault();
+                return false;
+            } else {
+                // Optionally, mark ignored products if needed
+                // _selectOption($("#ignore-status"), 1);
+            }
+        }
+        
+
+        var form_data = new FormData(document.getElementById("bulkRFQForm"));
+        $('#data_list').html('<div id="loading" style="text-align:center;width: 100%;" ></div>');
+
+        $.ajax({
+            url: "{{ route('buyer.rfq.bulk-rfq.bulkDraftRFQ') }}",
+            type: "POST",
+            dataType: 'json',
+            data: form_data,
+            contentType: false,
+            cache: false,
+            processData: false,
+            beforeSend: function () {},
+            success: function (responce) {
+                if (responce.status == 2) {
+                    printInvalidProduct(responce.all_product_data.all_product_data);
+                } else if (responce.status == 3) {
+                    $(".remove-rfq-file").click();
+                    //alert(responce.message);
+                } else if (responce.status == 1) {
+                    //alert(responce.message);
+                    setTimeout(function () {
+                        window.location.href = responce.url;
+                    }, 1000);
+                }
+            },
+            error: function () {
+                alert('Something Went Wrong..');
+            },
+            complete: function () {}
+        });
+    }
+    });
+
    function appendFileError(obj, msg='') {
       $(obj).parents('.file-browse').parent().find('.error-message').remove();
       if (msg) {
@@ -551,9 +574,9 @@
       $(".readonly-text-field").attr('readonly', 'readonly');
       $(this).parents('tr').find(".suggest-str-p").html('').addClass("d-none");
       
-      makeSelectedUOM();
-      updateSubmitBtn();
+      makeSelectedUOM();      
       updateQtyUom();
+      updateSubmitBtn();
    });
    $(document).on("change", ".product-uom", function(){//.product-qty, 
       updateQtyUom(this);
@@ -563,47 +586,52 @@
    });
 
    function updateQtyUom(_this, is_first=false){
-      // $(this).parents('div.bulk-rfq-product-row').find('.bulk-rfq-product-field').val($(this).html());
-      // console.log("_this is ", _this);
+        const $row = $(_this).closest('tr.bulk-product-row');
 
-      var uom = $(_this).parents('tr.bulk-product-row').find('.product-uom').val();
-      var uom_data = $(_this).parents('tr.bulk-product-row').find('.product-uom').data('uom-name');
-      // console.log("click on product",parseInt(uom_data) > 0, uom, uom_data);
-      if(is_first && uom=='' && parseInt(uom_data) > 0){
-         uom = uom_data;
-      }
-      var qty = $(_this).parents('tr.bulk-product-row').find('.product-qty').val();
-      var old_status_p = $(_this).parents('tr.bulk-product-row').find('.validate-product').val();
-      var old_status = $(_this).parents('tr.bulk-product-row').find('.validate-qty-uom').val();
-      // console.log("click on qty uom", qty=='', parseInt(qty)<=0, uom=='', old_status);
-      if(old_status_p==1){
-         var row_color = '', status = 1;
-         var msg = '';
-         if(qty=='' || parseInt(qty)<=0 || uom=='' || parseInt(uom)<=0 ){
-            if(qty=='' || parseInt(qty)<=0){
-               msg += "Quantity";
+        // Get selected UOM value
+        let uom = $row.find('.product-uom').val();
+
+        // Get data attribute from UOM element
+        const uom_data = $row.find('.product-uom').data('uom-name');
+
+        // Assign data-uom-name if UOM is empty and is_first is true
+        if (is_first && (uom === '' || parseInt(uom) <= 0) && parseInt(uom_data) > 0) {
+            uom = uom_data;
+        }
+
+        // Get quantity and validation status
+        const qty = $row.find('.product-qty').val();
+        const old_status_p = $row.find('.validate-product').val();
+        const old_status = $row.find('.validate-qty-uom').val();
+
+        if (old_status_p == 1) {
+            let msg = '';
+            let status = 1;
+
+            const hasInvalidQty = qty === '' || parseInt(qty) <= 0;
+            const hasInvalidUom = uom === '' || parseInt(uom) <= 0;
+
+            if (hasInvalidQty || hasInvalidUom) {
+                if (hasInvalidQty) msg += "Quantity";
+                if (hasInvalidUom) msg += (msg ? " & " : "") + "UOM";
+
+                msg += " is required";
+                status = 2;
+                $row.find('.validate-qty-uom').val(2)
+                $row.find('td input, td select, td').addClass('text-danger');
+                $("#submit_type").val(2);
+            } else {
+                msg = "Product Verified";
+                $row.find('td input, td select, td').removeClass('text-danger');
+                $("#submit_type").val(1);
             }
+
+            // This line was commented out before — now it's active!
+            $row.find('.product-message').text(msg);
+
             
-            if(uom=='' || parseInt(uom)<=0 ){
-               if(msg!=''){
-                  msg += " &";
-               }
-               msg += " UOM";
-            }
-            msg +=" is required";
-            status = 2;
-            
-            $(_this).closest('tr.bulk-product-row').find('td input').addClass('text-danger');
-            $(_this).closest('tr.bulk-product-row').find('td').addClass('text-danger');
-            $(_this).closest('tr.bulk-product-row').find('td select').addClass('text-danger');
-         }else{
-            msg ="Product Verified";
-            $(_this).closest('tr.bulk-product-row').find('td input').removeClass('text-danger');
-            $(_this).closest('tr.bulk-product-row').find('td').removeClass('text-danger');
-            $(_this).closest('tr.bulk-product-row').find('td select').removeClass('text-danger');
-         }         
-         updateSubmitBtn();
-      }
+        }
+        updateSubmitBtn();
    }
    $(document).on("change", ".change-field", function(){
       // $(".remove-rfq-file").click();
@@ -638,7 +666,7 @@
                 html+='<td class="row-count-number"> </td>';
                 html+='<td >';
                     html+='<div class="bulk-rfq-product-row">';
-                    html+='<input type="text" name="product_name[]" class="form-control readonly-text-field bulk-rfq-product-field" value="" autocomplete="off">';
+                    html+='<input type="text" name="product_name[]" class="select-product form-control readonly-text-field bulk-rfq-product-field" value="" autocomplete="off">';
                         html+='<ul class="suggest-str-p d-none">';
                         html+='</ul>';
                     html+='</div>';
@@ -721,39 +749,59 @@
          }
       });
    }
-   function updateSubmitBtn(){
-      var isInvalidAnyProduct = false;
-      var isValidAnyProduct = false;
-      var sr_no_arr = new Array();
-      $(".validate-product").each(function(){
-         var qty = $(this).parent().find(".validate-qty-uom").val();
-         if($(this).val()=='2' || $(this).val()==2 || qty=='2' || qty==2){
-            isInvalidAnyProduct = true;
-            sr_no_arr.push(parseInt($(this).parents("tr").find(".row-count-number").html()));
-            //console.log("sr no is: ", $(this).parents("tr").find(".row-count-number").html());
-         }
-         if($(this).val()=='1' || $(this).val()==1 || qty=='1' || qty==1){
-            isValidAnyProduct = true;
-         }
-      });
+   function updateSubmitBtn() {
+        var isInvalidAnyProduct = false;
+        var isValidAnyProduct = false;
+        var sr_no_arr = [];
 
-      if(isInvalidAnyProduct==true){
-         $("#draft-rfq-btn").html('<i class="bi bi-skip-end"></i> Ignore & Proceed to RFQ');
-         if(isValidAnyProduct==false){
-            $("#draft-rfq-btn").html('<i class="bi bi-save"></i> No Valid Product found');
-         }
-         $(".error-found-msg").html("Error has been found on Sr. No. " + sr_no_arr.toString() + " Kindly rectify the same or for further processing <i><a target='_blank' href='{{url('buyer/help-support/create')}}'><u>Submit to RaProcure</u></a></i>");
+        $(".validate-product").each(function () {
+            let $row = $(this).closest("tr");
+            let qtyStatus = $row.find(".validate-qty-uom").val();
+            let productStatus = $(this).val();
+            
+            let sr_no = $row.find(".row-count-number").text().trim();
 
-      }else{
-         $("#draft-rfq-btn").html('<i class="bi bi-check2-square"></i> Proceed to RFQ');
-         $(".error-found-msg").html('');
-      }
-      if(isValidAnyProduct==true){
-         $("#draft-rfq-btn").removeAttr("disabled");
-      }else{
-         $("#draft-rfq-btn").attr("disabled", "disabled");
-      }
-   }
+            // Mark invalid products
+            if (productStatus == '2' || qtyStatus == '2') {
+                isInvalidAnyProduct = true;
+                sr_no_arr.push(sr_no); // collect serial number
+            }
+
+            // Check for at least one valid product
+            if (productStatus == '1' && qtyStatus == '1') {
+                isValidAnyProduct = true;
+            }
+        });
+
+        // Set the submit button text based on status
+        if (isInvalidAnyProduct) {
+            if (isValidAnyProduct) {
+                $("#draft-rfq-btn").html('<i class="bi bi-skip-end"></i> Ignore & Proceed to RFQ');
+            } else {
+                $("#draft-rfq-btn").html('<i class="bi bi-save"></i> No Valid Product found');
+            }
+
+            // Update the error message DOM
+            $(".error-found-msg").html(
+                "Error has been found on Sr. No. " +
+                sr_no_arr.join(', ') +
+                ". Kindly rectify the same or for further processing <i><a target='_blank' href='/buyer/help-support/create'><u>Submit to RaProcure</u></a></i>"
+            );
+            
+
+        } else {
+            $("#draft-rfq-btn").html('<i class="bi bi-check2-square"></i> Proceed to RFQ');
+            $(".error-found-msg").html('');
+        }
+
+        // Enable or disable button
+        if (isValidAnyProduct) {
+            $("#draft-rfq-btn").removeAttr("disabled");
+        } else {
+            $("#draft-rfq-btn").attr("disabled", "disabled");
+        }
+    }
+
 
    $(document).on("change", "input[name='specification[]']", function(){
       $(this).attr("title", $(this).val());

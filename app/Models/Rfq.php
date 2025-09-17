@@ -958,7 +958,7 @@ class Rfq extends Model
                     $q->select('id', 'product_name', 'division_id', 'category_id');
                 },
                 'rfqProducts.productVendors' => function ($q) use ($vendor_ids) {
-                    $q->select('id', 'vendor_id', 'product_id', 'gst_id')->whereIn('vendor_id', $vendor_ids)->where('edit_status', '!=', 2);
+                    $q->select('id', 'vendor_id', 'product_id', 'gst_id', 'hsn_code')->whereIn('vendor_id', $vendor_ids)->where('edit_status', '!=', 2);
                 },
                 'rfqOrders' => function ($q) {
                     $q->select('id', 'rfq_id', 'vendor_id', 'po_number')->whereIn('order_status', [1, 3]);
@@ -989,9 +989,13 @@ class Rfq extends Model
         $variants = [];
         $vendor_product_gsts = [];
         foreach ($unapproved_order->rfqProducts as $key => $product) {
+
             foreach ($product->productVariants as $key2 => $variant) {
+
+                $hsn_code = $product->productVendors->where('product_id', $variant->product_id)->first();
                 $variants[$variant->id] = [
                     'product_id' => $product->product_id,
+                    'hsn_code' => $hsn_code->hsn_code,
                     'product_name' => $product->masterProduct->product_name,
                     'brand' => $product->brand,
                     'remarks' => $product->remarks,
@@ -1076,6 +1080,7 @@ class Rfq extends Model
 
         $vendors = [];
         foreach ($unapproved_order->rfqVendors as $key => $vendor) {
+
             $vendor_id = $vendor->vendor_user_id;
             $quotes = $vendor_quotes[$vendor_id] ?? [];
 
@@ -1083,6 +1088,7 @@ class Rfq extends Model
                 'vendor_user_id' => $vendor_id,
                 'legal_name' => $vendor->rfqVendorProfile->legal_name,
                 'address' => $vendor->rfqVendorProfile->address,
+                'vendor_mobile' => optional($vendor->vendor)->mobile,
                 'country' => $vendor->rfqVendorProfile->country,
                 'vendor_rfq_status' => $vendor->vendor_status,
                 'vendorQuotes' => $quotes,

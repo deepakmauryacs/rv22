@@ -665,7 +665,7 @@
                                                         }
                                                     @endphp
                                                 <td class="product-price p-1 align-middle text-center">
-                                                    {{ $nature_of_business[$vendor['nature_of_business']] }}
+                                                    {{ isset($nature_of_business[$vendor['nature_of_business']]) ? $nature_of_business[$vendor['nature_of_business']] : '' }}
                                                 </td>
                                                 @endforeach
                                             </tr>

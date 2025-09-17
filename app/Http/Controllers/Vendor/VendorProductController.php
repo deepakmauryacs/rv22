@@ -592,56 +592,49 @@ class VendorProductController extends Controller
     // Function to check and insert product aliases on update
     public function checkAndInsertProductAliases($tags, $productId, $vendorId, $vendorProductId = null)
     {
-        $aliasProductId = $vendorProductId ?: $productId;
+        // If productId is empty, use vendorProductId
+        $baseProductId = $productId ?: $vendorProductId;
 
-        if (empty($aliasProductId)) {
+        if (empty($baseProductId)) {
             return;
         }
 
+        // Normalize tags -> array of unique, uppercase, trimmed, non-empty
         if (!is_array($tags)) {
-            $tags = explode(',', $tags); // If it's a string, split it into an array
+            $tags = explode(',', $tags);
         }
-
-        $tags = array_map('trim', $tags); // Trim spaces
-        $tags = array_map('strtoupper', $tags); // Convert to uppercase
-        $tags = array_unique($tags); // Ensure tags are unique
-        $tags = array_filter($tags, function ($tag) {
-            return $tag !== '';
-        });
+        $tags = array_map('trim', $tags);
+        $tags = array_map('strtoupper', $tags);
+        $tags = array_unique(array_filter($tags, fn ($t) => $t !== ''));
 
         if (empty($tags)) {
             return;
         }
 
-        $aliasData = [];
+        // Legacy IDs: include the "other" product id (whichever isn't the base), and 0
+        $bothIds = array_filter([$productId, $vendorProductId], fn ($v) => !empty($v));
+        $legacyProductIds = array_values(array_diff($bothIds, [$baseProductId]));
+        $legacyProductIds[] = 0; // handle legacy records with 0
+        $legacyProductIds = array_values(array_unique($legacyProductIds));
 
-        $legacyProductIds = [];
-        if (!empty($productId) && (int) $productId !== (int) $aliasProductId) {
-            $legacyProductIds[] = $productId;
-        }
-
-        $legacyProductIds[] = 0; // Handle any legacy records stored with 0
-        $legacyProductIds = array_unique(array_filter($legacyProductIds, function ($value) {
-            return $value !== null;
-        }));
-
+        // If any legacy rows exist for these tags, re-point them to baseProductId
         if (!empty($legacyProductIds)) {
             DB::table('product_alias')
                 ->where('alias_of', 2)
                 ->where('vendor_id', $vendorId)
                 ->whereIn('alias', $tags)
                 ->whereIn('product_id', $legacyProductIds)
-                ->where('product_id', '!=', $aliasProductId)
+                ->where('product_id', '!=', $baseProductId)
                 ->update([
-                    'product_id' => $aliasProductId,
+                    'product_id' => $baseProductId,
                     'updated_by' => auth()->id(),
                     'updated_at' => now(),
                 ]);
         }
 
-        $productIdsForLookup = array_unique(array_merge([$aliasProductId], $legacyProductIds));
+        $productIdsForLookup = array_unique(array_merge([$baseProductId], $legacyProductIds));
 
-        // Get the existing aliases for the product from the database
+        // Existing aliases for this product across base + legacy ids
         $existingAliases = DB::table('product_alias')
             ->whereIn('product_id', $productIdsForLookup)
             ->where('alias_of', 2)
@@ -649,10 +642,8 @@ class VendorProductController extends Controller
             ->pluck('alias')
             ->toArray();
 
-        // Find the aliases that need to be removed (tags that are no longer part of the update)
+        // Remove aliases that are no longer present
         $tagsToRemove = array_diff($existingAliases, $tags);
-
-        // Remove the aliases that are no longer included in the updated tags
         if (!empty($tagsToRemove)) {
             DB::table('product_alias')
                 ->whereIn('product_id', $productIdsForLookup)
@@ -662,22 +653,24 @@ class VendorProductController extends Controller
                 ->delete();
         }
 
-        $isNewAlias = empty($productId) || (int) $productId === 0 ? null : 1;
+        // If we resolved a baseProductId (even if original $productId was empty), treat as not-new (1)
+        // If you specifically want "new" when productId was empty, set this to null based on original $productId:
+        // $isNewAlias = empty($productId) || (int)$productId === 0 ? null : 1;
+        $isNewAlias = empty($productId) || (int)$productId === 0 ? null : 1;
 
+        $aliasData = [];
         foreach ($tags as $tag) {
-            $tag = substr($tag, 0, 255); // Ensure alias doesn't exceed column length
-            $tag = preg_replace('/\s+/', ' ', trim($tag)); // Clean up the tag (remove extra spaces)
-            $tag = htmlspecialchars($tag, ENT_QUOTES); // Prevent XSS
+            $tag = substr($tag, 0, 255);
+            $tag = preg_replace('/\s+/', ' ', trim($tag));
+            $tag = htmlspecialchars($tag, ENT_QUOTES); // XSS guard for display
 
-            // Check if alias exists in either products or product_alias
             if (!empty($tag) && !$this->aliasExists($tag)) {
-                // Use the method from the same class
                 $aliasData[] = [
-                    'product_id' => $aliasProductId,
-                    'vendor_id' => $vendorId,
-                    'alias' => $tag,
-                    'alias_of' => 2, // 2 indicates the alias belongs to a vendor
-                    'is_new' => $isNewAlias,
+                    'product_id' => $baseProductId,
+                    'vendor_id'  => $vendorId,
+                    'alias'      => $tag,
+                    'alias_of'   => 2, // vendor alias
+                    'is_new'     => $isNewAlias,
                     'created_by' => auth()->id(),
                     'updated_by' => auth()->id(),
                     'created_at' => now(),
@@ -686,11 +679,11 @@ class VendorProductController extends Controller
             }
         }
 
-        // Insert new aliases if any valid alias is found
         if (!empty($aliasData)) {
             DB::table('product_alias')->insert($aliasData);
         }
     }
+
 
     
 }

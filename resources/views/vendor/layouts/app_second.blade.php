@@ -40,7 +40,9 @@
 
         <!-- Body Section -->
         <div class="d-flex">
+            @if(Auth::user()->is_profile_verified==1)
             @include('vendor.layouts.sidebar_second')
+            @endif
 
             <!---Section Main-->
             <main class="main main-inner-page flex-grow-1 py-2 px-md-3 px-1">
@@ -74,38 +76,38 @@
 
         <script>
             function openNav() {
-      const sidebar = document.getElementById("mySidebar");
-      sidebar.style.transform = "translateX(0)";
-      sidebar.classList.add("onClickMenuSidebar");
-      window.addEventListener('resize', function () {
-        const isMobileView = window.innerWidth <= 768;
+                const sidebar = document.getElementById("mySidebar");
+                sidebar.style.transform = "translateX(0)";
+                sidebar.classList.add("onClickMenuSidebar");
+                window.addEventListener('resize', function () {
+                    const isMobileView = window.innerWidth <= 768;
 
-        if (!isMobileView) {
-          sidebar.classList.remove("onClickMenuSidebar");
-          sidebar.removeAttribute("style");
-        }
-      });
-    }
+                    if (!isMobileView) {
+                    sidebar.classList.remove("onClickMenuSidebar");
+                    sidebar.removeAttribute("style");
+                    }
+                });
+            }
 
-    function closeNav() {
-      const sidebar = document.getElementById("mySidebar");
-      sidebar.style.transform = "translateX(-115%)";
-      sidebar.classList.remove("onClickMenuSidebar");
+            function closeNav() {
+                const sidebar = document.getElementById("mySidebar");
+                sidebar.style.transform = "translateX(-115%)";
+                sidebar.classList.remove("onClickMenuSidebar");
 
-      let wasMobileView = window.innerWidth <= 768;
-      window.addEventListener('resize', function () {
-        const isMobileView = window.innerWidth <= 768;
+                let wasMobileView = window.innerWidth <= 768;
+                window.addEventListener('resize', function () {
+                    const isMobileView = window.innerWidth <= 768;
 
-        if (wasMobileView && !isMobileView) {
-          openNav();
-          sidebar.classList.remove("onClickMenuSidebar");
-          sidebar.removeAttribute("style");
-        }
-        wasMobileView = isMobileView;
-      });
-    }
-  </script>
-  @yield('scripts')
+                    if (wasMobileView && !isMobileView) {
+                    openNav();
+                    sidebar.classList.remove("onClickMenuSidebar");
+                    sidebar.removeAttribute("style");
+                    }
+                    wasMobileView = isMobileView;
+                });
+            }
+            </script>
+    @yield('scripts')
     <script>
             setInterval(check_user_message, 15*60000); //poll every 60 second
             check_user_message();

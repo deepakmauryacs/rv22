@@ -1311,7 +1311,7 @@ class InventoryController extends Controller
 
             // Insert indent if shortfall
             // if ($totalCommitted < $qty) {
-            echo $existingIndentQty.'-'.$openRfqQty; //die();
+            //echo $existingIndentQty.'-'.$openRfqQty; //die();
             if ($existingIndentQty < $openRfqQty) {
                 // $indentQty = $qty - $totalCommitted;
                 $indentQty = $openRfqQty - $existingIndentQty;

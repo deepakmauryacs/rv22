@@ -68,6 +68,7 @@
 
 		@yield('scripts')
         <script>
+            @if(Auth::user()->is_profile_verified==1)
             setInterval(check_user_message, 15*60000); //poll every 60 second
             check_user_message();
             // Listen for the visibility change event to detect when the tab becomes active
@@ -110,6 +111,7 @@
                     }
                 });
             }
+            @endif
         </script>
     </body>
 </html>

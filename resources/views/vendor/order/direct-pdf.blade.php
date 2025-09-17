@@ -8,81 +8,81 @@
     <meta charset="utf-8">
     <title>Direct Order for {{ $order->manual_po_number}}</title>
     <style>
-    * {
-        font-family: sans-serif;
-        font-size: 0.94em;
-    }
+        * {
+            font-family: sans-serif;
+            font-size: 0.94em;
+        }
 
-    .table3 {
-        float: left;
-        width: 33.33%;
-    }
+        .table3 {
+            float: left;
+            width: 33.33%;
+        }
 
-    #datatable_wrapper {
-        margin-top: 15px;
-    }
+        #datatable_wrapper {
+            margin-top: 15px;
+        }
 
-    .table-border {
-        border: 1px solid #000;
-    }
+        .table-border {
+            border: 1px solid #000;
+        }
 
-    table {
-        border-collapse: collapse;
-    }
+        table {
+            border-collapse: collapse;
+        }
 
-    thead tr th {
-        color: #1b1a1a !important;
-        text-align: center;
-    }
+        thead tr th {
+            color: #1b1a1a !important;
+            text-align: center;
+        }
 
-    .fc {
-        color: black;
-        line-height: 0.9;
-    }
+        .fc {
+            color: black;
+            line-height: 0.9;
+        }
 
-    .fc1 {
-        color: black;
-        line-height: 0.7;
-        font-size: 1.1em !important;
-    }
+        .fc1 {
+            color: black;
+            line-height: 0.7;
+            font-size: 1.1em !important;
+        }
 
-    .form-control {
-        height: 30px;
-    }
+        .form-control {
+            height: 30px;
+        }
 
-    .fcolor1 {
-        background-color: rgb(54, 96, 146, 0.4);
-    }
+        .fcolor1 {
+            background-color: rgb(54, 96, 146, 0.4);
+        }
 
-    table.product_table {
-        border-bottom: 1px solid #000;
-    }
+        table.product_table {
+            border-bottom: 1px solid #000;
+        }
 
-    table.product_table tr th {
-        border: 1px solid #000;
-        font-size: 12px !important;
-    }
+        table.product_table tr th {
+            border: 1px solid #000;
+            font-size: 12px !important;
+        }
 
-    table.product_table tr th:first-child {
-        border-left: 0px;
-    }
+        table.product_table tr th:first-child {
+            border-left: 0px;
+        }
 
-    table.product_table tr th:lasr-child {
-        border-right: 0px;
-    }
+        table.product_table tr th:lasr-child {
+            border-right: 0px;
+        }
 
-    table.product_table tr td {
-        border: 1px solid #000;
-        font-size: 12px !important;
-    }
+        table.product_table tr td {
+            border: 1px solid #000;
+            font-size: 12px !important;
+        }
 
-    table.product_table tr td:first-child {
-        border-left: 0px;
-    }
+        table.product_table tr td:first-child {
+            border-left: 0px;
+        }
 
-    table.product_table tr td:last-child {
-        border-right: 0px;
-    }
+        table.product_table tr td:last-child {
+            border-right: 0px;
+        }
     </style>
 </head>
 
@@ -92,7 +92,12 @@
             <tr>
                 <td style="">
                     <div class="row" style="margin-bottom:-33px;margin-top:10px;">
-                        <img height="30" width="150" src="{{ asset('public/assets/images/rfq-logo.png') }}" />
+                        @if(empty($order->buyer->logo))
+                        {{$order->buyer->legal_name}}
+                        @else
+                        <img height="30" width="150" src="{{ asset('public/uploads/buyer-profile/'.$order->buyer->logo) }}" style="margin-top: 8px;" />
+                        @endif
+                        {{-- <img height="30" width="150" src="{{ asset('public/assets/images/rfq-logo.png') }}" /> --}}
                         <div class="col-md-12" style="position: relative;top: -38px;">
                             <h4 style="text-align: right;padding-right: 12px;">DIRECT ORDER /ORDER CONFIRMATION</h4>
                         </div>
@@ -428,7 +433,8 @@
                 <td style="">
                     <div class="row">
                         <div class="col-md-12">
-                            <h3 style="text-align: right; padding-right: 5px;">ORDER GENERATED THROUGH<br> RaProcure
+                            <h3 style="text-align: right; padding-right: 5px;">ORDER GENERATED THROUGH<br> <img height="30" width="150"
+                            src="{{ asset('public/assets/images/rfq-logo.png') }}" style="margin-top: 8px;" />
                             </h3>
                         </div>
                     </div>

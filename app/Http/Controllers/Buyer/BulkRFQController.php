@@ -14,7 +14,7 @@ use App\Models\Product;
 use App\Models\Rfq;
 use App\Models\RfqProduct;
 use App\Models\RfqProductVariant;
-use App\Models\uom;
+use App\Models\Uom;
 use Carbon\Carbon;
 use DB;
 use Log;

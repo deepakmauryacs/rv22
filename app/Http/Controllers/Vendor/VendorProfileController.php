@@ -137,6 +137,8 @@ class VendorProfileController extends Controller
         $current_user_id = Auth::user()->id;
         $file_prefix = 'V' . $current_user_id. '-';
 
+        $is_first_time_profile = true;
+
         DB::beginTransaction();
 
         try {
@@ -165,7 +167,7 @@ class VendorProfileController extends Controller
                         
             $vendor->date_of_incorporation = date("Y-m-d", strtotime(str_replace("/", "-", $request->date_of_incorporation)));
             $vendor->nature_of_organization = $request->nature_of_organization;
-            // $vendor->nature_of_business = $request->nature_of_business;
+            $vendor->nature_of_business = $request->nature_of_business;
             $vendor->other_contact_details = $request->other_contact_details;
             $vendor->registered_address = $request->registered_address;
             $vendor->country = $request->country;
@@ -218,6 +220,10 @@ class VendorProfileController extends Controller
                 }
             }else if(!empty($request->iso_regi_certificate_old)){
                 $vendor->iso_regi_certificate = $request->iso_regi_certificate_old;
+            }
+
+            if(empty($vendor->description)){
+                $is_first_time_profile = false;
             }
 
             $vendor->description = $request->description;
@@ -338,6 +344,16 @@ class VendorProfileController extends Controller
                                 'updated_by'=> Auth::user()->id
                             )
                         );
+            }
+
+            if(Auth::user()->is_profile_verified==1 && $is_first_time_profile==true){
+                $admin_detail = getMainSuperadminDetails();
+                
+                $notification = array();
+                $notification_data['to_user_id'] = $admin_detail->id;
+                $notification_data['notification_link'] = route('admin.vendor.profile', ['id'=>$company_id]);
+                $notification_data['message_type'] = "Vendor Profile Update";
+                sendNotifications($notification_data);
             }
 
             $redirectUrl = '';

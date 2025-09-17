@@ -1,6 +1,6 @@
 @extends('vendor.layouts.app_second', ['title' => 'Vendor Profile', 'sub_title' => 'Create'])
 
-@section('css')
+@section('styles')
     <style>
         span.tmd-serial-no,
         span.branch-serial-no {
@@ -9,6 +9,9 @@
         #submit-vendor-profile .spinner-border {
             height: 14px;
             width: 14px;
+        }
+        .error-message {
+            color: red !important;
         }
     </style>
 @endsection
@@ -44,9 +47,11 @@
                             <h2 class="profile-title py-2">For Vendors who are supplying to Steel Plants</h2>
                         </div>
                         <div class="col-4 col-sm-3 order-3 order-sm-3 text-end" id="editEnableDesable">
+                            @if($is_profile_verified == true)
                             <button type="button" onclick="disableEnabled();" class="ra-btn ra-btn-outline-primary-light font-size-12">
                                 <span class="font-size-11">Edit</span>
                             </button>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -103,7 +108,7 @@
                             </div>
 
                             <div class="form-group col-md-6">
-                                <label for="dateOfIncorporation" class="mb-1">Date of Incorporation(DD/MM/YYYY)
+                                <label for="date_of_incorporation" class="mb-1">Date of Incorporation(DD/MM/YYYY)
                                     <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control required date-masking mng-input" placeholder="DD/MM/YYYY"
                                     onblur="validateDateFormat(this, true);" id="date_of_incorporation"
@@ -142,11 +147,11 @@
                             </div>
 
                             <div class="form-group col-md-6">
-                                <label for="otherContactDetails" class="mb-1">
+                                <label for="other_contact_details" class="mb-1">
                                     Other Contact Details
                                     <span class="text-danger">*</span>
                                 </label>
-                                <input type="text" class="form-control mng-input" placeholder="Enter Other Contact Details"
+                                <input type="text" class="form-control mng-input required" placeholder="Enter Other Contact Details"
                                     oninput="this.value = this.value.replace(/[^0-9,\-\/ ]/g, '')"
                                     id="other_contact_details" name="other_contact_details"
                                     value="{{ $vendor->other_contact_details }}" maxlength="255">
@@ -589,7 +594,7 @@
                             </div>
 
                             <div class="col-12 text-start text-sm-end mb-3">
-                                <button type="submit" class="ra-btn ra-btn-primary font-size-12" id="submit-vendor-profile" disabled>
+                                <button type="submit" class="ra-btn ra-btn-primary font-size-12" id="submit-vendor-profile">
                                     <span class="bi bi-floppy font-size-11"></span>
                                     <span class="font-size-11">Save and Submit</span>
                                 </button>
@@ -606,7 +611,8 @@
 
 @section('scripts')
     <script>
-         var disabed=true;
+        var disabed=true;
+        @if($is_profile_verified == true)
         $(document).ready(function() {
             $('.mng-input').prop('disabled', true);
             $('#submit-vendor-profile').prop('disabled', true);
@@ -624,6 +630,7 @@
                 $('#editEnableDesable').html('<button type="button" onclick="disableEnabled();" class="ra-btn ra-btn-outline-primary-light font-size-12"><span class="font-size-11">Edit</span></button>')
             }
         }
+        @endif
         let branch_country = "",
             branch_state = "";
 

@@ -66,8 +66,11 @@
             <tr>
                 <td style="">
                     <div class="row" style="margin-bottom: -22px;">
-                        <img height="30" width="150"
-                            src="{{ asset('public/assets/images/rfq-logo.png') }}" style="margin-top: 8px;" />
+                        @if(empty($order->buyer->logo))
+                        {{$order->buyer->legal_name}}
+                        @else
+                        <img height="30" width="150" src="{{ asset('public/uploads/buyer-profile/'.$order->buyer->logo) }}" style="margin-top: 8px;" />
+                        @endif
                         <div class="col-md-12" style="position: relative;top: -30px;">
 
                             <h4 style="text-align: right;padding-right: 12px;">PURCHASE ORDER /ORDER CONFIRMATION</h4>
@@ -509,7 +512,8 @@
                 <td style="">
                     <div class="row">
                         <div class="col-md-12">
-                            <h3 style="text-align: right; padding-right: 5px;">ORDER GENERATED THROUGH<br> RaProcure</h3>
+                            <h3 style="text-align: right; padding-right: 5px;">ORDER GENERATED THROUGH<br><img height="30" width="150"
+                            src="{{ asset('public/assets/images/rfq-logo.png') }}" style="margin-top: 8px;" /></h3>
                         </div>
                     </div>
                 </td>

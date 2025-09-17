@@ -283,7 +283,7 @@ if(!function_exists('uploadMultipleFile'))
             if($file_prefix!=''){
                 $customName.= $file_prefix . '-';
             }
-            $customName.=  $filename . '-' . date('Ymd-His') . '.' . $extension;
+            $customName.=  $filename . '-' . date('Ymd-His') . '-' . uniqid() . '.' . $extension;
             // Create the target directory for the current year
             $directory = public_path('uploads/'.$dir);
 
@@ -369,19 +369,19 @@ if(!function_exists('sendNotifications')){
                 return "New RFQ has been received from <b>".$sender_name."</b>. RFQ No. ".$notification_data['rfq_no'].".";
             })(),
             'Counter Offer Received' => (function () use ($notification_data) {
-                return "Counter Offer has been received for RFQ No. ".$notification_data['rfq_no'].".";
+                return "Counter Offer has been received for RFQ No. <b>".$notification_data['rfq_no']."</b>.";
             })(),
             'Order Cancelled' => (function () use ($notification_data) {
-                return "Order - No ".$notification_data['po_number']." has been cancelled ";
+                return "Order - No <b>".$notification_data['po_number']."</b> has been cancelled ";
             })(),
             'Order Confirmed' => (function () use ($notification_data) {
-                return "Congratulations! You have received an Order. Order No.: ".$notification_data['po_number'].".";
+                return "Congratulations! You have received an Order. Order No.: <b>".$notification_data['po_number']."</b>.";
             })(),
             'RFQ Closed' => (function () use ($notification_data, $sender_name) {
                 return "<b>".$sender_name."</b> has closed RFQ No. ".$notification_data['rfq_id'].". You will no longer be able to quote.";
             })(),
             'RFQ Edited' => (function () use ($notification_data, $sender_name) {
-                return "RFQ No. ".$notification_data['rfq_no']." has been edited. Update your quote accordingly.";
+                return "RFQ No. <b>".$notification_data['rfq_no']."</b> has been edited. Update your quote accordingly.";
             })(),
             'RFQ Auction' => (function () use ($notification_data, $sender_name) {
                 return "A new Auction has been scheduled. Time <b style='color:red;'>".$notification_data['auction_time']."</b> on <b style='color:red;'>".$notification_data['auction_date']."</b> for <b>".$notification_data['rfq_no']."</b> from <b>".$sender_name."</b> against RFQ No. ".$notification_data['rfq_no'].".";
@@ -400,6 +400,9 @@ if(!function_exists('sendNotifications')){
             })(),
             'Buyer User Creation' => (function () use ($sender_name) {
                 return "<b>".$sender_name."</b> has created a new user.";
+            })(),
+            'Vendor Profile Update' => (function () use ($sender_name) {
+                return "Vendor <b>".$sender_name."</b> has updated profile. Click here to verify.";
             })(),
             // 'editor' => (function () {
             //     logAccess('editor');
@@ -1224,7 +1227,7 @@ if (!function_exists('makeDuplicateRFQData')) {
         $newRfqArray['is_bulk_rfq'] = 2;
         // $newRfqArray['buyer_rfq_status'] = 1;
         $newRfqArray['buyer_user_id'] = $current_user_id;
-        $newRfqArray['last_response_date'] = \Carbon\Carbon::parse($newRfqArray['last_response_date'])->format('Y-m-d');
+        $newRfqArray['last_response_date'] = !empty($newRfqArray['last_response_date']) ? \Carbon\Carbon::parse($newRfqArray['last_response_date'])->format('Y-m-d') : NULL;
         $newRfqArray['edit_by'] = $type == 'edit' ? $current_user_id : NULL;
         $newRfqArray['edit_rfq_id'] = $edited_rfq_id;
         $rfqInsertId = DB::table('rfqs')->insertGetId($newRfqArray);

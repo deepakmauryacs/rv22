@@ -233,7 +233,14 @@ class BuyerController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to complete Buyer Profile. '.$e->getMessage(),
-                'complete_message' => $e
+                'complete_message' => [
+                    // 'exception' => get_class($e),
+                    // 'message' => $e->getMessage(),
+                    // 'code'    => $e->getCode(),
+                    // 'file'    => $e->getFile(),
+                    // 'line'    => $e->getLine(),
+                    // 'trace'   => $e->getTraceAsString(),
+                ]
             ]);
         }
 

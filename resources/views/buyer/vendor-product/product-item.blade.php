@@ -58,7 +58,7 @@ $color = $colors->next();
             </div>
 
             <h4 class="product-category">
-                <a class="text-dark fw-bold font-size-12 text-inherit text-truncate w-100" href=""
+                <a class="text-dark fw-bold font-size-12 text-inherit text-truncate w-100" href="{{ route('buyer.vendor.product.details', ['product_id' => $products->id, 'vendor_id'=> $v->vendor_profile->user_id]) }}"
                     title="{{ $products->product_name }}">{{ $products->product_name }}</a>
             </h4>
         </div>

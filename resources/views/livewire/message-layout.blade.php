@@ -160,7 +160,7 @@
     <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
 
 
-    <script src="{{ asset('public/assets/js/messagePopup.js') }}"></script>
+
 
     <script>
         /*let ckEditorInstance = null;
@@ -206,85 +206,86 @@
                         console.error('CKEditor error:', error);
                     });
             }*/
-            // function injectCkeditorStyles() {
-            // if (document.getElementById('ck-custom-styles')) return;
 
-            // const style = document.createElement('style');
-            // style.id = 'ck-custom-styles';
-            // style.textContent = `
-            // /* Keep link panel above Bootstrap modal */
-            // .ck-balloon-panel,
-            // .ck.ck-balloon-panel,
-            // .ck.ck-tooltip {
-            // z-index: 999999999 !important;
-            // }
+           function injectCkeditorStyles() {
+                if (document.getElementById('ck-custom-styles')) return;
 
-            // /* Minimum height for editor area */
-            // .ck-editor__editable_inline {
-            // min-height: 180px !important;
-            // }
+                const style = document.createElement('style');
+                style.id = 'ck-custom-styles';
+                style.textContent = `
+                /* Keep link panel above Bootstrap modal */
+                .ck-balloon-panel,
+                .ck.ck-balloon-panel,
+                .ck.ck-tooltip {
+                z-index: 99999999999 !important ;
+                }
 
-            // /* Restore bullets/numbers inside CKEditor even if global CSS removes them */
-            // .ck-editor__editable_inline ul,
-            // .ck-editor__editable_inline ol {
-            // padding-left: 2rem;
-            // margin-left: 0;
-            // }
-            // .ck-editor__editable_inline ul li {
-            // list-style-type: disc !important;
-            // }
-            // .ck-editor__editable_inline ol li {
-            // list-style-type: decimal !important;
-            // }
-            // `;
-            // document.head.appendChild(style);
-            // }
+                /* Minimum height for editor area */
+                .ck-editor__editable_inline {
+                min-height: 180px !important;
+                }
 
-            // let ckEditorInstance = null;
+                /* Restore bullets/numbers inside CKEditor even if global CSS removes them */
+                .ck-editor__editable_inline ul,
+                .ck-editor__editable_inline ol {
+                padding-left: 2rem;
+                margin-left: 0;
+                }
+                .ck-editor__editable_inline ul li {
+                list-style-type: disc !important;
+                }
+                .ck-editor__editable_inline ol li {
+                list-style-type: decimal !important;
+                }
+                `;
+            document.head.appendChild(style);
+            }
 
-            // function initCkEditor(initialData = '') {
-            //     const editorElement = document.querySelector('#msg');
-            //     if (!editorElement) {
-            //     console.warn('CKEditor target #msg not found');
-            //     return;
-            //     }
+            let ckEditorInstance = null;
 
-            //     if (ckEditorInstance) {
-            //     ckEditorInstance.destroy()
-            //     .then(() => {
-            //     createCkEditor(editorElement, initialData);
-            //     })
-            //     .catch(error => {
-            //     console.error('Error destroying previous CKEditor:', error);
-            //     createCkEditor(editorElement, initialData);
-            //     });
-            //     } else {
-            //     createCkEditor(editorElement, initialData);
-            //     }
-            // }
+            function initCkEditor(initialData = '') {
+                const editorElement = document.querySelector('#msg');
+                if (!editorElement) {
+                console.warn('CKEditor target #msg not found');
+                return;
+                }
 
-            // function createCkEditor(editorElement, initialData = '') {
-            //     injectCkeditorStyles();
-            // ClassicEditor
-            // .create(editorElement, {
-            // toolbar: [
-            // 'heading', '|', 'bold', 'italic',
-            // 'link', 'bulletedList', 'numberedList',
-            // 'blockQuote', 'undo', 'redo'
-            // ],
-            // })
-            // .then(editor => {
-            // ckEditorInstance = editor;
-            // editor.setData(initialData || '');
-            // editor.model.document.on('change:data', () => {
-            // const data = editor.getData();
-            // Livewire.dispatch('ckeditor-update', { content: data });
-            // });
-            // })
-            // .catch(error => {
-            // console.error('CKEditor error:', error);
-            // });
-            // }
+                if (ckEditorInstance) {
+                ckEditorInstance.destroy()
+                .then(() => {
+                createCkEditor(editorElement, initialData);
+                })
+                .catch(error => {
+                console.error('Error destroying previous CKEditor:', error);
+                createCkEditor(editorElement, initialData);
+                });
+                } else {
+                createCkEditor(editorElement, initialData);
+                }
+            }
+
+            function createCkEditor(editorElement, initialData = '') {
+                injectCkeditorStyles();
+            ClassicEditor
+            .create(editorElement, {
+            toolbar: [
+            'heading', '|', 'bold', 'italic',
+            'link', 'bulletedList', 'numberedList',
+            'blockQuote', 'undo', 'redo'
+            ],
+            })
+            .then(editor => {
+            ckEditorInstance = editor;
+            editor.setData(initialData || '');
+            editor.model.document.on('change:data', () => {
+            const data = editor.getData();
+            Livewire.dispatch('ckeditor-update', { content: data });
+            });
+            })
+            .catch(error => {
+            console.error('CKEditor error:', error);
+            });
+            }
 
             document.addEventListener('DOMContentLoaded', function() {
 

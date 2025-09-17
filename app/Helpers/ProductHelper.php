@@ -119,7 +119,7 @@ if (!function_exists('get_alias_vendor_by_prod_id')) {
         $aliases = DB::table('product_alias')
             ->select('alias')
             ->where('alias_of', 2)
-            ->where('is_new', 0)
+            ->where('is_new', 1)
             ->where('product_id', $prod_id)
             ->where('vendor_id', $vend_id)
             ->get()
@@ -130,6 +130,27 @@ if (!function_exists('get_alias_vendor_by_prod_id')) {
         return implode(', ', $aliases);
     }
 }
+
+if (!function_exists('get_new_alias_vendor_by_prod_id')) {
+    function get_new_alias_vendor_by_prod_id($prod_id, $vend_id) {
+        // Fetch aliases from the database
+        $aliases = DB::table('product_alias')
+            ->select('alias')
+            ->where('alias_of', 2)
+            ->where('is_new',null)
+            ->where('product_id', $prod_id)
+            ->where('vendor_id', $vend_id)
+            ->get()
+            ->pluck('alias')
+            ->toArray();
+
+        // Concatenate aliases into a single string
+        return implode(', ', $aliases);
+    }
+}
+
+
+
 
 if (!function_exists('get_active_dealer_types')) {
     function get_active_dealer_types()

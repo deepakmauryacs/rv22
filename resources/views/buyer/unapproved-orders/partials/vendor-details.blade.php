@@ -21,6 +21,7 @@ $grand_total = 0;
                 value="{{$unapprovedOrder['rfq']['buyer_branch_address']}}">
 
 
+            <input type="hidden" name="vendor_mobile" value="{{ $vendor['vendor_mobile'] }}">
             <input type="hidden" name="vendor_name" value="{{ $vendor['legal_name'] }}">
             <input type="hidden" name="vendor_address" value="{{ $vendor['address'] ?? '-' }}">
             <input type="hidden" name="vendor_currency" value="{{ $quote_details['vendor_currency'] }}">
@@ -85,6 +86,7 @@ $grand_total = 0;
                             <input type="hidden" name="variants[{{ $key }}][specification]"
                                 value="{{$variant['specification']}}">
                             <input type="hidden" name="variants[{{ $key }}][uom]" value="{{$uom[$variant['uom']]}}">
+                            <input type="hidden" name="variants[{{ $key }}][hsn_code]" value="{{$variant['hsn_code']}}">
 
                             <td>{{$s_r++}}</td>
                             <td class="text-center"><b class="font-size-12">

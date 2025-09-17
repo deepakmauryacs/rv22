@@ -1,24 +1,32 @@
-@extends('vendor.layouts.app', ['title'=>'Vendor Profile', 'sub_title'=>'Create'])
+@extends('vendor.layouts.app_second', ['title'=>'Vendor Profile Success', 'sub_title'=>'Create'])
 
 @section('css')
 @endsection
 
 @section('content')
 
-    <div class="bg-white mt-10">
-        <div class="order_confirm">
-            <div class="raprosvg-container">
-                <img src="{{ asset('public/assets/images/raprocure-fevicon.png') }}">
-            </div>
-            <div class="order_confirm_head text-center animated growIn go">
-                <h3>Vendor Profile Status </h3>
-                <p>Thank you for registering with raProcure. Your profile is currently under verification.</p>
-                <p> You will receive a message on your registered email, once your account is verified</p>
-                <a href="{{ route("vendor.profile") }}" class="btn-rfq btn-rfq-primary profile_edit_btn">Edit Profile</a>
-            </div>
-        </div>
-    </div>
+    <main class="success-wrap">
+        <section class="text-center success-card">
 
+            <!-- logo (replace src with your logo path) -->
+            <div class="mt-5">
+                <img class="brand-mark" src="{{ asset('public/assets/images/raprocure-fevicon.png') }}" style="width: 8%;" alt="Brand Logo">
+            </div>
+
+            <!-- main line -->
+            <h3>Vendor Profile Status </h3>
+            <p>Thank you for registering with raProcure. Your profile is currently under verification.</p>
+            <p> You will receive a message on your registered email, once your account is verified</p>
+
+            <!-- actions -->
+            <div class="d-flex justify-content-center gap-2 flex-wrap mt-3">
+                <a href="{{ route("vendor.profile") }}" class="ra-btn ra-btn-outline-primary-light py-2 height-inherit">
+                    Edit Profile
+                </a>
+            </div>
+
+        </section>
+    </main>
 @endsection
 
 @section('scripts')

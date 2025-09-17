@@ -71,7 +71,7 @@
                     </li>
                     <li>
                         <span>Delivery Period:</span>
-                        <span class="fw-bold">{{$rfq->buyer_delivery_period}}</span>
+                        <span class="fw-bold">{{!empty($rfq->buyer_delivery_period)?$rfq->buyer_delivery_period.' Days':''}}</span>
                     </li>
                     <li>
                         <button type="button" onclick="window.open(`{{ route('buyer.rfq.quotation-received.print',['rfq_id'=> $rfq_id,'vendor_id'=>$vendor_id]) }}`, '_blank', 'width=800,height=600,resizable=yes,scrollbars=yes'); return false;"
@@ -114,6 +114,8 @@
                                         $showAttachment = $product->productVariants->contains(function ($v) {
                                             return !empty($v->attachment);
                                         });
+                                        $vendor_currency=$product->productVariants[0]->latestVendorQuotation($vendor_id)->vendor_currency;
+
                                     @endphp
                                     <tr>
                                         <th scope="col" class="text-nowrap text-dark">
@@ -132,16 +134,16 @@
                                         <th>Attachment</th>
                                         @endif
                                         <th scope="col" class="text-nowrap text-dark">
-                                            Price(₹)
+                                            Price({{!empty($vendor_currency)?$vendor_currency:'₹'}})
                                         </th>
                                         <th scope="col" class="text-nowrap text-dark">
-                                            MRP(₹)
+                                            MRP({{!empty($vendor_currency)?$vendor_currency:'₹'}})
                                         </th>
                                         <th scope="col" class="text-nowrap text-dark">
                                             Disc.(%)
                                         </th>
                                         <th scope="col" class="text-nowrap text-dark">
-                                            Total(₹)
+                                            Total({{!empty($vendor_currency)?$vendor_currency:'₹'}})
                                         </th>
                                         <th scope="col" class="text-nowrap text-dark">
                                             Counter <br>Offer
@@ -157,9 +159,8 @@
 
                                 <tbody>
                                     @foreach($product->productVariants as $keyj => $variant)
-
                                     <tr>
-                                        <td>{{++$keyj}}.</td>
+                                        <td>{{++$keyj}}</td>
                                         <td>
                                             <span class="text-muted">{!!$variant->specification!!}</span>
                                         </td>
@@ -192,16 +193,21 @@
                                         </td>
                                         @endif
                                         <td class="text-center">
-                                            <span
-                                                class="text-muted text-nowrap">{{$variant->latestVendorQuotation($vendor_id)?->price}}</span>
+                                            <span class="text-muted text-nowrap">
+                                                {{$variant->latestVendorQuotation($vendor_id)?->price}}
+                                            </span>
                                         </td>
                                         <td class="text-center">
                                             <span
-                                                class="text-muted text-nowrap">{{$variant->latestVendorQuotation($vendor_id)?->mrp}}</span>
+                                                class="text-muted text-nowrap">
+                                                {{$variant->latestVendorQuotation($vendor_id)?->mrp}}
+                                            </span>
                                         </td>
                                         <td class="text-center">
                                             <span
-                                                class="text-muted text-nowrap">{{$variant->latestVendorQuotation($vendor_id)?->discount}}</span>
+                                                class="text-muted text-nowrap">
+                                                {{$variant->latestVendorQuotation($vendor_id)?->discount}}
+                                            </span>
                                         </td>
                                         <td class="text-center">
                                             <span class="text-muted text-nowrap">
@@ -293,7 +299,7 @@
                         </div>
                     </div>
                     <div class="col-md-4 mb-4">
-                        
+
                         <span class="form-control" readonly disabled>Attachment File...</span>
                         @if($latestQuotation?->vendor_attachment_file)
                         <a href="{{ asset('public/uploads/rfq-attachment/' . $latestQuotation?->vendor_attachment_file) }}" target="_blank">

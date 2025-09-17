@@ -122,7 +122,7 @@ if(!empty(Auth::user()->parent_id)){
                             <a href="javascript:void(0)" class="btn-link" onclick="setNotify(event)" id="notifyButton"
                                 data-bs-toggle="tooltip" data-bs-placement="bottom" title="Notification">
                                 <i class="bi bi-bell font-size-22" aria-hidden="true"></i>
-                                <span class="notification-number">7</span>
+                                <span class="notification-number">0</span>
                             </a>
                             <div class="bell_messages" id="Allnotification_messages">
                                 <div class="message_wrap">
