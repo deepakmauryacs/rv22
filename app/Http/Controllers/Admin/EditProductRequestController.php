@@ -181,9 +181,9 @@ class EditProductRequestController extends Controller
 
             // Update Tags/Aliases
             if (!empty($request->tag)) {
-                DB::table('tbl_prod_alias')
-                    ->where('prod_id', $request->prod_id)
-                    ->where('vend_id', $request->vend_id)
+                DB::table('product_alias')
+                    ->where('product_id', $request->prod_id)
+                    ->where('vendor_id', $request->vend_id)
                     ->where('alias_of', 2)
                     ->delete();
 
@@ -192,8 +192,8 @@ class EditProductRequestController extends Controller
 
                 foreach ($tags as $tag) {
                     $aliasData[] = [
-                        'prod_id' => $request->prod_id,
-                        'vend_id' => $request->vend_id,
+                        'product_id' => $request->prod_id,
+                        'vendor_id' => $request->vend_id,
                         'alias' => htmlspecialchars(strtoupper(substr($tag, 0, 255)), ENT_QUOTES),
                         'alias_of' => 2,
                         'is_new' => 1,
@@ -203,7 +203,7 @@ class EditProductRequestController extends Controller
                 }
 
                 if (!empty($aliasData)) {
-                    DB::table('tbl_prod_alias')->insert($aliasData);
+                    DB::table('product_alias')->insert($aliasData);
                 }
             }
 
