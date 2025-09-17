@@ -55,6 +55,10 @@ class NewProductRequestController extends Controller
     {
         $product = VendorProduct::with(['vendor', 'product'])->findOrFail($id);
 
+        if (!empty($product->product_name)) {
+            $product->product_name = strtoupper($product->product_name);
+        }
+
         $divisions = Division::where('status', 1)->orderBy('division_name')->get();
 
         $dealertypes = DB::table('dealer_types')
@@ -116,9 +120,16 @@ class NewProductRequestController extends Controller
 
 
 
-    
+
     public function update(Request $request)
     {
+        if ($request->has('product_name')) {
+            $normalizedProductName = strtoupper(preg_replace('/\s+/', ' ', trim($request->input('product_name', ''))));
+            $request->merge([
+                'product_name' => $normalizedProductName,
+            ]);
+        }
+
         $validator = Validator::make($request->all(), [
             'product_name' => 'required',
             'product_description' => 'required',
@@ -197,6 +208,7 @@ class NewProductRequestController extends Controller
             // Step 2: Prepare vendor product update
             $productData = [
                 'product_id' => $prod_id,
+                'product_name' => $request->product_name,
                 'description' => $request->product_description,
                 'dealer_type_id' => $request->product_dealer_type,
                 'uom' => $request->product_uom ?? 0,

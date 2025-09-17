@@ -87,7 +87,7 @@
                             <label class="col-sm-3 col-form-label">Product Name <span class="text-danger">*</span></label>
                             <div class="col-sm-9">
                                 <div class="position-relative">
-                                     <input type="text" class="form-control" name="product_name" id="product_name" value="{{ $product->product_name }}" autocomplete="off">
+                                     <input type="text" class="form-control" name="product_name" id="product_name" value="{{ old('product_name', $product->product_name) }}" autocomplete="off">
                                      <input type="hidden" name="product_id" id="product_id">
                                      <!-- <div id="product_suggestions" class="dropdown-menu" style="width: 100%; display: none;"></div> -->
 
@@ -537,8 +537,27 @@ $(document).ready(function () {
     const $suggestionBox = $('#product_suggestions');
     let debounceTimer;
 
+    const toUppercase = (value) => (value || '').toString().toUpperCase();
+
+    if ($input.val()) {
+        $input.val(toUppercase($input.val()));
+    }
+
     $input.on('input', function () {
-        const query = $(this).val().trim();
+        const currentValue = $(this).val();
+        const uppercasedValue = toUppercase(currentValue);
+
+        if (currentValue !== uppercasedValue) {
+            const selectionStart = this.selectionStart;
+            const selectionEnd = this.selectionEnd;
+            $(this).val(uppercasedValue);
+
+            if (typeof selectionStart === 'number' && typeof selectionEnd === 'number') {
+                this.setSelectionRange(selectionStart, selectionEnd);
+            }
+        }
+
+        const query = uppercasedValue.trim();
         clearTimeout(debounceTimer);
         $hiddenInput.val(''); // reset hidden input
 
@@ -562,9 +581,10 @@ $(document).ready(function () {
                         `<div class="dropdown-item disabled text-muted">Showing result for "<strong>${query}</strong>" — ${data.length} found</div>`
                     );
                     $.each(data, function (i, item) {
-                        const $option = $('<div class="dropdown-item" style="cursor: pointer;"></div>').text(item.label);
+                        const labelUpper = toUppercase(item.label);
+                        const $option = $('<div class="dropdown-item" style="cursor: pointer;"></div>').text(labelUpper);
                         $option.on('click', function () {
-                            $input.val(item.label);
+                            $input.val(labelUpper);
                             $hiddenInput.val(item.id);
                             $suggestionBox.hide();
 
