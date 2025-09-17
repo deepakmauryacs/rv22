@@ -75,13 +75,16 @@
         }
 
         const maxQty = parseFloat($('#IssueStock').val()) || 0;
+        const valFloat = parseFloat(val) || 0;
 
-        if (parseFloat(val) > maxQty) {
-            val = maxQty.toString();
+        // Fixing floating point precision by rounding to 2 decimal places
+        if (parseFloat(valFloat.toFixed(2)) > parseFloat(maxQty.toFixed(2))) {
+            val = maxQty.toFixed(2);
         }
 
         this.value = val;
     });
+
 
     let isSubmitting = false;
 
@@ -153,11 +156,9 @@
                     $('#addIssueForm').find('input[type="hidden"]').val('');
                     $('#IssueModal').modal('hide');
                     toastr.success(response.message);
-
-                    if ($.fn.DataTable.isDataTable('#inventory-table')) {
-                        $('#inventory-table').DataTable().destroy();
+                    if (inventoryTable) {
+                        inventoryTable.ajax.reload();
                     }
-                    inventory_list_data();
                 } else {
                     toastr.error("Failed to add Issue!");
                 }

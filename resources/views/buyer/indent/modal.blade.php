@@ -47,15 +47,20 @@
 </div>
 <!--indent Modal--->
 <script>
-    //===save indent data==   
+    //===save indent data==  
+    let isSaveIndentSubmitting = false; 
     $("#addIndentForm").off('submit').on('submit', function (e) {
         e.preventDefault();
+
+        if (isSaveIndentSubmitting) return;
 
         const $form = $(this);
         const $saveButton = $('.save_indent_button');
         let hasError = false;
 
         const branchId = $('#branch_id').val();
+        
+        
         if (!branchId) {
             toastr.error("Branch Name is required");
             hasError = true;
@@ -68,6 +73,20 @@
         const indentQtyArr = $form.find('input[name="indent_qty[]"]').map(function () {
             return $(this).val();
         }).get();
+        let minIndentQtyArr = [];
+
+        const indentQtyField = $form.find('input[name="indent_qty"]');
+        const minIndentQtyField = $form.find('input[name="min_indent_qty"]');
+
+        if (indentQtyField.length > 0 && minIndentQtyField.length > 0) {
+            const indentQty = parseFloat(parseFloat(indentQtyField.val()).toFixed(2));
+            const minQty = parseFloat(parseFloat(minIndentQtyField.val()).toFixed(2));
+
+            if (!isNaN(indentQty) && !isNaN(minQty) && indentQty < minQty) {
+                toastr.error(`Indent quantity cannot be less than existing RFQ quantity (${minQty.toFixed(2)})`);
+                hasError = true;
+            }
+        }
 
         for (let i = 0; i < inventoryIds.length; i++) {
             if (!inventoryIds[i]) {
@@ -75,7 +94,8 @@
                 hasError = true;
             }
 
-            const qty = parseFloat(indentQtyArr[i]);
+            const qty = parseFloat(parseFloat(indentQtyArr[i]).toFixed(2));
+           
             if (!indentQtyArr[i]) {
                 toastr.error(`Row ${i + 1}: QTY is required`);
                 hasError = true;
@@ -96,8 +116,12 @@
             }
         });
 
-        if (hasError) return;
+        if (hasError) {
+            isSaveIndentSubmitting = false;
+            return;
+        }
 
+        isSaveIndentSubmitting = true;
         $saveButton.prop('disabled', true);
 
         let formData = $form.serialize();
@@ -109,21 +133,22 @@
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
             data: formData,
             success: function (response) {
+                isSaveIndentSubmitting = false;
                 $saveButton.prop('disabled', false);
                 if (response.status) {
                     $form[0].reset();
                     $form.find('input[type="hidden"]').val('');
                     $('#indentModal').modal('hide');
                     toastr.success(response.message);
-                    if ($.fn.DataTable.isDataTable('#inventory-table')) {
-                        $('#inventory-table').DataTable().destroy();
-                    }
-                    inventory_list_data();
+                    if (inventoryTable) {
+                            inventoryTable.ajax.reload();
+                        }
                 } else {
                     toastr.error(response.message || "Failed to add indent!");
                 }
             },
             error: function (xhr) {
+                isSaveIndentSubmitting = false;
                 $saveButton.prop('disabled', false);
                 const res = xhr.responseJSON || {};
                 if (xhr.status === 422 && res.errors) {
@@ -169,8 +194,9 @@
 
                     toastr.success(response.message || 'Indent deleted successfully.');
                     $('.delete_indent_button').removeAttr('disabled');
-                    $('#inventory-table').DataTable().destroy();
-                    inventory_list_data();
+                    if (inventoryTable) {
+                            inventoryTable.ajax.reload();
+                        }
                 } else {
                     $('.delete_indent_button').removeAttr('disabled');
                     toastr.error(response.message || 'Failed to delete indent.');

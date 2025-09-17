@@ -74,7 +74,7 @@
                         </div>
                     </div>
                 </div>
-
+                
                 <div class="col-6 col-sm-auto">
                     <button type="button"
                         class="ra-btn ra-btn-outline-danger w-100 justify-content-center font-size-11" onClick="window.location.href='{{ route('buyer.report.pendingGrn') }}'">

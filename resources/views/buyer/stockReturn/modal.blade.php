@@ -51,6 +51,7 @@
                                         <select class="form-select w-220" id="stock_return_type" name="stock_return_type">
                                         </select>
                                     </td>
+                                    
                                 </tr>
                             </tbody>
                         </table>
@@ -75,15 +76,20 @@
 
         const maxQty = parseFloat($('#stock_return_stock').val()) || 0;
 
-        if (parseFloat(val) > maxQty) {
-            val = maxQty.toString();
+        const valFloat = parseFloat(val) || 0;
+
+        // Fixing floating point precision by rounding to 2 decimal places
+        if (parseFloat(valFloat.toFixed(2)) > parseFloat(maxQty.toFixed(2))) {
+            val = maxQty.toFixed(2);
         }
 
         this.value = val;
     });
-
+    let isSaveStockReturnSubmitting = false;
     $("#addStockReturnForm").off('submit').on('submit', function (e) {
         e.preventDefault();
+        if (isSaveStockReturnSubmitting) return;
+        isSaveStockReturnSubmitting = true;
         $('.save_stock_return_button').prop('disabled', true);
 
         var z = false;
@@ -125,6 +131,7 @@
 
         if (z) {
             $('.save_stock_return_button').prop('disabled', false);
+            isSaveStockReturnSubmitting = false;
             return;
         }
 
@@ -136,21 +143,22 @@
             data: formData,
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
             success: function (response) {
+                isSaveStockReturnSubmitting = false;
                 $('.save_stock_return_button').prop('disabled', false);
                 if (response.status) {
                     $('#addStockReturnForm')[0].reset();
                     $('#addStockReturnForm').find('input[type="hidden"]').val('');
                     $('#StockReturnModal').modal('hide');
                     toastr.success(response.message);
-                    if ($.fn.DataTable.isDataTable('#inventory-table')) {
-                        $('#inventory-table').DataTable().destroy();
+                    if (inventoryTable) {
+                        inventoryTable.ajax.reload();
                     }
-                    inventory_list_data();
                 } else {
                     toastr.error("Failed to add Issue!");
                 }
             },
             error: function (xhr) {
+                isSaveStockReturnSubmitting = false;
                 $('.save_stock_return_button').prop('disabled', false);
                 if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
                     let errors = xhr.responseJSON.errors;

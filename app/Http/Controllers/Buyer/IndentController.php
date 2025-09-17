@@ -214,11 +214,12 @@ class IndentController extends Controller
         }
         $inventoryId = $indent->inventory_id;
         $inventoryController = app(InventoryController::class);
+        $inventoryController->preloadRfqData([$inventoryId]);
         $rfqData = $inventoryController->getRfqData($inventoryId);
         $rfqQty = $rfqData['rfq_qty'][$inventoryId] ?? 0;
 
         $restRfqQty = $rfqQty;
-
+        $min_indent_qty=0;
         $allIndents = Indent::where('inventory_id', $inventoryId)
         ->where('is_deleted', 2)
         ->orderBy('id')
@@ -233,15 +234,18 @@ class IndentController extends Controller
             foreach ($allIndents as $row) {
                 if ($restRfqQty == 0) {
                     $showDelete = true;
+                    $min_indent_qty=0;
                     break;
                 }
                 if ($restRfqQty >= $row->indent_qty) {
                     $restRfqQty -= $row->indent_qty;
                     if ($row->id == $indent->id) {
+                        $min_indent_qty=$restRfqQty;
                         $showDelete = false;
                         break;
                     }
                 } else {
+                    $min_indent_qty = $restRfqQty;
                     $restRfqQty = 0;
                     if ($row->id == $indent->id) {
                         $showDelete = false;
@@ -266,6 +270,8 @@ class IndentController extends Controller
             'created_at' => $indent->created_at,
             'updated_at' => $indent->updated_at,
             'showDelete' => $showDelete,
+            'min_indent_qty' => $min_indent_qty > 0 ? round($min_indent_qty,2) : 0,
+
 
             'product_name' => optional($indent->inventory->product)->product_name,
             'specification' => optional($indent->inventory)->specification,
@@ -453,7 +459,11 @@ class IndentController extends Controller
             $inventory = $row->inventory;
             $inventoryId = $row->inventory_id;
 
+
             $inventoryController = app(InventoryController::class);
+            // $this->controller->preloadGrnData([$inventoryId]);
+            // $this->controller->preloadRfqData([$inventoryId]);
+            // $this->controller->preloadOrderData([$inventoryId]);
             $totalGrnQty = $this->getGrnData($inventoryId)['grn_qty'][$inventoryId] ?? 0;
             $totalRfqQty = $this->getRfqData($inventoryId)['rfq_qty'][$inventoryId] ?? 0;
             $totalOrderQty = $this->getOrderData($inventoryId)['order_qty'][$inventoryId] ?? 0;

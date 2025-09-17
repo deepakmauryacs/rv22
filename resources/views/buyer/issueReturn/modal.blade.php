@@ -67,8 +67,11 @@
 
         const maxQty = parseFloat($('#IssuedReturnStock').val()) || 0;
 
-        if (parseFloat(val) > maxQty) {
-            val = maxQty.toString();
+        const valFloat = parseFloat(val) || 0;
+
+        // Fixing floating point precision by rounding to 2 decimal places
+        if (parseFloat(valFloat.toFixed(2)) > parseFloat(maxQty.toFixed(2))) {
+            val = maxQty.toFixed(2);
         }
 
         this.value = val;
@@ -76,8 +79,10 @@
 
 
     //===save Issue Return data==
+    let isSaveIssueReturnSubmitting = false;
     $("#addIssueReturnForm").off('submit').on('submit', function(e) {
         e.preventDefault();
+        if (isSaveIssueReturnSubmitting) return;
 
         let hasError = false;
         const branch_id = $('#branch_id').val();
@@ -119,49 +124,52 @@
             toastr.error(`${fieldName} must not exceed ${$(invalidField).attr('maxlength')} characters.`);
             $(invalidField).focus();
         }
+        if (hasError) return;
+        isSaveIssueReturnSubmitting = true;
+        $submitButton.prop('disabled', true);
+        const formData = $(this).serialize();
 
-        if (!hasError) {
-            const formData = $(this).serialize();
+        $submitButton.prop('disabled', true);
 
-            $submitButton.prop('disabled', true);
-
-            $.ajax({
-                url: "{{ route('buyer.issue_return.store') }}",
-                type: "POST",
-                data: formData + '&buyer_branch_id=' + branch_id,
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function (response) {
-                    if (response.status) {
-                        $submitButton.prop('disabled', false);
-                        $('#addIssueReturnForm')[0].reset();
-                        $('#addIssueReturnForm').find('input[type="hidden"]').val('');
-                        $('#IssueReturnModal').modal('hide');
-                        toastr.success(response.message);
-                        $('#inventory-table').DataTable().destroy();
-                        inventory_list_data();
-                    } else {
-                        toastr.error(response.message || "Failed to add issue return.");
-                        $submitButton.prop('disabled', false);
+        $.ajax({
+            url: "{{ route('buyer.issue_return.store') }}",
+            type: "POST",
+            data: formData + '&buyer_branch_id=' + branch_id,
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function (response) {
+                isSaveIssueReturnSubmitting = false;
+                $submitButton.prop('disabled', false);
+                if (response.status) {
+                    $('#addIssueReturnForm')[0].reset();
+                    $('#addIssueReturnForm').find('input[type="hidden"]').val('');
+                    $('#IssueReturnModal').modal('hide');
+                    toastr.success(response.message);
+                    if (inventoryTable) {
+                        inventoryTable.ajax.reload();
                     }
-                },
-                error: function (xhr) {
-                    $submitButton.prop('disabled', false);
-
-                    if (xhr.status === 422 && xhr.responseJSON?.errors) {
-                        let errors = xhr.responseJSON.errors;
-                        for (let field in errors) {
-                            toastr.error(errors[field][0]);
-                        }
-                    } else if (xhr.status === 400 && xhr.responseJSON?.message) {
-                        toastr.error(xhr.responseJSON.message);
-                    } else {
-                        toastr.error("Something went wrong!");
-                    }
+                } else {
+                    toastr.error(response.message || "Failed to add issue return.");
                 }
-            });
-        }
+            },
+            error: function (xhr) {
+                isSaveIssueReturnSubmitting = false;
+                $submitButton.prop('disabled', false);
+
+                if (xhr.status === 422 && xhr.responseJSON?.errors) {
+                    let errors = xhr.responseJSON.errors;
+                    for (let field in errors) {
+                        toastr.error(errors[field][0]);
+                    }
+                } else if (xhr.status === 400 && xhr.responseJSON?.message) {
+                    toastr.error(xhr.responseJSON.message);
+                } else {
+                    toastr.error("Something went wrong!");
+                }
+            }
+        });
+        
     });
 
 

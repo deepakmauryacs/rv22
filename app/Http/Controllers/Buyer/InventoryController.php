@@ -15,16 +15,19 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{
-    Auth,DB,Route,Validator
+    Auth,DB,Route,Validator,Cache
 };
 use App\Rules\NoSpecialCharacters;
 use App\Traits\TrimFields;
 
-
-
 class InventoryController extends Controller
 {
     use TrimFields;
+    protected $grnQtyCache = [];
+    protected $rfqDataCache = [];
+    protected $orderQtyCache = [];
+    protected $batchSize = 100;
+    
     public function __construct(protected ExportService $exportService) {}
     public function index(Request $request)
     {
@@ -41,7 +44,7 @@ class InventoryController extends Controller
         $inventoryTypes = InventoryType::all();
         $uom = Uom::all();
         $firstBranch = BranchDetail::getDistinctActiveBranchesByUser($user_id)->first();
-        if(empty(session('branch_id'))){
+        if (empty(session('branch_id')) && $firstBranch !== null) {
             session(['branch_id' => $firstBranch->branch_id]);
         }
         session(['page_title' => 'Inventory Management System - Raprocure']);
@@ -129,7 +132,7 @@ class InventoryController extends Controller
 
                 return response()->json([
                     'status' => true,
-                    'message' => 'Inventory saved successfully!',
+                    'message' => 'Inventory added successfully!',
                     'data' => $inventory
                 ], 200);
             } else {
@@ -142,7 +145,7 @@ class InventoryController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Error saving inventory!',
+                'message' => 'Inventory not added, please try again!',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -252,6 +255,7 @@ class InventoryController extends Controller
             $filters['search_inventory_type_id'] = $request->input('search_inventory_type_id');
             $fileName = 'Inventory_Report_' . now()->format('d-m-Y') . '.xlsx';
         }
+        
 
         $response = $this->exportService->storeAndDownload($export, $fileName);
 
@@ -320,6 +324,9 @@ class InventoryController extends Controller
         $inventories = collect($inventories);
         $inventoryIds = $inventories->pluck('id')->toArray();
         $quantityMaps = StockQuantityHelper::preloadStockQuantityMaps($inventoryIds);
+        $this->preloadGrnData($inventoryIds);
+        $this->preloadRfqData($inventoryIds);
+        $this->preloadOrderData($inventoryIds);
 
         return $inventories->map(function ($inv)use ($quantityMaps) {
             $currentStockValue = StockQuantityHelper::calculateCurrentStockValue($inv->id,$inv->opening_stock,$quantityMaps);
@@ -343,8 +350,11 @@ class InventoryController extends Controller
         $inventories = collect($inventories);
         $inventoryIds = $inventories->pluck('id')->toArray();
         $quantityMaps = StockQuantityHelper::preloadStockQuantityMaps($inventoryIds);
+        $this->preloadGrnData($inventoryIds);
+        $this->preloadRfqData($inventoryIds);
+        $this->preloadOrderData($inventoryIds);
 
-        return $inventories->map(function ($inv) use ($quantityMaps) {
+        $formatdata= $inventories->map(function ($inv) use ($quantityMaps) {
             $indentQty = $inv->indents->where('is_deleted', 2)->where('closed_indent', 2)->sum('indent_qty');
             $currentStockValue = StockQuantityHelper::calculateCurrentStockValue($inv->id,$inv->opening_stock,$quantityMaps);
             $currencySymbol = session('user_currency')['symbol'] ?? '₹';
@@ -383,92 +393,227 @@ class InventoryController extends Controller
 
             ];
         });
+        $this->clearAllCacheSilent($inventoryIds);
+        return $formatdata;
     }
+
+    public function preloadGrnData(array $inventoryIds): void
+    {
+        $cacheKey = 'grn_data_' . md5(json_encode($inventoryIds));
+
+        $this->grnQtyCache = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($inventoryIds) {
+            return Grn::whereIn('inventory_id', $inventoryIds)
+                ->where('grn_type', 1)
+                ->where('inv_status', 1)
+                ->select('inventory_id', DB::raw('SUM(grn_qty) as total_grn_qty'))
+                ->groupBy('inventory_id')
+                ->pluck('total_grn_qty', 'inventory_id')
+                ->toArray();
+        });
+    }
+
+
+
     public function getGrnData($inventoryId)
     {
-        $grnQtySum = Grn::where('inventory_id', $inventoryId)
-            ->where('grn_type', 1)
-            ->where('inv_status', 1)
-            ->sum('grn_qty');
+        $grnQty = $this->grnQtyCache[$inventoryId] ?? 0;
+        return [
+            'grn_qty' => [$inventoryId => $grnQty]
+        ];
+    }
+
+    public function preloadRfqData(array $inventoryIds): void
+    {
+        $cacheKey = 'rfq_data_' . md5(json_encode($inventoryIds));
+
+        $this->rfqDataCache = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($inventoryIds) {
+            $result = [
+                'already_fetch_rfq' => [],
+                'close_rfq_id_arr' => [],
+                'rfq_ids_against_inventory_id' => [],
+                'rfq_qty' => [],
+            ];
+
+            $rfqs = Rfq::with('rfqProductVariants')
+                ->where('record_type', 2)
+                ->whereHas('rfqProductVariants', function ($query) use ($inventoryIds) {
+                    $query->whereIn('inventory_id', $inventoryIds)
+                        ->where('inventory_status', 1);
+                })
+                ->get();
+
+            foreach ($rfqs as $rfq) {
+                $rfqId = $rfq->id;
+                $status = $rfq->buyer_rfq_status;
+                $result['already_fetch_rfq'][$rfqId] = $rfqId;
+
+                foreach ($rfq->rfqProductVariants as $variant) {
+                    $inventoryId = $variant->inventory_id;
+                    $quantity = $variant->quantity;
+
+                    if (in_array($status, [8, 10])) {
+                        $result['close_rfq_id_arr'][$rfqId] = $rfqId;
+                        $result['rfq_ids_against_inventory_id'][$rfqId] = $inventoryId;
+                    } else {
+                        if (!isset($result['rfq_qty'][$inventoryId])) {
+                            $result['rfq_qty'][$inventoryId] = 0;
+                        }
+                        $result['rfq_qty'][$inventoryId] += $quantity;
+                    }
+                }
+            }
+
+            return $result;
+        });
+    }
+
+
+    public function getRfqData($inventoryId): array
+    {
+        if (empty($this->rfqDataCache)) {
+            return [];
+        }
+
+        $rfqQty = $this->rfqDataCache['rfq_qty'][$inventoryId] ?? 0;
 
         return [
-            'grn_qty' => [
-                $inventoryId => $grnQtySum
-            ]
+            'rfq_qty' => [$inventoryId => $rfqQty],
         ];
     }
-    public function getRfqData($inventoryIds): array
+
+    public function preloadOrderData(array $inventoryIds): void
     {
-        $result = [
-            'already_fetch_rfq' => [],
-            'close_rfq_id_arr' => [],
-            'rfq_ids_against_inventory_id' => [],
-            'rfq_qty' => [],
-        ];
-        $rfqs = Rfq::with('rfqProductVariants')
-            ->where('record_type', 2)
-            ->whereHas('rfqProductVariants', function ($query) use ($inventoryIds) {
-                if (is_array($inventoryIds)) {
-                    $query->whereIn('inventory_id', $inventoryIds)
-                          ->where('inventory_status', 1);
-                } else {
-                    $query->where('inventory_id', $inventoryIds)
-                          ->where('inventory_status', 1);
-                }
-            })
-            ->get();
-        foreach ($rfqs as $rfq) {
-            $rfqId = $rfq->id;
-            $status = $rfq->buyer_rfq_status;
+        $cacheKey = 'order_data_' . md5(json_encode($inventoryIds));
 
-            $result['already_fetch_rfq'][$rfqId] = $rfqId;
+        $this->orderQtyCache = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($inventoryIds) {
+            $totalQtyPerInventory = [];
 
-            foreach ($rfq->rfqProductVariants as $variant) {
+            $variants = RfqProductVariant::with(['rfq.orders.order_variants'])
+                ->whereIn('inventory_id', $inventoryIds)
+                ->where('inventory_status', 1)
+                ->whereHas('rfq', function ($query) {
+                    $query->where('record_type', 2);
+                })
+                ->get();
+
+            foreach ($variants as $variant) {
                 $inventoryId = $variant->inventory_id;
-                $quantity = $variant->quantity;
+                $productId = $variant->product_id;
+                $rfq = $variant->rfq;
 
-                if (in_array($status, [8, 10])) {
-                    $result['close_rfq_id_arr'][$rfqId] = $rfqId;
-                    $result['rfq_ids_against_inventory_id'][$rfqId] = $inventoryId;
-                } else {
-                    if (!isset($result['rfq_qty'][$inventoryId])) {
-                        $result['rfq_qty'][$inventoryId] = 0;
+                foreach ($rfq->orders as $order) {
+                    if ($order->order_status != 1) continue;
+
+                    foreach ($order->order_variants as $ov) {
+                        if ($ov->product_id == $productId) {
+                            if (!isset($totalQtyPerInventory[$inventoryId])) {
+                                $totalQtyPerInventory[$inventoryId] = 0;
+                            }
+                            $totalQtyPerInventory[$inventoryId] += $ov->order_quantity;
+                        }
                     }
-                    $result['rfq_qty'][$inventoryId] += $quantity;
                 }
             }
-        }
-        return $result;
+
+            return $totalQtyPerInventory;
+        });
     }
-    
+
     public function getOrderData($inventoryId): array
     {
-        $totalQty = 0;
-
-        $variants = RfqProductVariant::with(['rfq.orders.order_variants'])
-            ->where('inventory_id', $inventoryId)
-            ->where('inventory_status', 1)
-            ->whereHas('rfq', function ($query) {
-                $query->where('record_type', 2);
-            })
-            ->get();
-
-        foreach ($variants as $variant) {
-            $rfq = $variant->rfq;
-
-            foreach ($rfq->orders as $order) {
-                if ($order->order_status != 1) continue;
-
-                foreach ($order->order_variants as $ov) {
-                    if ($ov->product_id == $variant->product_id) {
-                        $totalQty += $ov->order_quantity;
-                    }
-                }
-            }
-        }
-
-        return ['order_qty' => [$inventoryId => $totalQty]];
+        $qty = $this->orderQtyCache[$inventoryId] ?? 0;
+        return ['order_qty' => [$inventoryId => $qty]];
     }
+    public function clearAllCacheSilent(array $inventoryIds = []): void
+    {
+        if (empty($inventoryIds)) return;
+
+        $chunks = array_chunk($inventoryIds, $this->batchSize);
+
+        foreach ($chunks as $chunk) {
+            Cache::forget('grn_data_' . md5(json_encode($chunk)));
+            Cache::forget('rfq_data_' . md5(json_encode($chunk)));
+            Cache::forget('order_data_' . md5(json_encode($chunk)));
+        }
+    }
+
+    protected function cacheRemember(string $key, \Closure $callback, int $minutes = 10)
+    {
+        return Cache::remember($key, now()->addMinutes($minutes), $callback);
+    }
+
+    
+    // public function getRfqData($inventoryIds): array
+    // {
+    //     $result = [
+    //         'already_fetch_rfq' => [],
+    //         'close_rfq_id_arr' => [],
+    //         'rfq_ids_against_inventory_id' => [],
+    //         'rfq_qty' => [],
+    //     ];
+    //     $rfqs = Rfq::with('rfqProductVariants')
+    //         ->where('record_type', 2)
+    //         ->whereHas('rfqProductVariants', function ($query) use ($inventoryIds) {
+    //             if (is_array($inventoryIds)) {
+    //                 $query->whereIn('inventory_id', $inventoryIds)
+    //                       ->where('inventory_status', 1);
+    //             } else {
+    //                 $query->where('inventory_id', $inventoryIds)
+    //                       ->where('inventory_status', 1);
+    //             }
+    //         })
+    //         ->get();
+    //     foreach ($rfqs as $rfq) {
+    //         $rfqId = $rfq->id;
+    //         $status = $rfq->buyer_rfq_status;
+
+    //         $result['already_fetch_rfq'][$rfqId] = $rfqId;
+
+    //         foreach ($rfq->rfqProductVariants as $variant) {
+    //             $inventoryId = $variant->inventory_id;
+    //             $quantity = $variant->quantity;
+
+    //             if (in_array($status, [8, 10])) {
+    //                 $result['close_rfq_id_arr'][$rfqId] = $rfqId;
+    //                 $result['rfq_ids_against_inventory_id'][$rfqId] = $inventoryId;
+    //             } else {
+    //                 if (!isset($result['rfq_qty'][$inventoryId])) {
+    //                     $result['rfq_qty'][$inventoryId] = 0;
+    //                 }
+    //                 $result['rfq_qty'][$inventoryId] += $quantity;
+    //             }
+    //         }
+    //     }
+    //     return $result;
+    // }
+    // public function getOrderData($inventoryId): array
+    // {
+    //     $totalQty = 0;
+
+    //     $variants = RfqProductVariant::with(['rfq.orders.order_variants'])
+    //         ->where('inventory_id', $inventoryId)
+    //         ->where('inventory_status', 1)
+    //         ->whereHas('rfq', function ($query) {
+    //             $query->where('record_type', 2);
+    //         })
+    //         ->get();
+
+    //     foreach ($variants as $variant) {
+    //         $rfq = $variant->rfq;
+
+    //         foreach ($rfq->orders as $order) {
+    //             if ($order->order_status != 1) continue;
+
+    //             foreach ($order->order_variants as $ov) {
+    //                 if ($ov->product_id == $variant->product_id) {
+    //                     $totalQty += $ov->order_quantity;
+    //                 }
+    //             }
+    //         }
+    //     }
+
+    //     return ['order_qty' => [$inventoryId => $totalQty]];
+    // }
 
 
     //----------------------------------------INVENTORY MIN QTY LOGIC---------------------------------------------------------
@@ -507,14 +652,23 @@ class InventoryController extends Controller
             ]);
         }
 
-        $inventories = Inventories::with(['product', 'uom'])
-                ->whereIn('id', $inventoryIds)
-                ->orderBy('created_at', 'desc')
-                ->orderBy('updated_at', 'desc')
-                ->get()
-                ->sortBy(function($inventory) {
-                    return $inventory->product->product_name ?? '';
-                });
+        // $inventories = Inventories::with(['product', 'uom'])
+        //         ->whereIn('id', $inventoryIds)
+        //         ->orderBy('created_at', 'desc')
+        //         ->orderBy('updated_at', 'desc')
+        //         ->get()
+        //         ->sortBy(function($inventory) {
+        //             return $inventory->product->product_name ?? '';
+        //         });
+        $inventories = Inventories::select('inventories.*')
+                ->join('products', 'products.id', '=', 'inventories.product_id')
+                ->with(['product', 'uom'])
+                ->whereIn('inventories.id', $inventoryIds)
+                ->orderBy('products.product_name', 'asc') // এখানে sort হচ্ছে DB তেই
+                ->orderBy('inventories.created_at', 'desc')
+                ->orderBy('inventories.updated_at', 'desc')
+                ->get();
+
 
 
         if ($inventories->isEmpty()) {
@@ -1157,7 +1311,7 @@ class InventoryController extends Controller
 
             // Insert indent if shortfall
             // if ($totalCommitted < $qty) {
-            //echo $existingIndentQty.'-'.$openRfqQty; //die();
+            echo $existingIndentQty.'-'.$openRfqQty; //die();
             if ($existingIndentQty < $openRfqQty) {
                 // $indentQty = $qty - $totalCommitted;
                 $indentQty = $openRfqQty - $existingIndentQty;
@@ -1188,6 +1342,5 @@ class InventoryController extends Controller
             throw $e;
         }
     }
-
 
 }

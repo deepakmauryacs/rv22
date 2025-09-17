@@ -45,66 +45,73 @@
 </div>
 <!--Consume Modal--->
 <script>
-   $('#qty').on('input paste keyup', function () {
+    $('#qty').on('input paste keyup', function () {
         let val = this.value;
 
         if (!/^\d*\.?\d{0,2}$/.test(val)) {
             val = val.slice(0, -1);
         }
 
-        const maxQty =$('#available_stock_qty').val();
-        if (parseFloat(val) > maxQty) {
-            val = maxQty.toString();
+        // Convert to float
+        const maxQty = parseFloat($('#available_stock_qty').val()) || 0;
+        const valFloat = parseFloat(val) || 0;
+
+        // Fixing floating point precision by rounding to 2 decimal places
+        if (parseFloat(valFloat.toFixed(2)) > parseFloat(maxQty.toFixed(2))) {
+            val = maxQty.toFixed(2);
         }
 
         this.value = val;
     });
 
 
-    //===save Issue data==
-   $("#addIssueConsumeForm").submit(function (e) {
-    e.preventDefault();
 
-    let submitBtn = $('#save_consume_button');
-    submitBtn.prop('disabled', true);
+    //===save consume  data==
+    $("#addIssueConsumeForm").off('submit').on('submit', function (e) {
+        e.preventDefault();
 
-    let issue_qty = parseFloat($('#qty').val().trim());
-    if (isNaN(issue_qty) || issue_qty < 0.01) {
-        toastr.error("Minimum quantity must be 0.01");
-        $('#qty').focus();
-        submitBtn.prop('disabled', false);
-        return;
-    }
+        let submitBtn = $('#save_consume_button');
 
-    let formData = $(this).serialize();
-    $.ajax({
-        url: "{{ route('buyer.issue.consume.store') }}",
-        type: "POST",
-        headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
-        data: formData,
-        success: function (response) {
-            if (response.status) {
-                $('.save_consume_button').removeAttr('disabled');
-                $('#addIssueConsumeForm')[0].reset();
-                $('#addIssueConsumeForm').find('input[type="hidden"]').val('');
-                $('#IssueConsumeModal').modal('hide');
-                toastr.success(response.message);
-                $('#report-table').DataTable().destroy();
-                report_list_data();
-            } else {
-                toastr.error(response.message || "Failed to Consume.");
-                submitBtn.prop('disabled', false);
-            }
-        },
-        error: function (xhr) {
-            let msg = xhr.responseJSON?.message || "Something went wrong!";
-            toastr.error(msg);
-            submitBtn.prop('disabled', false);
+        if (submitBtn.hasClass('processing')) {
+            return;
         }
-    });
-});
 
-    //===Save Issue Data==
+        let issue_qty = parseFloat($('#qty').val().trim());
+        if (isNaN(issue_qty) || issue_qty < 0.01) {
+            toastr.error("Minimum quantity must be 0.01");
+            $('#qty').focus();
+            return;
+        }
+
+        submitBtn.prop('disabled', true).addClass('processing');
+
+        let formData = $(this).serialize();
+        $.ajax({
+            url: "{{ route('buyer.issue.consume.store') }}",
+            type: "POST",
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            data: formData,
+            success: function (response) {
+                if (response.status) {
+                    $('#addIssueConsumeForm')[0].reset();
+                    $('#addIssueConsumeForm').find('input[type="hidden"]').val('');
+                    $('#IssueConsumeModal').modal('hide');
+                    toastr.success(response.message);
+                    $('#report-table').DataTable().destroy();
+                    report_list_data();
+                } else {
+                    toastr.error(response.message || "Failed to Consume.");
+                }
+                submitBtn.prop('disabled', false).removeClass('processing');
+            },
+            error: function (xhr) {
+                let msg = xhr.responseJSON?.message || "Something went wrong!";
+                toastr.error(msg);
+                submitBtn.prop('disabled', false).removeClass('processing');
+            }
+        });
+    });
+    //===Save consume Data==
 
 
 

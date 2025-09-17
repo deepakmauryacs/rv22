@@ -42,22 +42,58 @@ class ManualPOController extends Controller
             ]);
         }
     }
+    // public function fetchInventoryDetails(Request $request)
+    // {
+    //     $this->userCurrency();
+    //     $inventories = collect();
+    //     Inventories::whereIn('id', $request->input('ids'))
+    //         ->with(['product:id,product_name', 'uom:id,uom_name'])
+    //         ->select('id', 'product_id', 'specification', 'size', 'uom_id')
+    //         ->orderBy('product_name', 'asc')
+    //         ->chunk(500, function ($chunk) use (&$inventories) {
+    //             $inventories = $inventories->concat($chunk);
+    //         });
+         
+
+    //     $taxes = Tax::where('status', '1')->get(['id', 'tax']);
+    //     return $inventories->isEmpty()
+    //         ? response()->json(['status' => 'error', 'message' => 'No inventories found'], 404)
+    //         : response()->json(['status' => 'success', 'data' => ['inventories' => $inventories->values(), 'taxes' => $taxes]]);
+    // }
     public function fetchInventoryDetails(Request $request)
     {
         $this->userCurrency();
-        $inventories = collect();
-        Inventories::whereIn('id', $request->input('ids'))
+
+        $inventoryIds = $request->input('ids', []);
+
+        if (empty($inventoryIds)) {
+            return response()->json(['status' => 'error', 'message' => 'No inventory IDs provided'], 400);
+        }
+
+        $inventories = Inventories::select('inventories.*')
+            ->join('products', 'products.id', '=', 'inventories.product_id')
             ->with(['product:id,product_name', 'uom:id,uom_name'])
-            ->select('id', 'product_id', 'specification', 'size', 'uom_id')
-            ->orderBy('product_name', 'asc')
-            ->chunk(500, function ($chunk) use (&$inventories) {
-                $inventories = $inventories->concat($chunk);
-            });
+            ->whereIn('inventories.id', $inventoryIds)
+            ->orderBy('products.product_name', 'asc')
+            ->orderBy('inventories.created_at', 'desc')
+            ->orderBy('inventories.updated_at', 'desc')
+            ->get();
+
+        if ($inventories->isEmpty()) {
+            return response()->json(['status' => 'error', 'message' => 'No inventories found'], 404);
+        }
+
         $taxes = Tax::where('status', '1')->get(['id', 'tax']);
-        return $inventories->isEmpty()
-            ? response()->json(['status' => 'error', 'message' => 'No inventories found'], 404)
-            : response()->json(['status' => 'success', 'data' => ['inventories' => $inventories->values(), 'taxes' => $taxes]]);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'inventories' => $inventories,
+                'taxes' => $taxes,
+            ]
+        ]);
     }
+
     public function searchVendorByVendorname(Request $request)
     {
         $query = $request->input('q');

@@ -116,7 +116,7 @@
                 var maxQty = parseFloat($input.data('max'));
                 var enteredQty = parseFloat(val);
 
-                if (!isNaN(maxQty) && !isNaN(enteredQty) && enteredQty > maxQty) {
+                if (!isNaN(maxQty) && !isNaN(enteredQty) && parseFloat(enteredQty.toFixed(2)) > parseFloat(maxQty.toFixed(2))) {
                     $input.val('');
                     toastr.error(`GRN Quantity cannot exceed available quantity (${maxQty}).`);
                 }
@@ -124,11 +124,14 @@
 
         });
 
-
-        $('#grnaddForm').submit(function (e) {
+        let isSaveGrnSubmitting = false;
+        $('#grnaddForm').off('submit').on('submit',function (e) {
             e.preventDefault();
-            $('.save_grn_button').attr('disabled', 'disabled');
-
+            if (isSaveGrnSubmitting) {
+                return; // Prevent multiple submissions
+            }
+            isSaveGrnSubmitting = true; 
+            $('.save_grn_button').attr('disabled', true);
             $.ajax({
                 type: "POST",
                 url: "{{ route('buyer.grn.store') }}",
@@ -142,18 +145,18 @@
                 success: function (response) {
                     if (response.status) {
                         toastr.success(response.message);
-                        $('.save_grn_button').removeAttr('disabled');
                         $("#grnaddModal").modal('hide');
-                        $('#inventory-table').DataTable().ajax.reload();
-                        // setTimeout(function () {
-                        //     location.reload();
-                        // }, 1000);
+                        if (inventoryTable) {
+                            inventoryTable.ajax.reload();
+                        }
                     } else {
                         toastr.error(response.message || 'Something went wrong. Please try again.');
-                        $('.save_grn_button').removeAttr('disabled');
                     }
+                    isSaveGrnSubmitting = false;
+                    $('.save_grn_button').removeAttr('disabled');
                 },
                 error: function (xhr) {
+                    isSaveGrnSubmitting = false;
                     $('.save_grn_button').removeAttr('disabled');
 
                     if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
@@ -168,7 +171,7 @@
                     }
                 }
             });
-        });//pingki
+        });
 
     </script>
 @endpush

@@ -19,7 +19,7 @@
                         <ul class="accordian-submenu">
                             {{-- <li><a href="javascript:void(0)">Generate New RFQ</a></li> --}}
                             @if(checkPermission('GENERATE_BULK_RFQ','view','1'))
-                                <li><a href="javascript:void(0)">Generate Bulk RFQ</a></li>
+                               <li><a href="{{ route('buyer.rfq.bulk-rfq') }}" class="{{ setActiveMenu('buyer.rfq.bulk-rfq') }}">Generate Bulk RFQ</a></li>
                             @endif
                             @if(checkPermission('ACTIVE_RFQS_CIS','view','1'))
                                 <li><a href="{{ route('buyer.rfq.active-rfq') }}" class="{{ setActiveMenu('buyer.rfq.active-rfq') }}">Active RFQs / CIS</a></li>

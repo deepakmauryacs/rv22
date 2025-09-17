@@ -28,18 +28,17 @@ class BranchDetail extends Model
     {
         return $this->belongsTo(User::class, 'updated_by');
     }
-
     public static function getDistinctActiveBranchesByUser($userId)
     {
         return self::where('user_id', $userId)
             ->where('status', 1)
             ->where('record_type', 1)
+            ->where('user_type', 1)
             ->groupBy('branch_id')
             ->select('branch_id', DB::raw('MIN(name) as name'))
             ->orderBy('name', 'asc')
             ->get();
     }
-
     // protected static function booted()
     // {
     //     static::addGlobalScope('alphabeticalFirst', function (Builder $builder) {
@@ -67,6 +66,7 @@ class BranchDetail extends Model
     {
         return $this->hasOne(Country::class, 'id', 'country');
     }
+    
     public function branch_state()
     {
         return $this->hasOne(State::class, 'id','state');

@@ -49,6 +49,8 @@ use App\Http\Controllers\Buyer\ScheduledRfqController;
 use App\Http\Controllers\Buyer\OrderConfirmedController;
 
 use App\Http\Controllers\Buyer\AuctionCISController;
+/* Added Bulk RFQ Controller */
+use App\Http\Controllers\Buyer\BulkRFQController;
 
 Route::name('buyer.')->group(function () {
 
@@ -107,6 +109,13 @@ Route::name('buyer.')->group(function () {
                 Route::get('compose/draft-rfq/{draft_id}', [RFQComposeController::class, 'index'])->name('rfq.compose-draft-rfq');
                 Route::post('draft-rfq/add', [RFQDraftController::class, 'addToDraftRFQ'])->name('rfq.add-to-draft-rfq');
                 Route::get('compose/rfq-success/{rfq_id}', [ComposeRFQController::class, 'composeRFQSuccess'])->name('rfq.compose-rfq-success');
+
+                /* BULK RFQ ROUTS */
+                Route::get('bulk-rfq', [BulkRFQController::class, 'index'])->name('rfq.bulk-rfq');
+                Route::post('upload-excel', [BulkRFQController::class, 'uploadBulkExcel'])->name('rfq.bulk-rfq.uploadBulkExcel');
+                Route::get('get-uom-list', [BulkRFQController::class, 'getAllUOMLists'])->name('rfq.bulk-rfq.getAllUOMLists');
+                Route::post('validate-product-name', [BulkRFQController::class, 'validateProductName'])->name('rfq.bulk-rfq.validateProductName');
+                Route::post('bulk-draft-rfq', [BulkRFQController::class, 'bulkDraftRFQ'])->name('rfq.bulk-rfq.bulkDraftRFQ');
 
                 Route::get('active-rfq', [ActiveRFQController::class, 'index'])->name('rfq.active-rfq');
                 Route::get('sent-rfq', [ActiveRFQController::class, 'sent_rfq'])->name('rfq.sent-rfq');

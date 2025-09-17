@@ -28,15 +28,15 @@
                                 <tr>
                                     <!-- Autocomplete Product Name -->
                                     <td>
-                                        <span id="divisionCategory" class="text-start"></span>
+                                        <span id="divisionCategory" class="text-start extraSpan"></span>
                                         <input type="text" class="form-control bg-white w-180" name="product_name" id="inventory_product_name" autocomplete="off">
                                         <input type="hidden" class="form-control bg-white w-180" name="product_id" id="product_id" maxlength="20">
                                         <div id="productSuggestions" class="list-group" style="display: none;"></div>
                                     </td>
-                                    <td><input type="text" class="form-control bg-white w-180 specialCharacterAllowed" name="specification" id="product_specification" maxlength="500"></td>
-                                    <td><input type="text" class="form-control bg-white w-180 specialCharacterAllowed" {{-- pingki --}} name="size" id="product_size" maxlength="1500"></td>
-                                    <td><input type="text" class="form-control bg-white smt_numeric_only" name="opening_stock" id="opening_stock" maxlength="10"></td>
-                                    <td>
+                                    <td><span class="text-start extraSpan"></span><input type="text" class="form-control bg-white w-180 specialCharacterAllowed" name="specification" id="product_specification" maxlength="500"></td>
+                                    <td><span class="text-start extraSpan"></span><input type="text" class="form-control bg-white w-180 specialCharacterAllowed" {{-- pingki --}} name="size" id="product_size" maxlength="1500"></td>
+                                    <td><span class="text-start extraSpan"></span><input type="text" class="form-control bg-white smt_numeric_only" name="opening_stock" id="opening_stock" maxlength="10"></td>
+                                    <td><span class="text-start extraSpan"></span>
                                         <select class="form-select" name="uom_id" id="product_uom" >
                                             <option value="">Select UOM</option>
                                             @foreach($uom as $uom)
@@ -44,7 +44,7 @@
                                             @endforeach
                                         </select>
                                     </td>
-                                    <td><input type="text" class="form-control bg-white smt_numeric_only" name="stock_price" id="stock_price" maxlength="10"></td>
+                                    <td><span class="text-start extraSpan"></span><input type="text" class="form-control bg-white smt_numeric_only" name="stock_price" id="stock_price" maxlength="10"></td>
                                 </tr>
                                 <tr>
                                     <th scope="col">Brand </th>
@@ -83,188 +83,209 @@
         </div>
     </div>
 </div>
+@push('styles')
+<style>
+    .extraSpan {
+        display: inline-block;
+        height: 20px;
+        }
+    .extraSpan:empty {
+        display: none;
+        }
+</style>
+@endpush
 @push('exJs')
     <script>
-        $("#inventory_product_name").keyup(function () {
-            let rawInput = $(this).val();          // includes spaces
-            let query = rawInput.trim();            
-            $('#divisionCategory').html(' ');
-            $('#product_id').val(' ');
-            $("#productSuggestions").empty().show();
-            if (rawInput.length < 3) {
+        $(document).ready(function () {
+
+            $("#productSuggestions").hide();
+
+            $("#inventory_product_name").on("keyup", function (e) {
+                let query = $(this).val();
+                let rawInput = $(this).val();
+                // let query = rawInput.trim();
+
+                $('#divisionCategory').html('');
+                $('.extraSpan').html('');
+                $('#product_id').val('');
+
+                if (e.key === "Enter") {
+                    const divisionCategoryVal = $('#divisionCategory').text().trim();
+                    if (divisionCategoryVal !== '') {
+                        $("#productSuggestions").hide();
+                    }
+                    return;
+                }
+
+                if (query.length < 3) {
+                    $("#productSuggestions").html(`
+                        <p class="p-2" style="color:#6aa510;">
+                            Please enter more than 3 characters.
+                        </p>
+                    `).show();
+                    return;
+                }
+
                 $("#productSuggestions").html(`
-                    <p class="p-2" style="color:#6aa510;">
-                        Please enter more than 3 characters.
-                    </p>
-                `);
-                return;
-            }
-            else{
-                 $("#productSuggestions").html(`<li style="text-align: center;" class="search-loader-image">
-                            <p><img src="{{ asset('public/assets/images/loader.gif') }}" style="width: 35px;"></p>
-                        </li>`);                          
+                    <div style="text-align: center;" class="search-loader-image">
+                        <p><img src="{{ asset('public/assets/images/loader.gif') }}" style="width: 35px;"></p>
+                    </div>
+                `).show();
+
+
                 $.ajax({
                     url: "{{ route('buyer.product.search') }}",
                     method: "GET",
                     data: { query: query },
                     success: function (data) {
                         if (data.length > 0) {
-                            $("#productSuggestions").html(`
-                                <p class="p-2">
-                                    Showing result for "<strong>${rawInput}</strong>" – <strong>${data.length}</strong> records found
-                                </p>
-                            `);
+                            let resultHtml = `<p class="p-2">Showing result for "<strong>${rawInput}</strong>" – <strong>${data.length}</strong> records found</p>`;
                             data.forEach(product => {
-                                $("#productSuggestions").append(`
+                                resultHtml += `
                                     <a href="#"
-                                    class="list-group-item list-group-item-action product-item text-start"
-                                    data-id="${product.id}"
-                                    data-name="${product.product_name}" data-division-category="${product.division_name} > ${product.category_name}">
+                                        class="list-group-item list-group-item-action product-item text-start"
+                                        data-id="${product.id}"
+                                        data-name="${product.product_name}"
+                                        data-division-category="${product.division_name} > ${product.category_name}">
                                         ${product.division_name} > ${product.category_name} <br> ${product.product_name}
                                     </a>
-                                `);
+                                `;
                             });
+                            $("#productSuggestions").html(resultHtml).show();
                         } else {
                             $("#productSuggestions").html(`
-                                <p class="p-2">No Product Found For <strong>"${rawInput}" Keyword</strong></p>
-                            `);
+                                <p class="p-2">No Product Found For <strong>"${rawInput}"</strong></p>
+                            `).show();
                         }
                     },
                     error: function (xhr, status, error) {
                         console.error("Error fetching product suggestions:", error);
                     }
                 });
-            }
+            });
 
-        });
-
-        // Select product from suggestions
-        $(document).on("click", ".product-item", function(e) {
-            e.preventDefault();
-            $("#inventory_product_name").val($(this).data("name"));
-            $('#product_id').val($(this).data("id"));
-            $('#divisionCategory').html($(this).data("division-category"));
-            $("#productSuggestions").hide();
-        });
-
-        // Hide suggestions when clicking outside
-        $(document).click(function(event) {
-            if (!$(event.target).closest("#productSuggestions, #inventory_product_name").length) {
+            $(document).on("click", ".product-item", function (e) {
+                e.preventDefault();
+                $("#inventory_product_name").val($(this).data("name"));
+                $('#product_id').val($(this).data("id"));
+                $('.extraSpan').html(' ');
+                $('#divisionCategory').html($(this).data("division-category"));
                 $("#productSuggestions").hide();
-            }
-        });
-        // Save Inventory (Add/Edit)
-        $('#inventoryForm').submit(function (e) {
-            e.preventDefault();
-            $('.save_inventory_button').removeAttr('disabled');
-
-            //start pingki
-            var branch_id = $('#branch_id').val().trim();
-            var product_id = $('#product_id').val().trim();
-            var opening_stock = $('#opening_stock').val().trim();
-            var product_uom = $('#product_uom').val().trim();
-            var stock_price = $('#stock_price').val().trim();
-            //end pingki
-
-            function showError(msg, selector) {
-                toastr.error(msg);
-                if (selector) $(selector).focus();
-            }
-
-            if (branch_id === '') {
-                showError("Branch Name is required!", '#branch_id');
-                return;
-            }
-            if (product_id === '') {
-                showError("Valid Product is required!", "#product_name");
-                return;
-            }
-            if (opening_stock === '') {
-                showError("Opening Stock is required!", "#opening_stock");
-                return;
-            }
-            if (product_uom === '') {
-                showError("Product UOM is required!", "#product_uom");
-                return;
-            }
-            if (stock_price === '') {
-                showError("Rate is required!", "#stock_price");
-                return;
-            }
-
-            // Client side maxlength validation for all inputs with maxlength attr inside form
-            var invalidMaxlengthField = null;
-            $('#inventoryForm [maxlength]').each(function () {
-                var max = parseInt($(this).attr('maxlength'));
-                var val = $(this).val();
-                if (val.length > max) {
-                    invalidMaxlengthField = this;
-                    return false; // break .each
-                }
             });
-            if (invalidMaxlengthField) {
-                var fieldName = $(invalidMaxlengthField).attr('name') || 'Field';
-                showError(fieldName + " must not exceed " + $(invalidMaxlengthField).attr('maxlength') + " characters.", invalidMaxlengthField);
-                return;
-            }
 
-            $('.save_inventory_button').attr('disabled', 'disabled');
-
-            $.ajax({
-                type: "POST",
-                url: "{{ route('buyer.inventory.store') }}",
-                // headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
-                data: $('#inventoryForm').serialize() + '&buyer_branch_id=' + branch_id,
-                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
-                success: function (response) {
-                    if (response.status) {
-                        $('.save_inventory_button').removeAttr('disabled');
-                        $('#inventoryForm')[0].reset();
-                        $('#inventoryForm').find('select').val('');
-                        $('#inventoryForm').find('input[type="hidden"]').val('');
-                        $('#inventoryModal').modal('hide');
-                        toastr.success(response.message);
-                        $('#inventory-table').DataTable().destroy();
-                        inventory_list_data();
-                    } else {
-                        toastr.error(response.message || "Failed to save data.");
-                        $('.save_inventory_button').removeAttr('disabled');
-                    }
-                },
-                error: function (xhr) {
-                    $('.save_inventory_button').removeAttr('disabled');
-                    // Laravel validation error format
-                    if (xhr.status === 422) {
-                        const response = xhr.responseJSON;
-
-                        // 1. Handle default Laravel validation errors (in "errors" object)
-                        if (response.errors) {
-                            let firstInvalid = true;
-                            $.each(response.errors, function (key, messages) {
-                                toastr.error(messages[0]);
-                                if (firstInvalid) {
-                                    const field = $('[name="' + key + '"]');
-                                    if (field.length) field.focus();
-                                    firstInvalid = false;
-                                }
-                            });
-                        }
-                        // 2. Handle custom error string from response.error
-                        else if (response.error) {
-                            toastr.error(response.error);
-                        }
-                        // 3. Fallback error message
-                        else {
-                            toastr.error(response.message || "Validation failed.");
-                        }
-                    } else {
-                        toastr.error("Something went wrong. Please try again.");
+            $(document).click(function (event) {
+                if (!$(event.target).closest("#productSuggestions, #inventory_product_name").length) {
+                    const divisionCategoryVal = $('#divisionCategory').text().trim();
+                    if (divisionCategoryVal !== '') {
+                        $("#productSuggestions").hide();
                     }
                 }
+            });
+            let isSaveInventorySubmitting = false;
+            $('#inventoryForm').off('submit').on('submit', function (e) {
+                e.preventDefault();
+                if (isSaveInventorySubmitting) return;
+                
+                $('.save_inventory_button').removeAttr('disabled');
 
+                var branch_id = $('#branch_id').val().trim();
+                var product_id = $('#product_id').val().trim();
+                var opening_stock = $('#opening_stock').val().trim();
+                var product_uom = $('#product_uom').val().trim();
+                var stock_price = $('#stock_price').val().trim();
+
+                function showError(msg, selector) {
+                    toastr.error(msg);
+                    if (selector) $(selector).focus();
+                }
+
+                if (branch_id === '') {
+                    showError("Branch Name is required!", '#branch_id');
+                    return;
+                }
+                if (product_id === '') {
+                    showError("Please select valid product!", "#product_name");
+                    return;
+                }
+                if (opening_stock === '') {
+                    showError("Opening Stock is required!", "#opening_stock");
+                    return;
+                }
+                if (product_uom === '') {
+                    showError("Product UOM is required!", "#product_uom");
+                    return;
+                }
+                if (stock_price === '') {
+                    showError("Rate is required!", "#stock_price");
+                    return;
+                }
+
+                var invalidMaxlengthField = null;
+                $('#inventoryForm [maxlength]').each(function () {
+                    var max = parseInt($(this).attr('maxlength'));
+                    var val = $(this).val();
+                    if (val.length > max) {
+                        invalidMaxlengthField = this;
+                        return false;
+                    }
+                });
+                if (invalidMaxlengthField) {
+                    var fieldName = $(invalidMaxlengthField).attr('name') || 'Field';
+                    showError(fieldName + " must not exceed " + $(invalidMaxlengthField).attr('maxlength') + " characters.", invalidMaxlengthField);
+                    return;
+                }
+
+                $('.save_inventory_button').attr('disabled', true);
+                isSaveInventorySubmitting = true;
+
+                $.ajax({
+                    type: "POST",
+                    url: "{{ route('buyer.inventory.store') }}",
+                    data: $('#inventoryForm').serialize() + '&buyer_branch_id=' + branch_id,
+                    headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                    success: function (response) {                        
+                        isSaveInventorySubmitting = false;
+                        $('.save_inventory_button').removeAttr('disabled');
+                        if (response.status) {
+                            $('#inventoryForm')[0].reset();
+                            $('#inventoryForm').find('select').val('');
+                            $('#inventoryForm').find('input[type="hidden"]').val('');
+                            $('#inventoryModal').modal('hide');
+                            toastr.success(response.message);
+                            if (inventoryTable) {
+                                inventoryTable.ajax.reload();
+                            }
+                        } else {
+                            toastr.error(response.message || "Failed to save data.");
+                        }
+                    },
+                    error: function (xhr) {
+                        isSaveInventorySubmitting = false;
+                        $('.save_inventory_button').removeAttr('disabled');
+                        if (xhr.status === 422) {
+                            const response = xhr.responseJSON;
+                            if (response.errors) {
+                                let firstInvalid = true;
+                                $.each(response.errors, function (key, messages) {
+                                    toastr.error(messages[0]);
+                                    if (firstInvalid) {
+                                        const field = $('[name="' + key + '"]');
+                                        if (field.length) field.focus();
+                                        firstInvalid = false;
+                                    }
+                                });
+                            } else if (response.error) {
+                                toastr.error(response.error);
+                            } else {
+                                toastr.error(response.message || "Validation failed.");
+                            }
+                        } else {
+                            toastr.error("Something went wrong. Please try again.");
+                        }
+                    }
+                });
             });
         });
-
-
     </script>
+
 @endpush

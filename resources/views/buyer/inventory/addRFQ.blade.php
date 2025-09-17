@@ -1,5 +1,5 @@
 <!---Rfq Modal-->
-<div id="RfqModal" class="modal fade" tabindex="-1" role="dialog">  
+<div id="RfqModal" class="modal fade" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-graident text-white">
@@ -70,9 +70,10 @@
 <!--Active Rfq Details Modal--->
 <script>
     //===save indent data==
-
-    $("#addRfqForm").submit(function (e) {
+    let isSaveRfqSubmitting = false;
+    $("#addRfqForm").off('submit').on('submit',function (e) {
         e.preventDefault();
+        if (isSaveRfqSubmitting) return;
 
         let branch_id = $('#branch_id').val();
         if (!branch_id) {
@@ -94,19 +95,25 @@
                 return false; // stop loop
             }
 
-            if (qty > max) {
-                toastr.error(`Please Enter Quantity Less than or Equal To ${max} For This Product`);
+            const qtyFloat = parseFloat(qty) || 0;
+            const maxFloat = parseFloat(max) || 0;
+
+            // Fix floating-point precision by comparing rounded values
+            if (parseFloat(qtyFloat.toFixed(4)) > parseFloat(maxFloat.toFixed(4))) {
+                toastr.error(`Please enter a quantity less than or equal to ${maxFloat.toFixed(2)} for this product.`);
                 $(this).focus();
                 allValid = false;
                 return false; // stop loop
             }
+
         });
 
         if (!allValid) return;
 
-        let formData = $(this).serialize() + '&branch_id=' + encodeURIComponent(branch_id);
-
+        isSaveRfqSubmitting = true;
         $('.save_rfq_button').attr('disabled', true);
+
+        let formData = $(this).serialize() + '&branch_id=' + encodeURIComponent(branch_id);
 
         $.ajax({
             url: "{{ route('buyer.inventory.generateRFQ') }}", // replace with correct route
@@ -116,12 +123,15 @@
             },
             data: formData,
             success: function (response) {
+                isSaveRfqSubmitting = false;
                 $('.save_rfq_button').removeAttr('disabled');
                 if (response.status) {
                     $('#addRfqForm')[0].reset();
                     $("#RfqModal").modal('hide');
                     // toastr.success(response.message);
-                    $('#inventory-table').DataTable().ajax.reload();
+                    if (inventoryTable) {
+                        inventoryTable.ajax.reload();
+                    }
                     if (response.url) {
                         window.open(response.url, '_blank');
                     }
@@ -130,6 +140,7 @@
                 }
             },
             error: function (xhr) {
+                isSaveRfqSubmitting = false;
                 $('.save_rfq_button').removeAttr('disabled');
                 const res = xhr.responseJSON;
                 if (xhr.status === 422 && res.errors) {
@@ -147,13 +158,14 @@
     $(document).on('input', 'input[name="rfq_qty[]"]', function () {
         let $input = $(this);
         let qty = parseFloat($input.val()) || 0;
+        let maxQty = parseFloat($input.attr('max')) || 0;
 
-        // Find the max quantity from the same row (adjust selector as needed)
-        let maxQty = parseFloat($(this).attr('max'))||0;
+        qty = parseFloat(qty.toFixed(2));
+        maxQty = parseFloat(maxQty.toFixed(2));
 
         if (qty > maxQty) {
-            toastr.error(`Please Enter Quantity Less than or Equal To ${maxQty} For This Product`);
-            $input.val(''); // reset input or set it to maxQty if you want
+            toastr.error(`Please enter a quantity less than or equal to ${maxQty} for this product.`);
+            $input.val(maxQty);
         }
     });
 

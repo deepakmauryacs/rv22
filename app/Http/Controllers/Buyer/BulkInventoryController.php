@@ -266,17 +266,18 @@ class BulkInventoryController extends Controller
         ) {
             // Do nothing
         } else {
-            if (is_null($openingStock)) {
-                $error_code .= 'Opening stock is required, ';
-            }
+            // if (is_null($openingStock)) {
+            //     $error_code .= 'Opening stock is required, ';
+            // }
 
-            if (is_null($stockPrice)) {
-                $error_code .= 'Stock price is required, ';
-            }
+            // if (is_null($stockPrice)) {
+            //     $error_code .= 'Stock price is required, ';
+            // }
 
             if (
-                !is_null($openingStock) && !is_null($stockPrice) && 
-                !(($openingStock > 0 && $stockPrice > 0) || ($openingStock == 0.0 && $stockPrice == 0.0))
+                is_null($openingStock) || is_null($stockPrice)  
+                // !is_null($openingStock) && !is_null($stockPrice) && 
+                // !(($openingStock > 0 && $stockPrice > 0) || ($openingStock == 0.0 && $stockPrice == 0.0))
             ) {
                 $error_code .= 'Invalid opening stock or stock price, ';
             }

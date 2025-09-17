@@ -31,6 +31,9 @@ class InventoryExport implements FromQuery, WithHeadings, WithMapping, WithStyle
 
         $inventoryIds =  (clone $originalQuery)->pluck('id')->toArray();
         $this->quantityMaps = StockQuantityHelper::preloadStockQuantityMaps($inventoryIds);
+        $this->controller->preloadGrnData($inventoryIds);
+        $this->controller->preloadRfqData($inventoryIds);
+        $this->controller->preloadOrderData($inventoryIds);
         return $originalQuery ;
     }
 

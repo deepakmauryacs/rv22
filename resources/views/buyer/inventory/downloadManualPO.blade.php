@@ -19,6 +19,7 @@
             font-size: 7pt;
             margin: 0;
             padding: 0;
+            -webkit-print-color-adjust: exact;
         }
 
         .main-wrapper {
@@ -125,6 +126,19 @@
         .text-wrap {
              white-space: normal!important;
         }
+        .order-generated {
+            text-align: right;
+            /* margin-top: 10px; */
+            font-size: 8pt;
+            border: 1px solid #000;
+            border-top: none;
+            padding: 4pt 3pt;
+        }
+        .order-generated img {
+            max-width: 20%;
+            margin-left: 5px;
+            vertical-align: middle;
+        }
     </style>
 </head>
 <body>
@@ -133,7 +147,28 @@
 
     <table class="top-bar-table">
         <tr>
-            <td class="left"><img src="https://a.eraprocure.co.in/assets/images/logo/rfq-logo.png" height="40">{{ strtoupper(auth()->user()->buyer->legal_name) }}
+            <td class="left">
+                @php
+                    $companyId = (auth()->user()->parent_id != 0) ? auth()->user()->parent_id : auth()->user()->id;
+                    $company = \App\Models\User::where('id', $companyId)->with('buyer')->first();
+                    $logo = ($company && isset($company->logo) && !empty($company->logo)) ? $company->logo : null;
+                    $base64 = null;
+                    if ($logo) {
+                        $path = public_path('uploads/buyer-profile/' . $logo);
+                        if (is_file($path) && file_exists($path)) {
+                            $type = pathinfo($path, PATHINFO_EXTENSION);
+                            $data = file_get_contents($path);
+                            $base64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
+                        }
+                    }
+                @endphp
+
+                @if ($base64)
+                    <img src="{{ $base64 }}" alt="Company Logo" style="max-width: 20%; vertical-align: middle;">
+                @else
+                    {{ strtoupper($company->buyer->legal_name ?? 'UNKNOWN COMPANY') }}
+                @endif
+
         </td>
             <td class="right">PURCHASE ORDER</td>
         </tr>
@@ -374,9 +409,20 @@
     <div class="amount-words">
         Amount In Words: {{ CurrencyConvertHelper::numberToWordsWithCurrency($totalAmount, $currency) }}
     </div>
-
-    <div class="footer" >
+    <div class="order-generated" >
         <p><strong>ORDER GENERATED THROUGH</strong></p>
+        @php
+            $path = public_path('assets\images\rfq-logo.png');
+            $type = pathinfo($path, PATHINFO_EXTENSION);
+            $data = file_get_contents($path);
+            $base64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
+        @endphp
+        <img src="{{ $base64 }}" alt="raProcure" style="max-width: 20%; margin-left: 5px; vertical-align: middle;">
+        
+    </div>
+    
+
+    <div class="footer" >        
         <p><strong>Remarks:</strong> {{$order->order_remarks}}</p>
         <p><strong>Additional Remarks:</strong> {{$order->order_add_remarks}}</p>
         <p><strong>Prepared By:</strong> {{ strtoupper($order->preparedBy->name) }} For {{ strtoupper(auth()->user()->buyer->legal_name) }}</p>

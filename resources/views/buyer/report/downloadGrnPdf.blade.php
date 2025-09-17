@@ -97,9 +97,16 @@
                 <p style="font-size:10px; font-weight:bold; display:inline-block; margin:0; vertical-align:middle;">
                     GENERATED THROUGH
                 </p>
-                <img alt="raProcure" 
-                    src="{{ public_path('assets/images/rfq-logo.png') }}" 
-                    style="max-width:20%; margin-left:5px; vertical-align:middle;">
+                <br>
+                @php
+                    $path = public_path('assets\images\rfq-logo.png');
+                    $type = pathinfo($path, PATHINFO_EXTENSION);
+                    $data = file_get_contents($path);
+                    $base64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
+                @endphp
+                <img src="{{ $base64 }}" alt="raProcure" style="max-width: 20%; margin-left: 5px; vertical-align: middle;">
+                    
+        
 
             </td>
         </tr>

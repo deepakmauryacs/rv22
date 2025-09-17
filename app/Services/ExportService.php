@@ -11,15 +11,28 @@ class ExportService
 {
     public function storeAndDownload($export, string $fileName): array
     {
-        $query = method_exists($export, 'query') ? $export->query() : null;
-
-        if ($query && !$query->exists()) {
-            return [
-                'success' => false,
-                'fetchRow' => false,
-                'message' => 'No record found for export.'
-            ];
+       
+        $query = null;
+        if (method_exists($export, 'query')) {
+            $query = $export->query();
+            if (!$query->exists()) {
+                return [
+                    'success' => false,
+                    'fetchRow' => false,
+                    'message' => 'No record found for export, Try another search!.'
+                ];
+            }
+        }elseif (method_exists($export, 'collection')) {
+            $collection = $export->collection();
+            if ($collection->isEmpty()) {
+                return [
+                    'success' => false,
+                    'fetchRow' => false,
+                    'message' => 'No record found for export, Try another search!.'
+                ];
+            }
         }
+        
         $userId = auth()->id().'_'.time();
         $storageFolder = "exports/{$userId}";
         $filePath = "{$storageFolder}/{$fileName}";

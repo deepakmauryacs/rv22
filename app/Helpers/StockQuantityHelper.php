@@ -3,6 +3,7 @@ namespace App\Helpers;
 
 use App\Models\{Grn, Issued, IssuedReturn, ReturnStock};
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class StockQuantityHelper
 {
@@ -58,12 +59,17 @@ class StockQuantityHelper
     }
     public static function preloadStockQuantityMaps(array $inventoryIds): array
     {
-        return [
-            'grn' => self::getGrnQuantities($inventoryIds),
-            'issue' => self::getIssueQuantities($inventoryIds),
-            'issue_return' => self::getIssueReturnQuantities($inventoryIds),
-            'stock_return' => self::getStockReturnQuantities($inventoryIds),
-        ];
+        $cacheKey = 'stock_quantity_maps_' . md5(json_encode($inventoryIds));
+
+        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($inventoryIds) {
+            return [
+                'grn' => self::getGrnQuantities($inventoryIds),
+                'issue' => self::getIssueQuantities($inventoryIds),
+                'issue_return' => self::getIssueReturnQuantities($inventoryIds),
+                'stock_return' => self::getStockReturnQuantities($inventoryIds),
+            ];
+        });
+        
     }
     public static function calculateCurrentStockValue(int $inventoryId,float $openingStock,array $quantityMaps): float {
         return $openingStock

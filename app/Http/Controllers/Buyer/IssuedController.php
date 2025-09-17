@@ -407,7 +407,7 @@ class IssuedController extends Controller
 
         return response()->json([
             'status' => 1,
-            'message' => 'Issue created successfully.',
+            'message' => 'Issued quantity updated successfully',
             'data' => $issue
         ], 201);
     }

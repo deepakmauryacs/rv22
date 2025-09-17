@@ -1311,4 +1311,16 @@ function encrypt_decrypt_urlsafe($action, $string) {
 
     return $output;
 }
+if (!function_exists('changeCustomDateFormate')) {
+    function changeCustomDateFormate($date) {
+        if(!empty($date)){
+            $date_arr = explode("/", $date);
+            $day = $date_arr[0];
+            $month = $date_arr[1];
+            $year = $date_arr[2];
+            return $year."-".$month."-".$day;
+        }
+        return '';
+    }
+}
 }

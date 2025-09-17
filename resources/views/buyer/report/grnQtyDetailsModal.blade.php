@@ -108,19 +108,29 @@
 
     <script src="{{ asset('public/assets/library/datetimepicker/jquery.datetimepicker.full.min.js') }}"></script>
     <script>
+        let isDownloadingGrn = false;
+
         $(document).on('click', '.download_grn_button', function (e) {
             e.preventDefault();
-            let id = $('input[name="id"]').val();
 
+            if (isDownloadingGrn) return;
+
+            isDownloadingGrn = true;
+            $('.download_grn_button').prop('disabled', true);
+
+            let id = $('input[name="id"]').val();
             let url = downloadGrnRowdataurl.replace(':id', id);
 
             $.ajax({
                 url: url,
                 type: "GET",
                 xhrFields: {
-                    responseType: 'blob'   
+                    responseType: 'blob'
                 },
                 success: function (data) {
+                    isDownloadingGrn = false;
+                    $('.download_grn_button').prop('disabled', false);
+
                     let blob = new Blob([data], { type: "application/pdf" });
                     let link = document.createElement("a");
                     link.href = window.URL.createObjectURL(blob);
@@ -128,12 +138,23 @@
                     link.click();
                 },
                 error: function (xhr, status, error) {
+                    isDownloadingGrn = false;
+                    $('.download_grn_button').prop('disabled', false);
                     console.error("Download failed:", error);
                 }
             });
         });
+
+        let isUpdatingGrn = false;
+
         $(document).on('click', '.edit_grn_button', function (e) {
             e.preventDefault();
+
+            if (isUpdatingGrn) return;
+
+            isUpdatingGrn = true;
+            $('.edit_grn_button').prop('disabled', true);
+
             let formData = {
                 _token: $('meta[name="csrf-token"]').attr('content'),
                 id: $('input[name="id"]').val(),
@@ -145,7 +166,6 @@
                 gst: $('#O_gst').is(':visible') ? $('#O_gst').val() : $('#s_gst').val(),
                 freight_charges: $('#O_freight_charges').is(':visible') ? $('#O_freight_charges').val() : $('#s_freight_charges').val(),
                 approved_by: $('#O_approved_by').is(':visible') ? $('#O_approved_by').val() : $('#s_approved_by').val()
-
             };
 
             $.ajax({
@@ -153,17 +173,22 @@
                 type: "POST",
                 data: formData,
                 success: function (response) {
+                    isUpdatingGrn = false;
+                    $('.edit_grn_button').prop('disabled', false);
+
                     if (response.status === 'success') {
                         toastr.success(response.message);
                         $('#grnQtyDetailsModal').modal('hide');
                         $('#report-table').DataTable().destroy();
                         report_list_data();
-                        // optionally refresh table or page
                     } else {
                         toastr.error(response.message || 'Update failed');
                     }
                 },
                 error: function (xhr) {
+                    isUpdatingGrn = false;
+                    $('.edit_grn_button').prop('disabled', false);
+
                     if (xhr.responseJSON && xhr.responseJSON.errors) {
                         const errors = xhr.responseJSON.errors;
                         let errorMessages = '';
@@ -181,9 +206,9 @@
                         toastr.error('Something went wrong. Please try again.');
                     }
                 }
-
             });
-        });            
+        });
+           
         $('#grnQtyDetailsModal').on('shown.bs.modal', function () {
             $('.bill-date').datetimepicker({
                 format: 'd-m-Y',

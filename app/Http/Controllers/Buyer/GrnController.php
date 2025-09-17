@@ -301,6 +301,7 @@ class GrnController extends Controller
                 }
                 $indentQty = Indent::where('inventory_id', $inventoryId)->where('is_deleted', 2)->where('closed_indent', 2)->sum('indent_qty');
                 $inventoryController = app(InventoryController::class);
+                $inventoryController->preloadGrnData([$inventoryId]);
                 $totalGrnQty = $inventoryController->getGrnData($inventoryId)['grn_qty'][$inventoryId] ?? 0;
 
                 $tolerance = $indentQty * 0.02;
@@ -334,7 +335,7 @@ class GrnController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Valid GRN submission.',
+            'message' => 'GRN quantity updated successfully.',
         ]);
     }
     protected function errorResponse($field, $message)
@@ -531,6 +532,22 @@ class GrnController extends Controller
 
             // if ($grnQty > 0 && $grnQty <= $remainingQty) {
             if ($this->bccomp_fallback($grnQty, '0', 2) === 1 && $this->bccomp_fallback($grnQty, $remainingQty, 2) <= 0) {
+                $rate = $request->rate[$index] ?? null;
+
+                if (!is_numeric($rate)) {
+                    abort(response()->json([
+                        'status' => false,
+                        'message' => 'Rate on row ' . ($index + 1) . ' must be a numeric value.',
+                    ], 422));
+                }
+
+                if (!preg_match('/^\d{1,8}(\.\d{1,2})?$/', $rate)) {
+                    abort(response()->json([
+                        'status' => false,
+                        'message' => 'Rate on row ' . ($index + 1) . ' is out of range (must be max 99,999,999.99).',
+                    ], 422));
+                }
+
                 $validData[] = [
                     'inventory_id'     => $inventoryId,
                     'grn_qty'          => $grnQty,
@@ -572,6 +589,7 @@ class GrnController extends Controller
             $stock_return_for = $request->stock_return_for[$index];
             
             if ($this->bccomp_fallback($grnQty, '0', 2) === 1 && $this->bccomp_fallback($grnQty, $remainingQty, 2) <= 0) {
+
                 $validData[] = [
                     'inventory_id'     => $inventoryId,
                     'grn_qty'          => $grnQty,
@@ -939,6 +957,7 @@ class GrnController extends Controller
                 $b->where('branch_id', $branchId);
             });
         });
+        
 
         return $query->groupBy('inventory_id', 'order_id','grn_type')
                     ->orderByRaw('MAX(id) DESC')
