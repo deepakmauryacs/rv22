@@ -241,7 +241,7 @@
                         {{ IND_money_format($total) }}
                     </td>
                 </tr>
-
+                @endforeach
                 <tr>
                     <td colspan="9"
                         style="background-color:rgb(242,220,219);border-left: 1px solid #0a0909 !important;
@@ -255,7 +255,7 @@
                         {{ IND_money_format($grandTotal) }}
                     </td>
                 </tr>
-                @endforeach
+
             </tbody>
         </table>
 

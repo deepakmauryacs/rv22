@@ -187,11 +187,11 @@ $count=9;
 
             <td
                 style="text-align: center;border: 5px dotted black;vertical-align: bottom;font-weight: bold;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #D2DAE4;border-bottom: 5px solid #000000 !important;border-top: 5px solid #000000 !important;border-left: 5px solid #000000 !important;border-right: 5px solid #000000 !important;">
-                FINAL RATE ({{ $rateSymbol; }} )
+                FINAL RATE ({!! $rateSymbol !!} )
             </td>
             <td
                 style="text-align: center;border: 5px dotted black;vertical-align: bottom;font-weight: bold;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #D2DAE4;border-bottom: 5px solid #000000 !important;border-top: 5px solid #000000 !important;border-left: 5px solid #000000 !important;border-right: 5px solid #000000 !important;">
-                MRP ({{ $rateSymbol; }})
+                MRP ({!! $rateSymbol !!})
             </td>
             <td
                 style="text-align: center;border: 5px dotted black;vertical-align: bottom;font-weight: bold;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #D2DAE4;border-bottom: 5px solid #000000 !important;border-top: 5px solid #000000 !important;border-left: 5px solid #000000 !important;border-right: 5px solid #000000 !important;">
@@ -199,7 +199,7 @@ $count=9;
             </td>
             <td
                 style="text-align: center;border: 5px dotted black;vertical-align: bottom;font-weight: bold;color: #000000;font-family: 'Calibri';font-size: 12pt;background-color: #D2DAE4;border-bottom: 5px solid #000000 !important;border-top: 5px solid #000000 !important;border-left: 5px solid #000000 !important;border-right: 5px solid #000000 !important;">
-                FIRST RATE ({{ $rateSymbol; }})
+                FIRST RATE ({!! $rateSymbol !!})
             </td>
             @endif
             @endforeach

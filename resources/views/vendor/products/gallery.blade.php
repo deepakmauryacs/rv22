@@ -1,4 +1,4 @@
-@extends('vendor.layouts.app_second')
+@extends('vendor.layouts.app_second',['title' => 'Product Gallery', 'sub_title' => ''])
 @section('title', 'Product Gallery - Raprocure')
 
 @section('content')
@@ -180,16 +180,6 @@
 @section('scripts')
 <script>
 $(document).ready(function() {
-    const galleryStoreUrl = "{{ route('vendor.products.gallery.store', ['product' => $product->id]) }}";
-    const galleryDestroyUrl = "{{ route('vendor.products.gallery.destroy', ['product' => $product->id]) }}";
-    const $galleryList = $('.img-list');
-    const placeholderHtml = '<li class="text-muted">No images uploaded yet</li>';
-
-    const ensurePlaceholder = () => {
-        if ($galleryList.find('li').length === 0) {
-            $galleryList.append(placeholderHtml);
-        }
-    };
     // Set CSRF token for all AJAX requests
     $.ajaxSetup({
         headers: {
@@ -249,13 +239,12 @@ $(document).ready(function() {
             contentType: false,
             success: function(response) {
                 if (response.success) {
-                    $galleryList.find('li.text-muted').remove();
                     // Append new images to gallery
                     response.images.forEach(function(image) {
-                        $galleryList.append(`
+                        $('.img-list').append(`
                             <li>
-                                <img style="width:149px;height:149px;"
-                                     src="${image.temp_url}"
+                                <img style="width:149px;height:149px;" 
+                                     src="${image.temp_url}" 
                                      data="${image.name}">
                                 <span class="remove">X</span>
                             </li>
@@ -289,7 +278,6 @@ $(document).ready(function() {
             success: function(response) {
                 if (response.success) {
                     listItem.remove();
-                    ensurePlaceholder();
                 } else {
                     alert(response.message || 'Error removing image');
                 }
@@ -307,8 +295,10 @@ $(document).ready(function() {
         const imageId = $(this).siblings('img').attr('data-id');
         const imageName = $(this).siblings('img').attr('data');
         const listItem = $(this).parent();
+        const productId = "{{ $product->id }}";
+
         $.ajax({
-            url: galleryDestroyUrl,
+            url: "{{ route('vendor.products.gallery.destroy', ['product' => ':productId']) }}".replace(':productId', productId),
             type: 'DELETE',
             data: {
                 image_id: imageId,
@@ -317,7 +307,6 @@ $(document).ready(function() {
             success: function(response) {
                 if (response.success) {
                     listItem.remove();
-                    ensurePlaceholder();
                     alert('Image deleted successfully');
                 } else {
                     alert(response.message || 'Error deleting image');
@@ -334,17 +323,16 @@ $(document).ready(function() {
     $('#gallery-form').on('submit', function(e) {
         e.preventDefault();
         const form = $(this);
+        const productId = "{{ $product->id }}";
         $('.submit-btn').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Saving...');
 
-        // Gather all temporary images awaiting persistence
+        // Get all temporary images, skipping the first <li>
         const tempImages = [];
-        $('.img-list li').each(function() {
+        $('.img-list li').each(function(index) {
+            if (index === 0) return; // Skip the first <li>
             const img = $(this).find('img');
-            if (!img.length) {
-                return;
-            }
-            if (img.attr('data-id') === undefined) {
-                tempImages.push(img.attr('data'));
+            if (img.length && img.attr('data-id') === undefined) {
+                tempImages.push(img.attr('data')); // Push only image name (string)
             }
         });
 
@@ -355,7 +343,7 @@ $(document).ready(function() {
         }
 
         $.ajax({
-            url: galleryStoreUrl,
+            url: "{{ route('vendor.products.gallery.store', ['product' => ':productId']) }}".replace(':productId', productId),
             type: 'POST',
             data: {
                 images: tempImages // Send array of image names (strings)

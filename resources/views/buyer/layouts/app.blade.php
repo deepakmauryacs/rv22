@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,26 +10,28 @@
         <meta property="og:image:size" content="300" />
         <title>{{ $title??'' }} - Raprocure</title>
         <!---favicon-->
-		<link rel="shortcut icon" href="{{ asset('public/assets/images/favicon/raprocure-fevicon.ico') }}" type="image/x-icon">
+        <link rel="shortcut icon" href="{{ asset('public/assets/images/favicon/raprocure-fevicon.ico') }}"
+            type="image/x-icon">
         <!---bootsrap-->
         <link href="{{ asset('public/assets/buyer/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet" />
         <!---bootsrap-icon-->
         <link rel="stylesheet" href="{{ asset('public/assets/buyer/bootstrap-icons/bootstrap-icons.min.css') }}">
         <!---css-->
-        <link href="{{ asset('public/assets/buyer/css/layout.css') }}" rel="stylesheet"/>
+        <link href="{{ asset('public/assets/buyer/css/layout.css') }}" rel="stylesheet" />
         <link href="{{ asset('public/assets/buyer/css/style.css') }}" rel="stylesheet">
 
-		<script src="{{ asset('public/assets/login/js/jquery-3.7.1.min.js') }}"></script>
+        <script src="{{ asset('public/assets/login/js/jquery-3.7.1.min.js') }}"></script>
 
-		<meta name="csrf-token" content="{{ csrf_token() }}">
+        <meta name="csrf-token" content="{{ csrf_token() }}">
         <style>
             li.suggesation-line a {
                 color: #0d71bb;
             }
         </style>
-		@yield('css')
+        @yield('css')
 
     </head>
+
     <body>
         <!---Header part-->
         <div class="project_header sticky-top">
@@ -58,7 +61,8 @@
         <!---local-js-->
         <script src="{{ asset('public/assets/buyer/js/common.js') }}"></script>
         <script src="{{ asset('public/assets/js/messagePopup.js') }}"></script>
-        <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
+
+        <script src="https://cdn.ckeditor.com/ckeditor5/34.2.0/classic/ckeditor.js"></script>
 
         {{-- toastr --}}
         <link href="{{ asset('public/assets/library/toastr/css/toastr.min.css') }}" rel="stylesheet" />
@@ -66,7 +70,7 @@
 
         @include('buyer.layouts.app-js')
 
-		@yield('scripts')
+        @yield('scripts')
         <script>
             @if(Auth::user()->is_profile_verified==1)
             setInterval(check_user_message, 15*60000); //poll every 60 second
@@ -114,4 +118,5 @@
             @endif
         </script>
     </body>
+
 </html>
