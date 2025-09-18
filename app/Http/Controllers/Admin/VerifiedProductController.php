@@ -59,34 +59,31 @@ class VerifiedProductController extends Controller
 
         $query = VendorProduct::query()
             ->select([
-                'id',
-                'product_id',
-                'vendor_id',
-                'vendor_status',
-                'added_from',
-                'updated_at',
+                'vendor_products.id',
+                'vendor_products.product_id',
+                'vendor_products.vendor_id',
+                'vendor_products.vendor_status',
+                'vendor_products.added_from',
+                'vendor_products.updated_at',
+                DB::raw('products.product_name AS product_name'),
+                DB::raw('vendors.legal_name AS vendor_legal_name'),
+                DB::raw("CASE WHEN vendor_products.added_from IN ('1', '2', '3', '4', '5') THEN 1 ELSE 0 END AS created_by_vendor"),
             ])
-            ->with([
-                'product:id,product_name',
-                'vendor_profile:user_id,legal_name',
-            ])
-            ->where('approval_status', 1)
-            ->orderByDesc('updated_at');
+            ->leftJoin('products', 'products.id', '=', 'vendor_products.product_id')
+            ->leftJoin('vendors', 'vendors.user_id', '=', 'vendor_products.vendor_id')
+            ->where('vendor_products.approval_status', 1)
+            ->orderByDesc('vendor_products.updated_at');
 
         if ($filters['product_name'] !== '') {
-            $query->whereHas('product', function ($productQuery) use ($filters) {
-                $productQuery->where('product_name', 'like', '%' . $filters['product_name'] . '%');
-            });
+            $query->where('products.product_name', 'like', '%' . $filters['product_name'] . '%');
         }
 
         if ($filters['vendor_name'] !== '') {
-            $query->whereHas('vendor_profile', function ($vendorQuery) use ($filters) {
-                $vendorQuery->where('legal_name', 'like', '%' . $filters['vendor_name'] . '%');
-            });
+            $query->where('vendors.legal_name', 'like', '%' . $filters['vendor_name'] . '%');
         }
 
         if ($status !== null) {
-            $query->where('vendor_status', $status);
+            $query->where('vendor_products.vendor_status', $status);
         }
 
         $perPage = (int) $request->input('per_page', 25);
@@ -95,14 +92,6 @@ class VerifiedProductController extends Controller
         $products = $query
             ->paginate($perPage)
             ->appends($request->query());
-
-        $products->getCollection()->transform(function (VendorProduct $product) {
-            $product->product_name = optional($product->product)->product_name;
-            $product->vendor_legal_name = optional($product->vendor_profile)->legal_name;
-            $product->created_by_vendor = in_array((string) $product->added_from, ['1', '2', '3', '4', '5'], true);
-
-            return $product;
-        });
 
         if ($request->ajax()) {
             return view('admin.verified-products.partials.table', compact('products'))->render();
