@@ -57,18 +57,20 @@ class VerifiedProductController extends Controller
             $status = (string) $status;
         }
 
-        $query = DB::table('vendor_products as vp')
+        $query = VendorProduct::query()
+            ->from('vendor_products as vp')
             ->select([
                 'vp.id',
                 'vp.vendor_status',
-                DB::raw("CASE WHEN vp.added_from IN ('1','2','3','4','5') THEN 1 ELSE 0 END AS created_by_vendor"),
                 'vp.updated_at',
+                DB::raw("CASE WHEN vp.added_from IN ('1','2','3','4','5') THEN 1 ELSE 0 END AS created_by_vendor"),
                 'p.product_name',
                 'v.legal_name as vendor_legal_name',
             ])
             ->leftJoin('products as p', 'p.id', '=', 'vp.product_id')
             ->leftJoin('vendors as v', 'v.user_id', '=', 'vp.vendor_id')
-            ->where('vp.approval_status', 1);
+            ->where('vp.approval_status', 1)
+            ->orderByDesc('vp.updated_at');
 
         if ($filters['product_name'] !== '') {
             $query->where('p.product_name', 'like', '%' . $filters['product_name'] . '%');
@@ -86,9 +88,14 @@ class VerifiedProductController extends Controller
         $perPage = $perPage > 0 ? min($perPage, 100) : 25;
 
         $products = $query
-            ->orderByDesc('vp.updated_at')
             ->paginate($perPage)
             ->appends($request->query());
+
+        $products->getCollection()->transform(function (VendorProduct $product) {
+            $product->created_by_vendor = (bool) $product->created_by_vendor;
+
+            return $product;
+        });
 
         if ($request->ajax()) {
             return view('admin.verified-products.partials.table', compact('products'))->render();
