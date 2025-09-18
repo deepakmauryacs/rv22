@@ -8,7 +8,6 @@ use App\Models\VendorProduct;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use App\Traits\HasModulePermission;
 use Intervention\Image\ImageManager;
@@ -46,26 +45,50 @@ class VerifiedProductController extends Controller
     {
         $this->ensurePermission('ALL_VERIFIED_PRODUCTS');
 
-        // slected column
-        $query = VendorProduct::with(['vendor', 'vendor_profile', 'product'])->where('approval_status', 1)->orderBy('updated_at', 'desc'); // Order by updated_at in descending order
-        if ($request->filled('product_name')) {
-            $query->whereHas('product', function ($q) use ($request) {
-                $q->where('product_name', 'like', '%' . $request->input('product_name') . '%');
-            });
+        $filters = [
+            'product_name' => trim((string) $request->input('product_name', '')),
+            'vendor_name' => trim((string) $request->input('vendor_name', '')),
+        ];
+
+        $status = $request->input('status');
+        if ($status === '' || $status === null || ! in_array((string) $status, ['1', '2', '3', '4'], true)) {
+            $status = null;
+        } else {
+            $status = (string) $status;
         }
 
-        if ($request->filled('vendor_name')) {
-            $query->whereHas('vendor_profile', function ($q) use ($request) {
-                $q->where('legal_name', 'like', '%' . $request->input('vendor_name') . '%');
-            });
+        $query = DB::table('vendor_products as vp')
+            ->select([
+                'vp.id',
+                'vp.vendor_status',
+                'vp.created_by_vendor',
+                'vp.updated_at',
+                'p.product_name',
+                'v.legal_name as vendor_legal_name',
+            ])
+            ->leftJoin('products as p', 'p.id', '=', 'vp.product_id')
+            ->leftJoin('vendors as v', 'v.user_id', '=', 'vp.vendor_id')
+            ->where('vp.approval_status', 1);
+
+        if ($filters['product_name'] !== '') {
+            $query->where('p.product_name', 'like', '%' . $filters['product_name'] . '%');
         }
 
-        if ($request->filled('status')) {
-            $query->where('vendor_status', $request->input('status'));
+        if ($filters['vendor_name'] !== '') {
+            $query->where('v.legal_name', 'like', '%' . $filters['vendor_name'] . '%');
         }
 
-        $perPage = $request->input('per_page', 25); // default to 25 if not present
-        $products = $query->paginate($perPage)->appends($request->all());
+        if ($status !== null) {
+            $query->where('vp.vendor_status', $status);
+        }
+
+        $perPage = (int) $request->input('per_page', 25);
+        $perPage = $perPage > 0 ? min($perPage, 100) : 25;
+
+        $products = $query
+            ->orderByDesc('vp.updated_at')
+            ->paginate($perPage)
+            ->appends($request->query());
 
         if ($request->ajax()) {
             return view('admin.verified-products.partials.table', compact('products'))->render();
