@@ -61,7 +61,7 @@ class VerifiedProductController extends Controller
             ->select([
                 'vp.id',
                 'vp.vendor_status',
-                'vp.created_by_vendor',
+                DB::raw("CASE WHEN vp.added_from IN ('1','2','3','4','5') THEN 1 ELSE 0 END AS created_by_vendor"),
                 'vp.updated_at',
                 'p.product_name',
                 'v.legal_name as vendor_legal_name',
